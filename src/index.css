@@ -135,4 +135,22 @@ All colors MUST be HSL.
   .hover-lift {
     @apply transition-smooth hover:-translate-y-1 hover:shadow-elegant;
   }
+
+  .card-tilt {
+    @apply transition-all duration-500 hover:-translate-y-2 hover:shadow-elegant hover:scale-[1.02];
+  }
+
+  .gradient-flag-anim {
+    background: linear-gradient(90deg, hsl(150 70% 30%), hsl(0 84% 50%), hsl(45 95% 55%), hsl(150 70% 30%));
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-shift 6s ease infinite;
+  }
+
+  .typing-caret::after {
+    content: "|";
+    @apply inline-block ml-1 text-primary animate-blink;
+  }
 }

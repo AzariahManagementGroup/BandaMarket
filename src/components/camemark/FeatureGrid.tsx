@@ -18,14 +18,15 @@ const FeatureGrid = () => {
         {features.map((f, i) => (
           <div
             key={f.title}
-            className="group relative rounded-2xl bg-card border border-border p-5 hover-lift animate-fade-in"
+            className="group relative rounded-2xl bg-card border border-border p-5 card-tilt animate-fade-in overflow-hidden"
             style={{ animationDelay: `${i * 0.05}s` }}
           >
-            <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-smooth">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-smooth" />
+            <div className="relative mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:rotate-6 group-hover:scale-110 transition-smooth">
               <f.icon className="h-5 w-5" />
             </div>
-            <h3 className="text-sm font-bold text-foreground">{f.title}</h3>
-            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
+            <h3 className="relative text-sm font-bold text-foreground group-hover:text-primary transition-smooth">{f.title}</h3>
+            <p className="relative mt-1 text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
           </div>
         ))}
       </div>

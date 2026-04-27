@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -9,22 +11,39 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Globe, Menu, ChevronDown } from "lucide-react";
 import logo from "@/assets/camemark-logo.png";
 
-const links = [
-  { label: "Home", href: "#" },
-  { label: "Marketplace", href: "#marketplace" },
-  { label: "Regions", href: "#regions", caret: true },
-  { label: "Wallet", href: "#wallet" },
-  { label: "Logistics", href: "#logistics" },
-  { label: "About", href: "#about" },
-  { label: "Contact", href: "#contact" },
+const LANGS = [
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "ar", label: "العربية", flag: "🇸🇦" },
 ];
 
 const Navbar = () => {
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+
+  const links = [
+    { key: "home", label: t("nav.home"), href: "/" },
+    { key: "marketplace", label: t("nav.marketplace"), href: "#marketplace" },
+    { key: "regions", label: t("nav.regions"), href: "#regions", caret: true },
+    { key: "wallet", label: t("nav.wallet"), href: "#wallet" },
+    { key: "logistics", label: t("nav.logistics"), href: "#logistics" },
+    { key: "about", label: t("nav.about"), href: "#about" },
+    { key: "contact", label: t("nav.contact"), href: "#contact" },
+  ];
+
+  const current = LANGS.find((l) => l.code === i18n.language?.split("-")[0]) ?? LANGS[0];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -32,6 +51,11 @@ const Navbar = () => {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = current.code;
+    document.documentElement.dir = current.code === "ar" ? "rtl" : "ltr";
+  }, [current.code]);
 
   return (
     <header
@@ -43,7 +67,7 @@ const Navbar = () => {
     >
       <div className="container flex h-16 md:h-20 items-center justify-between gap-4">
         {/* Logo */}
-        <a href="#" className="flex items-center gap-2 group shrink-0">
+        <a href="/" className="flex items-center gap-2 group shrink-0">
           <img
             src={logo}
             alt="CameMark — Cameroon's Digital Marketplace logo"
@@ -55,7 +79,7 @@ const Navbar = () => {
         <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold">
           {links.map((l) => (
             <a
-              key={l.label}
+              key={l.key}
               href={l.href}
               className="story-link inline-flex items-center gap-1 text-foreground/85 hover:text-primary transition-smooth"
             >
@@ -67,23 +91,35 @@ const Navbar = () => {
 
         {/* Right cluster */}
         <div className="flex items-center gap-2">
-          <button className="hidden md:inline-flex items-center gap-1.5 text-sm font-medium text-foreground/70 hover:text-primary transition-smooth border border-border rounded-md px-2.5 py-1.5">
-            <Globe className="h-4 w-4" />
-            EN
-            <ChevronDown className="h-3 w-3 opacity-70" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="hidden md:inline-flex items-center gap-1.5 text-sm font-medium text-foreground/70 hover:text-primary transition-smooth border border-border rounded-md px-2.5 py-1.5">
+              <Globe className="h-4 w-4" />
+              {current.code.toUpperCase()}
+              <ChevronDown className="h-3 w-3 opacity-70" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-popover z-50">
+              {LANGS.map((l) => (
+                <DropdownMenuItem key={l.code} onClick={() => i18n.changeLanguage(l.code)}>
+                  <span className="mr-2">{l.flag}</span>
+                  {l.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="outline"
             size="sm"
             className="hidden sm:inline-flex border-primary/30 text-foreground hover:bg-primary/5"
+            onClick={() => navigate("/signup")}
           >
-            Sign In
+            {t("nav.signin")}
           </Button>
           <Button
             size="sm"
-            className="hidden sm:inline-flex bg-primary hover:bg-primary-glow shadow-card text-primary-foreground"
+            className="hidden sm:inline-flex bg-primary hover:bg-primary-glow shadow-card text-primary-foreground animate-pulse-glow"
+            onClick={() => navigate("/signup")}
           >
-            Get Started
+            {t("nav.getStarted")}
           </Button>
 
           {/* Mobile trigger */}
@@ -104,7 +140,7 @@ const Navbar = () => {
                 <Breadcrumb>
                   <BreadcrumbList className="text-xs">
                     <BreadcrumbItem>
-                      <BreadcrumbLink href="#" className="text-primary font-semibold">
+                      <BreadcrumbLink href="/" className="text-primary font-semibold">
                         CameMark
                       </BreadcrumbLink>
                     </BreadcrumbItem>
@@ -116,7 +152,7 @@ const Navbar = () => {
                     </BreadcrumbItem>
                     <BreadcrumbSeparator />
                     <BreadcrumbItem>
-                      <BreadcrumbPage className="text-foreground">Home</BreadcrumbPage>
+                      <BreadcrumbPage className="text-foreground">{t("nav.home")}</BreadcrumbPage>
                     </BreadcrumbItem>
                   </BreadcrumbList>
                 </Breadcrumb>
@@ -127,7 +163,7 @@ const Navbar = () => {
                 <ul className="space-y-1">
                   {links.map((l, i) => (
                     <li
-                      key={l.label}
+                      key={l.key}
                       className="animate-fade-in-right"
                       style={{ animationDelay: `${i * 0.05}s` }}
                     >
@@ -143,10 +179,23 @@ const Navbar = () => {
                   ))}
                 </ul>
 
-                <div className="mt-6 px-4">
-                  <button className="inline-flex items-center gap-2 text-xs font-medium text-foreground/70 border border-border rounded-md px-3 py-1.5">
-                    <Globe className="h-4 w-4" /> EN
-                  </button>
+                <div className="mt-6 px-4 space-y-2">
+                  <div className="text-[11px] uppercase font-bold text-muted-foreground">Language</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {LANGS.map((l) => (
+                      <button
+                        key={l.code}
+                        onClick={() => i18n.changeLanguage(l.code)}
+                        className={`text-left text-xs font-semibold border rounded-lg px-3 py-2 transition-smooth ${
+                          current.code === l.code
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border hover:bg-primary/5"
+                        }`}
+                      >
+                        <span className="mr-1.5">{l.flag}</span>{l.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </nav>
 
@@ -155,15 +204,15 @@ const Navbar = () => {
                 <Button
                   variant="outline"
                   className="w-full border-primary/30 hover:bg-primary/5"
-                  onClick={() => setOpen(false)}
+                  onClick={() => { setOpen(false); navigate("/signup"); }}
                 >
-                  Sign In
+                  {t("nav.signin")}
                 </Button>
                 <Button
                   className="w-full bg-primary hover:bg-primary-glow text-primary-foreground"
-                  onClick={() => setOpen(false)}
+                  onClick={() => { setOpen(false); navigate("/signup"); }}
                 >
-                  Get Started
+                  {t("nav.getStarted")}
                 </Button>
               </div>
             </SheetContent>
