@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin, Shield, Truck, Globe2 } from "lucide-react";
 import heroImg from "@/assets/hero-marketplace.jpg";
@@ -9,7 +12,35 @@ const stats = [
   { icon: Globe2, label: "AfCFTA Ready", sub: "Trade beyond borders" },
 ];
 
+const useTypewriter = (words: string[], speed = 70, pause = 1400) => {
+  const [text, setText] = useState("");
+  const [wordIdx, setWordIdx] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const word = words[wordIdx % words.length];
+    let timeout: ReturnType<typeof setTimeout>;
+    if (!deleting && text === word) {
+      timeout = setTimeout(() => setDeleting(true), pause);
+    } else if (deleting && text === "") {
+      setDeleting(false);
+      setWordIdx((i) => (i + 1) % words.length);
+    } else {
+      timeout = setTimeout(() => {
+        setText(deleting ? word.slice(0, text.length - 1) : word.slice(0, text.length + 1));
+      }, deleting ? speed / 2 : speed);
+    }
+    return () => clearTimeout(timeout);
+  }, [text, deleting, wordIdx, words, speed, pause]);
+
+  return text;
+};
+
 const Hero = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const phrases = t("hero.typing", { returnObjects: true }) as string[];
+  const typed = useTypewriter(Array.isArray(phrases) ? phrases : ["One Digital Market"]);
   return (
     <section className="relative overflow-hidden">
       {/* Background flourishes */}
@@ -21,33 +52,34 @@ const Hero = () => {
         <div className="space-y-7 animate-fade-in">
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary">
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            Proudly Cameroonian. Built for Africa. Ready for the World.
+            {t("hero.badge")}
           </span>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.05] text-foreground">
-            One Digital Market<br />
-            for All 10 Regions<br />
-            <span className="text-gradient-flag">of Cameroon</span>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.05] text-foreground min-h-[160px] md:min-h-[260px]">
+            <span className="gradient-flag-anim typing-caret">{typed}</span>
           </h1>
 
           <div className="space-y-3 max-w-xl">
             <p className="text-lg font-semibold text-foreground/90">
-              Cameroon's Digital Market, Wallet & Trade Gateway
+              {t("hero.tagline")}
             </p>
-            <p className="text-base text-muted-foreground italic">Buy. Sell. Bargain. Pay. Deliver. Grow.</p>
+            <p className="text-base text-muted-foreground italic">{t("hero.slogan")}</p>
             <p className="text-base text-muted-foreground leading-relaxed">
-              CameMark connects buyers, sellers, farmers, cooperatives and businesses across all 10 regions
-              with secure payments, smart bargains, logistics and regional trade opportunities.
+              {t("hero.desc")}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Button size="lg" className="bg-primary hover:bg-primary-glow shadow-elegant group">
-              Start Trading
+            <Button
+              size="lg"
+              onClick={() => navigate("/signup")}
+              className="bg-primary hover:bg-primary-glow shadow-elegant group animate-pulse-glow"
+            >
+              {t("hero.start")}
               <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
             <Button size="lg" variant="outline" className="border-primary/30 hover:bg-primary/5">
-              Explore Regions
+              {t("hero.explore")}
               <MapPin className="ml-1 h-4 w-4" />
             </Button>
           </div>
