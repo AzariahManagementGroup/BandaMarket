@@ -8,35 +8,45 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* CameMark — Cameroon flag inspired (green / red / yellow) on warm cream */
+    --background: 40 33% 97%;
+    --foreground: 150 40% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 150 40% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 150 40% 10%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 150 70% 18%;
+    --primary-foreground: 40 33% 97%;
+    --primary-glow: 150 60% 32%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 45 95% 55%;
+    --secondary-foreground: 150 70% 12%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 40 20% 92%;
+    --muted-foreground: 150 15% 35%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 8 78% 52%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 40 18% 86%;
+    --input: 40 18% 88%;
+    --ring: 150 70% 18%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    --gradient-hero: linear-gradient(135deg, hsl(150 70% 14%) 0%, hsl(150 60% 22%) 60%, hsl(160 55% 30%) 100%);
+    --gradient-leaf: linear-gradient(120deg, hsl(150 60% 95%) 0%, hsl(45 90% 95%) 100%);
+    --gradient-flag: linear-gradient(90deg, hsl(150 70% 30%) 0%, hsl(0 84% 50%) 50%, hsl(45 95% 55%) 100%);
+    --shadow-elegant: 0 20px 60px -20px hsl(150 70% 12% / 0.25);
+    --shadow-glow: 0 0 40px hsl(150 60% 35% / 0.35);
+    --shadow-card: 0 8px 24px -12px hsl(150 40% 10% / 0.12);
+    --transition-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 
     --sidebar-background: 0 0% 98%;
 
@@ -56,7 +66,30 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 150 30% 6%;
+    --foreground: 40 33% 95%;
+    --card: 150 30% 8%;
+    --card-foreground: 40 33% 95%;
+    --popover: 150 30% 8%;
+    --popover-foreground: 40 33% 95%;
+    --primary: 150 60% 45%;
+    --primary-foreground: 150 30% 6%;
+    --primary-glow: 150 70% 55%;
+    --secondary: 45 90% 55%;
+    --secondary-foreground: 150 30% 6%;
+    --muted: 150 20% 14%;
+    --muted-foreground: 40 15% 70%;
+    --accent: 8 78% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 150 20% 18%;
+    --input: 150 20% 18%;
+    --ring: 150 60% 45%;
+    --sidebar-background: 150 30% 8%;
+}
+
+.dark-unused {
     --foreground: 210 40% 98%;
 
     --card: 222.2 84% 4.9%;
@@ -100,6 +133,36 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer utilities {
+  .bg-hero { background: var(--gradient-hero); }
+  .bg-leaf { background: var(--gradient-leaf); }
+  .bg-flag { background: var(--gradient-flag); }
+  .shadow-elegant { box-shadow: var(--shadow-elegant); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .transition-smooth { transition: all 0.4s var(--transition-smooth); }
+
+  .text-gradient-flag {
+    background: var(--gradient-flag);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .story-link {
+    @apply relative inline-block after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left;
+  }
+
+  .hover-lift {
+    @apply transition-smooth hover:-translate-y-1 hover:shadow-elegant;
   }
 }
