@@ -18,13 +18,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -58,37 +52,43 @@ const BuyerDashboard = () => {
 
   useEffect(() => {
     document.title = "Dashboard | CameMark";
-
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        toast.error("Please sign in to access the dashboard");
         navigate("/signin");
-        return;
+      } else {
+        setSession(session);
+        fetchDashboardData(session.user.id);
       }
-      setSession(session);
-      fetchDashboardData(session.user.id);
-      setupRealtime(session.user.id);
-    };
+    });
 
-    checkAuth();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) fetchDashboardData(session.user.id);
+      else navigate("/signin");
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const setupRealtime = (userId: string) => {
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
     const channel = supabase
-      .channel("db_changes")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `profile_id=eq.${userId}` }, 
-      (payload) => {
-        setNotifications(prev => [payload.new, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        toast.info(payload.new.title, { description: payload.new.message });
-      })
+      .channel(`notifications-${session.user.id}`)
+      .on("postgres_changes", 
+        { event: "INSERT", schema: "public", table: "notifications", filter: `profile_id=eq.${session.user.id}` }, 
+        (payload) => {
+          setNotifications(prev => [payload.new, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          toast.info(payload.new.title, { description: payload.new.message });
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  };
+  }, [session?.user?.id]);
 
   const fetchDashboardData = async (userId: string) => {
     setLoading(true);
@@ -98,7 +98,7 @@ const BuyerDashboard = () => {
         .from("profiles")
         .select("*")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
       setProfile(profileData);
 
       // Determine Currency by Country
@@ -112,7 +112,7 @@ const BuyerDashboard = () => {
         .from("wallets")
         .select("*")
         .eq("profile_id", userId)
-        .single();
+        .maybeSingle();
       
       // Update wallet currency if it doesn't match detected currency
       if (walletData && walletData.currency !== detectedCurrency) {
@@ -121,7 +121,7 @@ const BuyerDashboard = () => {
           .update({ currency: detectedCurrency })
           .eq("id", walletData.id)
           .select()
-          .single();
+          .maybeSingle();
         walletData = updatedWallet;
       }
       setWallet(walletData);
@@ -141,7 +141,7 @@ const BuyerDashboard = () => {
       const { data: notifData, count } = await supabase.from("notifications").select("*", { count: "exact" }).eq("profile_id", userId).eq("is_read", false).order("created_at", { ascending: false });
       setNotifications(notifData || []);
       setUnreadCount(count || 0);
-      const { data: cardData } = await supabase.from("cards").select("*").eq("profile_id", userId).single();
+      const { data: cardData } = await supabase.from("cards").select("*").eq("profile_id", userId).maybeSingle();
       setCard(cardData);
 
     } catch (err) {
@@ -179,10 +179,33 @@ const BuyerDashboard = () => {
     setIsWalletModalOpen(true);
   };
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
+  const handleIDUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    const fileExt = file.name.split('.').pop();
+    const filePath = `ids/${session.user.id}-${Math.random()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars') // Using same bucket for now, or you can use 'ids'
+      .upload(filePath, file);
+
+    if (uploadError) {
+      toast.error("ID Upload failed: " + uploadError.message);
+    } else {
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      await supabase.from("profiles").update({ id_card_url: publicUrl }).eq("id", session.user.id);
+      setProfile({ ...profile, id_card_url: publicUrl });
+      toast.success("ID image uploaded successfully!");
+    }
+    setLoading(false);
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const formData = new FormData(e.currentTarget);
     const updates = Object.fromEntries(formData.entries());
     
     const { error } = await supabase
@@ -199,14 +222,15 @@ const BuyerDashboard = () => {
     setLoading(false);
   };
 
-  const handleProcessTransaction = async (e: React.FormEvent) => {
+  const handleProcessTransaction = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = e.currentTarget;
     setLoading(true);
-    // Simulation of gateway payment
+    
     toast.info(`Processing ${walletAction} via Sandbox Gateway...`);
     
     setTimeout(async () => {
-      const formData = new FormData(e.currentTarget as HTMLFormElement);
+      const formData = new FormData(form);
       const amount = parseFloat(formData.get("amount") as string);
       
       if (walletAction === "add") {
@@ -704,6 +728,7 @@ const BuyerDashboard = () => {
         <DialogContent className="sm:max-w-[600px] bg-white rounded-3xl p-6 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="text-xl font-extrabold">Advanced KYC & Profile</DialogTitle>
+            <DialogDescription className="text-xs text-gray-500">Submit your details to become a verified buyer.</DialogDescription>
           </DialogHeader>
           
           <div className="flex items-center gap-4 py-4 border-b border-gray-50 mb-4">
@@ -723,6 +748,7 @@ const BuyerDashboard = () => {
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-4">
+            {/* ... form fields ... */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Full Name</Label>
@@ -772,7 +798,7 @@ const BuyerDashboard = () => {
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">ID Number</Label>
-                <Input name="id_card_url" defaultValue={profile?.id_card_url} className="h-10 rounded-xl" />
+                <Input name="tax_id" defaultValue={profile?.tax_id} className="h-10 rounded-xl" />
               </div>
             </div>
 
@@ -792,6 +818,25 @@ const BuyerDashboard = () => {
               <Input name="tax_id" defaultValue={profile?.tax_id} className="h-10 rounded-xl" />
             </div>
 
+            <div className="space-y-3">
+               <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Identity Document Image</Label>
+               <div className="border-2 border-dashed border-gray-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 bg-gray-50/50">
+                  {profile?.id_card_url ? (
+                    <div className="relative">
+                      <img src={profile.id_card_url} className="h-20 w-32 object-cover rounded-lg border" alt="ID Card" />
+                      <div className="absolute -top-2 -right-2 bg-emerald-500 text-white rounded-full p-1"><CheckCircle2 className="h-3 w-3" /></div>
+                    </div>
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center"><CreditCard className="h-5 w-5 text-emerald-600" /></div>
+                  )}
+                  <p className="text-[10px] text-gray-500 font-medium">Upload a clear photo of your selected ID</p>
+                  <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg relative overflow-hidden">
+                     {profile?.id_card_url ? "Replace Image" : "Choose Image"}
+                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleIDUpload} accept="image/*" />
+                  </Button>
+               </div>
+            </div>
+
             <div className="pt-4 flex justify-end gap-3 border-t border-gray-50">
               <Button type="button" variant="ghost" onClick={() => setIsProfileModalOpen(false)}>Cancel</Button>
               <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-10" disabled={loading}>
@@ -804,9 +849,10 @@ const BuyerDashboard = () => {
 
       {/* Wallet Action Modal */}
       <Dialog open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen}>
-        <DialogContent className="sm:max-w-[400px] bg-white rounded-3xl p-6">
+        <DialogContent className="sm:max-w-[400px] bg-white rounded-3xl p-8">
           <DialogHeader>
-            <DialogTitle className="text-xl font-extrabold capitalize">{walletAction} Money</DialogTitle>
+            <DialogTitle className="text-2xl font-black text-center capitalize">{walletAction} Funds</DialogTitle>
+            <DialogDescription className="text-center text-xs text-gray-500">Enter the amount and authorize the transaction via our secure gateway.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleProcessTransaction} className="space-y-6 py-4">
             <div className="space-y-2">

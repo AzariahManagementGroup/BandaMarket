@@ -200,19 +200,26 @@ const Navbar = () => {
               <nav className="flex-1 overflow-y-auto px-3 py-4">
                 <ul className="space-y-1">
                   {links.map((l, i) => (
-                    <li
-                      key={l.key}
-                      className="animate-fade-in-right"
-                      style={{ animationDelay: `${i * 0.05}s` }}
-                    >
-                      <a
-                        href={l.href}
-                        onClick={() => setOpen(false)}
-                        className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-foreground/85 hover:bg-primary/5 hover:text-primary transition-smooth"
-                      >
-                        {l.label}
-                        {l.caret && <ChevronDown className="h-4 w-4 opacity-60" />}
-                      </a>
+                    <li key={l.key}>
+                      {l.href.startsWith("/") ? (
+                        <Link
+                          to={l.href}
+                          onClick={() => setOpen(false)}
+                          className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-foreground/85 hover:bg-primary/5 hover:text-primary transition-smooth"
+                        >
+                          {l.label}
+                          {l.caret && <ChevronDown className="h-4 w-4 opacity-60" />}
+                        </Link>
+                      ) : (
+                        <a
+                          href={l.href}
+                          onClick={() => setOpen(false)}
+                          className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-foreground/85 hover:bg-primary/5 hover:text-primary transition-smooth"
+                        >
+                          {l.label}
+                          {l.caret && <ChevronDown className="h-4 w-4 opacity-60" />}
+                        </a>
+                      )}
                     </li>
                   ))}
                 </ul>

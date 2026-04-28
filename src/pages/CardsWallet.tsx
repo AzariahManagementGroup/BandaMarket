@@ -14,7 +14,8 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle 
+  DialogTitle,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -42,8 +43,8 @@ const CardsWallet = () => {
       return;
     }
 
-    const { data: profileData } = await supabase.from("profiles").select("*").eq("id", session.user.id).single();
-    const { data: walletData } = await supabase.from("wallets").select("*").eq("profile_id", session.user.id).single();
+    const { data: profileData } = await supabase.from("profiles").select("*").eq("id", session.user.id).maybeSingle();
+    const { data: walletData } = await supabase.from("wallets").select("*").eq("profile_id", session.user.id).maybeSingle();
     const { data: cardsData } = await supabase.from("cards").select("*").eq("profile_id", session.user.id);
 
     setProfile(profileData);
@@ -220,6 +221,7 @@ const CardsWallet = () => {
         <DialogContent className="sm:max-w-[400px] bg-white rounded-3xl p-8">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black text-center">Top Up Wallet</DialogTitle>
+            <DialogDescription className="text-center text-xs text-gray-500">Securely top up your balance using our payment simulator.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleTopup} className="space-y-6 py-6">
             <div className="space-y-2">
@@ -248,6 +250,7 @@ const CardsWallet = () => {
         <DialogContent className="sm:max-w-[500px] bg-white rounded-3xl p-8">
            <DialogHeader>
               <DialogTitle className="text-2xl font-black text-center">Request New Card</DialogTitle>
+              <DialogDescription className="text-center text-xs text-gray-500">Choose between a virtual or physical card to extend your buying power.</DialogDescription>
            </DialogHeader>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-8">
               <div className="border border-gray-100 rounded-3xl p-6 hover:border-emerald-500 hover:bg-emerald-50 transition-all cursor-pointer group" onClick={() => handleCreateCard('virtual')}>
