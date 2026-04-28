@@ -23,7 +23,7 @@ const RegionsMap = () => {
           ))}
         </ul>
         <div className="relative">
-          <img src={map} alt="Map of the 10 regions of Cameroon" loading="lazy" className="w-40 md:w-52 h-auto animate-float" />
+          <img src={map} alt="Map of the 10 regions of Cameroon" loading="lazy" className="w-40 md:w-52 h-auto animate-float hover:scale-105 transition-transform duration-500" />
         </div>
         <ul className="space-y-2 text-left text-sm font-medium">
           {regions.map((r) => (

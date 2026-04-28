@@ -16,7 +16,7 @@ const Footer = () => {
       <div className="container py-14 grid gap-10 lg:grid-cols-6">
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-background rounded-xl px-3 py-2 inline-flex">
-            <img src={logo} alt="CameMark" className="h-8 w-auto" loading="lazy" />
+            <img src={logo} alt="CameMark" className="h-8 w-auto mix-blend-multiply dark:mix-blend-screen" loading="lazy" />
           </div>
           <p className="text-sm text-primary-foreground/80 leading-relaxed max-w-xs">
             Cameroon's Digital Marketplace, Wallet & Trade Gateway. Empowering regions. Connecting Cameroon. Building a prosperous future.
@@ -48,7 +48,7 @@ const Footer = () => {
       </div>
       <div className="border-t border-primary-foreground/10">
         <div className="container py-4 flex flex-col sm:flex-row items-center justify-between text-xs text-primary-foreground/70 gap-2">
-          <span>© 2025 CameMark. All rights reserved.</span>
+          <span>© 2026 CameMark. All rights reserved.</span>
           <span>Made in Cameroon. Made for Africa. Made to Grow.</span>
           <span>Proudly Cameroonian 🇨🇲</span>
         </div>

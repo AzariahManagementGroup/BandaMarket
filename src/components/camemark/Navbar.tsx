@@ -71,7 +71,7 @@ const Navbar = () => {
           <img
             src={logo}
             alt="CameMark — Cameroon's Digital Marketplace logo"
-            className="h-9 md:h-11 w-auto transition-smooth group-hover:scale-105"
+            className="h-9 md:h-11 w-auto transition-smooth group-hover:scale-105 mix-blend-multiply dark:mix-blend-screen"
           />
         </a>
 
@@ -135,7 +135,7 @@ const Navbar = () => {
             <SheetContent side="right" className="w-[88%] sm:w-96 p-0 flex flex-col">
               {/* Mobile header */}
               <div className="px-5 pt-5 pb-4 border-b border-border bg-leaf">
-                <img src={logo} alt="CameMark logo" className="h-10 w-auto mb-3" />
+                <img src={logo} alt="CameMark logo" className="h-10 w-auto mb-3 mix-blend-multiply dark:mix-blend-screen" />
                 {/* Breadcrumb on mobile */}
                 <Breadcrumb>
                   <BreadcrumbList className="text-xs">

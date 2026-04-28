@@ -64,8 +64,8 @@ const BuiltFor = () => {
         </div>
 
         {/* Farmer */}
-        <div className="rounded-3xl bg-card border border-border overflow-hidden shadow-card hover-lift animate-fade-in" style={{ animationDelay: "0.1s" }}>
-          <img src={farmer} alt="Cameroonian farmer holding fresh produce" loading="lazy" className="w-full h-44 object-cover" />
+        <div className="group rounded-3xl bg-card border border-border overflow-hidden shadow-card hover-lift animate-fade-in" style={{ animationDelay: "0.1s" }}>
+          <img src={farmer} alt="Cameroonian farmer holding fresh produce" loading="lazy" className="w-full h-44 object-cover group-hover:scale-110 transition-transform duration-700" />
           <div className="p-6">
             <h3 className="font-bold text-foreground">Farmer Marketplace</h3>
             <p className="text-xs text-muted-foreground mb-3">Sell directly to thousands of buyers.</p>

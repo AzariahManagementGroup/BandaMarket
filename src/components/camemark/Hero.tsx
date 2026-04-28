@@ -106,7 +106,7 @@ const Hero = () => {
             alt="CameMark digital marketplace dashboard with Cameroonian produce, wallet card and mobile app"
             width={1280}
             height={896}
-            className="relative rounded-3xl shadow-elegant w-full h-auto"
+            className="relative rounded-3xl shadow-elegant w-full h-auto hover:scale-[1.02] transition-transform duration-700"
           />
           <div className="absolute -bottom-4 -left-4 rounded-2xl bg-card shadow-elegant border border-border p-3 animate-float" style={{ animationDelay: "1s" }}>
             <div className="text-[10px] text-muted-foreground">Today's volume</div>

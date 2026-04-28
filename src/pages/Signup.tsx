@@ -18,7 +18,15 @@ import {
 import logo from "@/assets/camemark-logo.png";
 import map from "@/assets/cameroon-map.png";
 
-const REGIONS = ["Adamawa","Centre","East","Far North","Littoral","North","Northwest","South","Southwest","West"];
+const COUNTRY_REGIONS: Record<string, string[]> = {
+  "Cameroon": ["Adamawa","Centre","East","Far North","Littoral","North","Northwest","South","Southwest","West"],
+  "Nigeria": ["Lagos","Abuja","Kano","Rivers","Oyo","Other"],
+  "Chad": ["N'Djamena","Moundou","Sarh","Abéché","Other"],
+  "Gabon": ["Estuaire","Haut-Ogooué","Moyen-Ogooué","Ngounié","Other"],
+  "France": ["Île-de-France","Auvergne-Rhône-Alpes","Nouvelle-Aquitaine","Occitanie","Other"],
+  "USA": ["California","Texas","New York","Florida","Illinois","Other"],
+  "Other": ["Other"]
+};
 const ROLES = [
   { id: "buyer", label: "Buyer", icon: ShoppingCart },
   { id: "seller", label: "Seller", icon: Store },
@@ -57,6 +65,10 @@ const Signup = () => {
   }, []);
 
   const handle = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleCountryChange = (v: string) => {
+    setForm((f) => ({ ...f, country: v, region: "" }));
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,10 +203,10 @@ const Signup = () => {
 
             <div className="grid sm:grid-cols-3 gap-4">
               <Field label={t("signup.country")}>
-                <Select value={form.country} onValueChange={(v) => handle("country", v)}>
-                  <SelectTrigger><SelectValue placeholder={t("signup.placeholders.country")} /></SelectTrigger>
+                <Select value={form.country} onValueChange={handleCountryChange}>
+                  <SelectTrigger className="transition-all focus:ring-primary/50 hover:border-primary/50"><SelectValue placeholder={t("signup.placeholders.country")} /></SelectTrigger>
                   <SelectContent className="bg-popover z-50">
-                    {["Cameroon","Nigeria","Chad","Gabon","France","USA","Other"].map((c) => (
+                    {Object.keys(COUNTRY_REGIONS).map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
                   </SelectContent>
@@ -202,9 +214,9 @@ const Signup = () => {
               </Field>
               <Field label={t("signup.region")}>
                 <Select value={form.region} onValueChange={(v) => handle("region", v)}>
-                  <SelectTrigger><SelectValue placeholder={t("signup.placeholders.region")} /></SelectTrigger>
+                  <SelectTrigger className="transition-all focus:ring-primary/50 hover:border-primary/50"><SelectValue placeholder={t("signup.placeholders.region")} /></SelectTrigger>
                   <SelectContent className="bg-popover z-50">
-                    {REGIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                    {(COUNTRY_REGIONS[form.country] || []).map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </Field>
