@@ -9,6 +9,7 @@ import Signup from "./pages/Signup.tsx";
 import Signin from "./pages/Signin.tsx";
 import MarketZone from "./pages/MarketZone.tsx";
 import BuyerDashboard from "./pages/BuyerDashboard.tsx";
+import CardsWallet from "./pages/CardsWallet.tsx";
 import ChatAssistant from "./components/camemark/ChatAssistant.tsx";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/signin" element={<Signin />} />
           <Route path="/market-zone" element={<MarketZone />} />
           <Route path="/dashboard" element={<BuyerDashboard />} />
+          <Route path="/cards-wallet" element={<CardsWallet />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

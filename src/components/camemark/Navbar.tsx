@@ -181,22 +181,16 @@ const Navbar = () => {
                 <div className="absolute inset-0 bg-primary/10 blur-xl animate-pulse" />
                 <img src={logo} alt="CameMark Logo — Cameroon's Premier Digital Marketplace and Regional Trading Hub" className="h-12 w-auto mb-3 animate-float drop-shadow-md relative z-10" />
                 {/* Breadcrumb on mobile */}
-                <Breadcrumb>
-                  <BreadcrumbList className="text-xs">
+                <Breadcrumb className="relative z-10">
+                  <BreadcrumbList className="text-[10px] font-bold">
                     <BreadcrumbItem>
-                      <BreadcrumbLink href="/" className="text-primary font-semibold">
-                        CameMark
+                      <BreadcrumbLink href="/" className="text-emerald-900">
+                        HOME
                       </BreadcrumbLink>
                     </BreadcrumbItem>
-                    <BreadcrumbSeparator />
+                    <BreadcrumbSeparator className="text-emerald-900/30" />
                     <BreadcrumbItem>
-                      <BreadcrumbLink href="#" className="text-foreground/70">
-                        Menu
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                      <BreadcrumbPage className="text-foreground">{t("nav.home")}</BreadcrumbPage>
+                      <BreadcrumbPage className="text-emerald-800 opacity-60">MARKET</BreadcrumbPage>
                     </BreadcrumbItem>
                   </BreadcrumbList>
                 </Breadcrumb>
