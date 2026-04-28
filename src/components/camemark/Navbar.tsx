@@ -27,6 +27,8 @@ const LANGS = [
   { code: "ar", label: "العربية", flag: "🇸🇦" },
 ];
 
+const REGIONS = ["Adamawa","Centre","East","Far North","Littoral","North","Northwest","South","Southwest","West"];
+
 const Navbar = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -35,7 +37,7 @@ const Navbar = () => {
 
   const links = [
     { key: "home", label: t("nav.home"), href: "/" },
-    { key: "marketplace", label: t("nav.marketplace"), href: "#marketplace" },
+    { key: "marketplace", label: t("nav.marketplace"), href: "/market-zone" },
     { key: "regions", label: t("nav.regions"), href: "#regions", caret: true },
     { key: "wallet", label: t("nav.wallet"), href: "#wallet" },
     { key: "logistics", label: t("nav.logistics"), href: "#logistics" },
@@ -67,26 +69,45 @@ const Navbar = () => {
     >
       <div className="container flex h-16 md:h-20 items-center justify-between gap-4">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2 group shrink-0">
+        <a href="/" className="flex items-center gap-2 group shrink-0 relative">
+          <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full group-hover:bg-primary/40 transition-colors animate-pulse" />
           <img
             src={logo}
-            alt="CameMark — Cameroon's Digital Marketplace logo"
-            className="h-9 md:h-11 w-auto transition-smooth group-hover:scale-105 mix-blend-multiply dark:mix-blend-screen"
+            alt="CameMark Logo — Cameroon's Premier Digital Marketplace and Regional Trading Hub"
+            className="h-10 md:h-12 w-auto animate-float drop-shadow-xl group-hover:scale-110 transition-all duration-500 relative z-10"
           />
         </a>
 
         {/* Desktop full menu */}
         <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold">
-          {links.map((l) => (
-            <a
-              key={l.key}
-              href={l.href}
-              className="story-link inline-flex items-center gap-1 text-foreground/85 hover:text-primary transition-smooth"
-            >
-              {l.label}
-              {l.caret && <ChevronDown className="h-3.5 w-3.5 opacity-70" />}
-            </a>
-          ))}
+          {links.map((l) => {
+            if (l.key === "regions") {
+              return (
+                <DropdownMenu key={l.key}>
+                  <DropdownMenuTrigger className="story-link inline-flex items-center gap-1 text-foreground/85 hover:text-primary transition-smooth outline-none">
+                    {l.label}
+                    <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-popover z-50">
+                    {REGIONS.map((r) => (
+                      <DropdownMenuItem key={r} onClick={() => navigate(`/market-zone?region=${r}`)}>
+                        {r}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
+            return (
+              <a
+                key={l.key}
+                href={l.href}
+                className="story-link inline-flex items-center gap-1 text-foreground/85 hover:text-primary transition-smooth"
+              >
+                {l.label}
+              </a>
+            );
+          })}
         </nav>
 
         {/* Right cluster */}
@@ -134,8 +155,9 @@ const Navbar = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-[88%] sm:w-96 p-0 flex flex-col">
               {/* Mobile header */}
-              <div className="px-5 pt-5 pb-4 border-b border-border bg-leaf">
-                <img src={logo} alt="CameMark logo" className="h-10 w-auto mb-3 mix-blend-multiply dark:mix-blend-screen" />
+              <div className="px-5 pt-5 pb-4 border-b border-border bg-leaf relative overflow-hidden">
+                <div className="absolute inset-0 bg-primary/10 blur-xl animate-pulse" />
+                <img src={logo} alt="CameMark Logo — Cameroon's Premier Digital Marketplace and Regional Trading Hub" className="h-12 w-auto mb-3 animate-float drop-shadow-md relative z-10" />
                 {/* Breadcrumb on mobile */}
                 <Breadcrumb>
                   <BreadcrumbList className="text-xs">

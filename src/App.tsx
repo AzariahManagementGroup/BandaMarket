@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Signup from "./pages/Signup.tsx";
+import MarketZone from "./pages/MarketZone.tsx";
+import ChatAssistant from "./components/camemark/ChatAssistant.tsx";
 
 const queryClient = new QueryClient();
 
@@ -18,10 +20,11 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/signup" element={<Signup />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/market-zone" element={<MarketZone />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      <ChatAssistant />
     </TooltipProvider>
   </QueryClientProvider>
 );

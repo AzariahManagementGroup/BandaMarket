@@ -122,9 +122,10 @@ const Signup = () => {
       <div className="absolute top-1/3 -right-40 h-96 w-96 rounded-full bg-secondary/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
 
       {/* Mini header */}
-      <header className="container py-5 flex items-center justify-between animate-fade-in">
-        <Link to="/" className="flex items-center gap-2 hover-scale">
-          <img src={logo} alt="CameMark" className="h-10 w-auto" />
+      <header className="container py-5 flex items-center justify-between animate-fade-in relative z-10">
+        <Link to="/" className="flex items-center gap-2 group hover-scale relative">
+          <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full group-hover:bg-primary/40 transition-colors animate-pulse" />
+          <img src={logo} alt="CameMark Logo — Cameroon's Premier Digital Marketplace and Regional Trading Hub" className="h-12 w-auto animate-float drop-shadow-xl relative z-10" />
         </Link>
         <Link to="/" className="text-sm font-semibold text-primary story-link">← Home</Link>
       </header>
