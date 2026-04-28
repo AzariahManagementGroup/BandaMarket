@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   Breadcrumb,
@@ -34,6 +35,15 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const links = [
     { key: "home", label: t("nav.home"), href: "/" },
@@ -127,21 +137,33 @@ const Navbar = () => {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button
-            variant="outline"
-            size="sm"
-            className="hidden sm:inline-flex border-primary/30 text-foreground hover:bg-primary/5"
-            onClick={() => navigate("/signup")}
-          >
-            {t("nav.signin")}
-          </Button>
-          <Button
-            size="sm"
-            className="hidden sm:inline-flex bg-primary hover:bg-primary-glow shadow-card text-primary-foreground animate-pulse-glow"
-            onClick={() => navigate("/signup")}
-          >
-            {t("nav.getStarted")}
-          </Button>
+          {session ? (
+            <Button
+              size="sm"
+              className="hidden sm:inline-flex bg-primary hover:bg-primary-glow shadow-card text-primary-foreground animate-pulse-glow"
+              onClick={() => navigate("/dashboard")}
+            >
+              Dashboard
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="hidden sm:inline-flex border-primary/30 text-foreground hover:bg-primary/5"
+                onClick={() => navigate("/signin")}
+              >
+                {t("nav.signin")}
+              </Button>
+              <Button
+                size="sm"
+                className="hidden sm:inline-flex bg-primary hover:bg-primary-glow shadow-card text-primary-foreground animate-pulse-glow"
+                onClick={() => navigate("/signup")}
+              >
+                {t("nav.getStarted")}
+              </Button>
+            </>
+          )}
 
           {/* Mobile trigger */}
           <Sheet open={open} onOpenChange={setOpen}>
@@ -223,19 +245,30 @@ const Navbar = () => {
 
               {/* Mobile CTA footer */}
               <div className="border-t border-border p-4 space-y-2 bg-card">
-                <Button
-                  variant="outline"
-                  className="w-full border-primary/30 hover:bg-primary/5"
-                  onClick={() => { setOpen(false); navigate("/signup"); }}
-                >
-                  {t("nav.signin")}
-                </Button>
-                <Button
-                  className="w-full bg-primary hover:bg-primary-glow text-primary-foreground"
-                  onClick={() => { setOpen(false); navigate("/signup"); }}
-                >
-                  {t("nav.getStarted")}
-                </Button>
+                {session ? (
+                  <Button
+                    className="w-full bg-primary hover:bg-primary-glow text-primary-foreground"
+                    onClick={() => { setOpen(false); navigate("/dashboard"); }}
+                  >
+                    Dashboard
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="w-full border-primary/30 hover:bg-primary/5"
+                      onClick={() => { setOpen(false); navigate("/signin"); }}
+                    >
+                      {t("nav.signin")}
+                    </Button>
+                    <Button
+                      className="w-full bg-primary hover:bg-primary-glow text-primary-foreground"
+                      onClick={() => { setOpen(false); navigate("/signup"); }}
+                    >
+                      {t("nav.getStarted")}
+                    </Button>
+                  </>
+                )}
               </div>
             </SheetContent>
           </Sheet>

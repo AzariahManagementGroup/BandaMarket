@@ -39,8 +39,16 @@ const useTypewriter = (words: string[], speed = 70, pause = 1400) => {
 const Hero = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [session, setSession] = useState<any>(null);
   const phrases = t("hero.typing", { returnObjects: true }) as string[];
   const typed = useTypewriter(Array.isArray(phrases) ? phrases : ["One Digital Market"]);
+
+  useEffect(() => {
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    });
+  }, []);
+
   return (
     <section className="relative overflow-hidden">
       {/* Background flourishes */}
@@ -72,10 +80,10 @@ const Hero = () => {
           <div className="flex flex-wrap gap-3">
             <Button
               size="lg"
-              onClick={() => navigate("/signup")}
+              onClick={() => navigate(session ? "/dashboard" : "/signup")}
               className="bg-primary hover:bg-primary-glow shadow-elegant group animate-pulse-glow"
             >
-              {t("hero.start")}
+              {session ? "Go to Dashboard" : t("hero.start")}
               <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
             <Button size="lg" variant="outline" className="border-primary/30 hover:bg-primary/5">

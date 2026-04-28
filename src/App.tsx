@@ -6,7 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Signup from "./pages/Signup.tsx";
+import Signin from "./pages/Signin.tsx";
 import MarketZone from "./pages/MarketZone.tsx";
+import BuyerDashboard from "./pages/BuyerDashboard.tsx";
 import ChatAssistant from "./components/camemark/ChatAssistant.tsx";
 
 const queryClient = new QueryClient();
@@ -20,7 +22,9 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/signin" element={<Signin />} />
           <Route path="/market-zone" element={<MarketZone />} />
+          <Route path="/dashboard" element={<BuyerDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

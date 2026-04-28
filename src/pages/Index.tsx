@@ -12,9 +12,6 @@ const Index = () => {
   useEffect(() => {
     // Attempt to play a welcome voice
     const playWelcomeVoice = () => {
-      // Check if it has already been played in this session to avoid annoying the user
-      if (sessionStorage.getItem("welcomeVoicePlayed")) return;
-
       const utterance = new SpeechSynthesisUtterance("Welcome to Cameroon's Digital Market");
       utterance.lang = "en-US";
       utterance.rate = 0.9;
@@ -22,7 +19,6 @@ const Index = () => {
       
       // Try speaking immediately
       window.speechSynthesis.speak(utterance);
-      sessionStorage.setItem("welcomeVoicePlayed", "true");
     };
 
     // Browsers often block autoplaying audio. We attach to first user interaction just in case.
@@ -45,9 +41,9 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <main>
+      <main className="overflow-x-hidden">
         <Hero />
         <FeatureGrid />
         <section className="container py-20 grid gap-12 lg:grid-cols-2 items-start">

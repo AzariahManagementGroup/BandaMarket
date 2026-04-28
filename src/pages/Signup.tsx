@@ -58,15 +58,44 @@ const Signup = () => {
   const [form, setForm] = useState({
     fullName: "", email: "", phone: "", password: "", confirm: "",
     country: "Cameroon", region: "", city: "", role: "buyer", referral: "",
+    phoneCode: "+237", currency: "XAF"
   });
 
   useEffect(() => {
     document.title = "Sign Up — CameMark | Cameroon's Digital Marketplace";
+    
+    // Geo-detection for country and currency
+    const detectLocation = async () => {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+        if (data.country_name) {
+          const country = data.country_name;
+          const phoneCode = data.country_calling_code || "+237";
+          const currency = data.currency || "XAF";
+          
+          setForm(f => ({ 
+            ...f, 
+            country: COUNTRY_REGIONS[country] ? country : "Other",
+            phoneCode,
+            currency
+          }));
+          
+          toast({ title: `Location detected: ${country}`, description: `Setting currency to ${currency}` });
+        }
+      } catch (err) {
+        console.error("Geo-detection failed:", err);
+      }
+    };
+    
+    detectLocation();
   }, []);
 
   const handle = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleCountryChange = (v: string) => {
+    // Simple mapping for common countries' calling codes if needed, 
+    // but we'll let user edit the code if they want or rely on initial detection
     setForm((f) => ({ ...f, country: v, region: "" }));
   };
 
@@ -88,9 +117,15 @@ const Signup = () => {
       options: {
         emailRedirectTo: `${window.location.origin}/`,
         data: {
-          full_name: form.fullName, phone: form.phone, country: form.country,
-          region: form.region, city: form.city, signup_role: form.role,
-          language: i18n.language, referral_code: form.referral,
+          full_name: form.fullName, 
+          phone: `${form.phoneCode}${form.phone}`, 
+          country: form.country,
+          region: form.region, 
+          city: form.city, 
+          signup_role: form.role,
+          language: i18n.language, 
+          referral_code: form.referral,
+          preferred_currency: form.currency
         },
       },
     });
@@ -100,13 +135,13 @@ const Signup = () => {
       return;
     }
     toast({ title: t("signup.success") });
-    navigate("/");
+    navigate("/dashboard");
   };
 
   const google = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/` },
+      options: { redirectTo: `${window.location.origin}/dashboard` },
     });
     if (error) toast({ title: error.message, variant: "destructive" });
   };
@@ -178,8 +213,19 @@ const Signup = () => {
               </Field>
               <Field label={t("signup.phone")}>
                 <div className="flex gap-2">
-                  <span className="inline-flex items-center px-3 rounded-md border border-input bg-muted text-sm font-semibold">🇨🇲 +237</span>
-                  <Input value={form.phone} onChange={(e) => handle("phone", e.target.value)} placeholder="6 12 34 56 78" required />
+                  <Input 
+                    value={form.phoneCode} 
+                    onChange={(e) => handle("phoneCode", e.target.value)} 
+                    className="w-20 text-xs font-semibold px-2"
+                    placeholder="+237"
+                  />
+                  <Input 
+                    value={form.phone} 
+                    onChange={(e) => handle("phone", e.target.value)} 
+                    placeholder="612345678" 
+                    required 
+                    className="flex-1"
+                  />
                 </div>
               </Field>
             </div>
@@ -296,7 +342,7 @@ const Signup = () => {
 
             <p className="text-center text-sm text-muted-foreground pt-2">
               {t("signup.have")}{" "}
-              <Link to="/signup" className="text-primary font-semibold story-link">{t("signup.signin")}</Link>
+            <Link to="/signin" className="text-primary font-semibold story-link">{t("signup.signin")}</Link>
             </p>
           </form>
         </section>

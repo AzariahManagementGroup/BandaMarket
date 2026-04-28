@@ -52,41 +52,42 @@ const ChatAssistant = () => {
     setLoading(true);
 
     try {
-      const messagesPayload = [
-        { role: "system", content: SYSTEM_PROMPT },
-        ...messages.map(m => ({ role: m.role, content: m.content })),
-        { role: "user", content: userMsg }
-      ];
-
-      const res = await fetch("https://text.pollinations.ai/openai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messages: messagesPayload,
-          model: "openai",
-        }),
-      });
+      const prompt = `System: ${SYSTEM_PROMPT}\n(CRITICAL: Start your response exactly with the word "ANSWER:")\n\nUser: ${userMsg}\nAssistant:`;
       
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      let text = data.choices[0].message.content;
+      const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}?model=openai`);
       
-      // Remove any variation of the Pollinations deprecation notice
-      text = text.replace(/.*The Pollinations legacy text API is being deprecated.*will continue to work normally\.?/gis, "").trim();
+      if (!res.ok) {
+        throw new Error(`API returned ${res.status}`);
+      }
       
-      // Sometimes it leaves weird Markdown if we stripped part of a blockquote. Cleanup leading symbols:
-      text = text.replace(/^[\s>⚠️*]+/, "").trim();
+      let text = await res.text();
+      
+      if (!text || text.length < 2) {
+        throw new Error("Received an empty or invalid response");
+      }
+      
+      // Look for the "ANSWER:" prefix and slice it
+      const answerIndex = text.toUpperCase().indexOf("ANSWER:");
+      if (answerIndex !== -1) {
+        text = text.substring(answerIndex + 7).trim();
+      }
+      
+      // Broad filter for any leftover system warnings
+      text = text.replace(/IMPORTANT NOTICE[\s\S]*?normally\.?/gi, "");
+      text = text.replace(/The Pollinations legacy text API[\s\S]*?normally\.?/gi, "");
+      
+      // Cleanup
+      text = text.replace(/^[\s>⚠️*#\-:\n]+/, "").trim();
       
       if (!text) {
-          text = "I apologize, but I am having trouble forming a response right now. Please ask again!";
+        text = "Welcome to CameMark! I'm here to help you navigate the marketplace. What would you like to know?";
       }
       
       setMessages(prev => [...prev, { id: Date.now().toString(), role: "ai", content: text }]);
     } catch (err) {
-      console.error(err);
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: "ai", content: "Sorry, I am having trouble connecting right now." }]);
+      console.error("Chat Assistant Error:", err);
+      // More user-friendly error that actually explains what happened
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: "ai", content: "I'm having a little trouble connecting to my brain right now. Please try again in a few seconds!" }]);
     } finally {
       setLoading(false);
     }

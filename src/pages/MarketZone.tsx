@@ -14,12 +14,30 @@ const MarketZone = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
+  const [userCurrency, setUserCurrency] = useState("XAF");
+
+  // Approximate conversion rates from XAF
+  const XAF_RATES: Record<string, number> = {
+    "USD": 1 / 610,
+    "EUR": 1 / 655,
+    "NGN": 1.5,
+    "GBP": 1 / 780,
+    "XAF": 1
+  };
 
   useEffect(() => {
     document.title = `Market Zone: ${region} — CameMark`;
     
     // Check if user is logged in
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
+
+    // Detect user location/currency
+    fetch("https://ipapi.co/json/")
+      .then(res => res.json())
+      .then(data => {
+        if (data.currency) setUserCurrency(data.currency);
+      })
+      .catch(err => console.error("Geo-detection failed:", err));
     
     // Simulating fetching products from the selected region.
     // In a fully populated database, this would filter by the seller's region.
@@ -59,10 +77,10 @@ const MarketZone = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
-      <main className="flex-1">
+      <main className="flex-1 overflow-x-hidden">
         {/* Header */}
         <section className="bg-primary/5 py-12 border-b border-border">
           <div className="container flex flex-col items-center text-center animate-fade-in">
@@ -99,8 +117,15 @@ const MarketZone = () => {
                       <Store className="h-3 w-3" /> {product.profiles?.full_name || "Verified Seller"}
                     </div>
                     <h3 className="font-bold text-foreground text-sm line-clamp-1">{product.title}</h3>
-                    <div className="mt-2 font-extrabold text-primary">
-                      {product.currency} {product.price.toLocaleString()}
+                    <div className="mt-2 flex flex-col">
+                      <span className="font-extrabold text-primary">
+                        {product.currency} {product.price.toLocaleString()}
+                      </span>
+                      {userCurrency !== product.currency && XAF_RATES[userCurrency] && (
+                        <span className="text-[10px] text-muted-foreground font-medium">
+                          ≈ {userCurrency} {(product.price * (XAF_RATES[userCurrency] || 1)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                        </span>
+                      )}
                     </div>
                     
                     <div className="mt-auto pt-4 grid grid-cols-2 gap-2">

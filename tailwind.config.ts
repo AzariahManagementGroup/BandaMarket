@@ -136,7 +136,7 @@ export default {
         "fade-in": "fade-in 0.7s cubic-bezier(0.22,1,0.36,1) both",
         "fade-in-right": "fade-in-right 0.7s cubic-bezier(0.22,1,0.36,1) both",
         "scale-in": "scale-in 0.5s cubic-bezier(0.22,1,0.36,1) both",
-        "float": "float 6s ease-in-out infinite",
+        "float": "float 12s ease-in-out infinite",
         "shimmer": "shimmer 3s linear infinite",
         "spin-slow": "spin-slow 20s linear infinite",
         "marquee": "marquee 30s linear infinite",
