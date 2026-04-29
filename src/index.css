@@ -177,7 +177,7 @@ All colors MUST be HSL.
 }
 
 .category-card {
-  @apply flex flex-col items-center gap-2 p-2 rounded-lg transition-smooth hover:bg-muted/50;
+  @apply flex flex-col items-center gap-2 p-3 rounded-xl transition-smooth bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/30 shadow-sm;
 }
 
 .category-card img {
@@ -185,5 +185,5 @@ All colors MUST be HSL.
 }
 
 .category-card span {
-  @apply text-sm font-medium text-foreground whitespace-nowrap;
+  @apply text-xs font-bold text-primary whitespace-nowrap;
 }

@@ -10,7 +10,9 @@ import Signin from "./pages/Signin.tsx";
 import MarketZone from "./pages/MarketZone.tsx";
 import BuyerDashboard from "./pages/BuyerDashboard.tsx";
 import CardsWallet from "./pages/CardsWallet.tsx";
+import AdminDashboard from "./pages/AdminDashboard.tsx";
 import ChatAssistant from "./components/camemark/ChatAssistant.tsx";
+import { Navigate } from "react-router-dom";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +29,8 @@ const App = () => (
           <Route path="/market-zone" element={<MarketZone />} />
           <Route path="/dashboard" element={<BuyerDashboard />} />
           <Route path="/cards-wallet" element={<CardsWallet />} />
+          <Route path="/admin/*" element={<AdminDashboard />} />
+          <Route path="/marketplace" element={<Navigate to="/market-zone" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

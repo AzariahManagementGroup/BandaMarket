@@ -36,14 +36,27 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState<any>(null);
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      if (data.session) fetchRole(data.session.user.id);
+    });
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) fetchRole(session.user.id);
+      else setRole(null);
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchRole = async (userId: string) => {
+    const { data } = await supabase.from("profiles").select("role, signup_role").eq("id", userId).single();
+    const finalRole = data?.role || data?.signup_role || "buyer";
+    setRole(finalRole);
+  };
 
   const links = [
     { key: "home", label: t("nav.home"), href: "/" },
@@ -138,13 +151,25 @@ const Navbar = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           {session ? (
-            <Button
-              size="sm"
-              className="hidden sm:inline-flex bg-primary hover:bg-primary-glow shadow-card text-primary-foreground animate-pulse-glow"
-              onClick={() => navigate("/dashboard")}
-            >
-              Dashboard
-            </Button>
+            <div className="flex items-center gap-2">
+              {(role === "admin" || role === "super_admin" || session?.user?.email === "info@azariahmg.com") && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="hidden sm:inline-flex border-primary/30 text-primary hover:bg-primary/5 font-bold text-xs uppercase tracking-tight"
+                  onClick={() => navigate("/admin")}
+                >
+                  Admin
+                </Button>
+              )}
+              <Button
+                size="sm"
+                className="hidden sm:inline-flex bg-primary hover:bg-primary-glow shadow-card text-primary-foreground animate-pulse-glow"
+                onClick={() => navigate("/dashboard")}
+              >
+                Dashboard
+              </Button>
+            </div>
           ) : (
             <>
               <Button
@@ -247,12 +272,23 @@ const Navbar = () => {
               {/* Mobile CTA footer */}
               <div className="border-t border-border p-4 space-y-2 bg-card">
                 {session ? (
-                  <Button
-                    className="w-full bg-primary hover:bg-primary-glow text-primary-foreground"
-                    onClick={() => { setOpen(false); navigate("/dashboard"); }}
-                  >
-                    Dashboard
-                  </Button>
+                  <div className="space-y-2">
+                    {(role === "admin" || role === "super_admin") && (
+                      <Button
+                        variant="outline"
+                        className="w-full border-primary/30 text-primary hover:bg-primary/5 font-bold"
+                        onClick={() => { setOpen(false); navigate("/admin"); }}
+                      >
+                        Admin Panel
+                      </Button>
+                    )}
+                    <Button
+                      className="w-full bg-primary hover:bg-primary-glow text-primary-foreground"
+                      onClick={() => { setOpen(false); navigate("/dashboard"); }}
+                    >
+                      Dashboard
+                    </Button>
+                  </div>
                 ) : (
                   <>
                     <Button

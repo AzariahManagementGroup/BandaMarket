@@ -7,7 +7,7 @@ import {
   Plus, ArrowUpRight, Clock, CheckCircle2,
   Package, MapPin, Store, ArrowRight,
   TrendingUp, CreditCard, ExternalLink,
-  Menu, X, Loader2
+  Menu, X, Loader2, Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -292,6 +292,12 @@ const BuyerDashboard = () => {
 
   const navItems = [
     { icon: LayoutDashboard, label: "Buyer Dashboard", active: true, href: "/dashboard" },
+    ...(profile?.role === "admin" || 
+        profile?.role === "super_admin" || 
+        profile?.signup_role === "admin" ||
+        session?.user?.email === "info@azariahmg.com" ? [
+      { icon: Shield, label: "Admin Panel", href: "/admin", special: true }
+    ] : []),
     { icon: ShoppingBag, label: "Marketplace", href: "/market-zone" },
     { icon: List, label: "Categories", href: "#" },
     { icon: MessageCircle, label: "Bargains", href: "#" },
@@ -329,7 +335,9 @@ const BuyerDashboard = () => {
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${
                 item.active 
                   ? "bg-[#064E3B] text-white shadow-lg shadow-emerald-900/20" 
-                  : "text-gray-500 hover:bg-emerald-50 hover:text-emerald-700"
+                  : item.special
+                    ? "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200/50"
+                    : "text-gray-500 hover:bg-emerald-50 hover:text-emerald-700"
               } animate-fade-in-right`}
               style={{ animationDelay: `${i * 0.05}s` }}
             >
