@@ -18,6 +18,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -882,6 +883,60 @@ const BuyerDashboard = () => {
            {/* Placeholder for future if needed */}
         </Dialog>
       )}
+      {/* Mobile Menu Sidebar */}
+      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <SheetContent side="left" className="p-0 bg-white border-r-0 w-72">
+          <SheetHeader className="p-6 bg-[#064E3B] text-white text-left">
+            <div className="flex items-center gap-2 mb-2">
+              <img src={logo} alt="CameMark" className="h-8 w-auto brightness-0 invert" />
+            </div>
+            <SheetTitle className="text-white text-lg font-black">CameMark Dashboard</SheetTitle>
+            <SheetDescription className="text-emerald-100 text-[10px]">
+              {profile?.full_name || "Buyer"} • {profile?.signup_role?.replace('_', ' ') || "User"}
+            </SheetDescription>
+          </SheetHeader>
+          
+          <nav className="p-4 space-y-1">
+            {navItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => {
+                  if (item.href !== "#") navigate(item.href);
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 ${
+                  item.active 
+                    ? "bg-emerald-50 text-emerald-900 font-bold" 
+                    : "text-gray-500 hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className="h-5 w-5" />
+                  <span className="text-sm">{item.label}</span>
+                </div>
+                {item.badge > 0 && (
+                  <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full">
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+            
+            <div className="pt-6 mt-6 border-t border-gray-100">
+              <button 
+                onClick={() => {
+                  supabase.auth.signOut().then(() => navigate("/"));
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all"
+              >
+                <X className="h-5 w-5" />
+                <span className="text-sm font-bold">Sign Out</span>
+              </button>
+            </div>
+          </nav>
+        </SheetContent>
+      </Sheet>
 
     </div>
   );

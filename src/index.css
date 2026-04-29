@@ -158,3 +158,32 @@ All colors MUST be HSL.
     @apply inline-block ml-1 text-primary animate-blink;
   }
 }
+
+/* Categories Slider Styles */
+.categories-slider {
+  @apply w-full overflow-hidden py-4 bg-background border-b border-border;
+}
+
+.embla {
+  @apply overflow-hidden;
+}
+
+.embla__container {
+  @apply flex items-center;
+}
+
+.embla__slide {
+  @apply flex-[0_0_auto] px-4;
+}
+
+.category-card {
+  @apply flex flex-col items-center gap-2 p-2 rounded-lg transition-smooth hover:bg-muted/50;
+}
+
+.category-card img {
+  @apply w-16 h-16 object-cover rounded-full shadow-card border-2 border-primary/10;
+}
+
+.category-card span {
+  @apply text-sm font-medium text-foreground whitespace-nowrap;
+}

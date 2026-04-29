@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import Navbar from "@/components/camemark/Navbar";
 import Hero from "@/components/camemark/Hero";
+import CategoriesSlider from "@/components/camemark/CategoriesSlider";
 import FeatureGrid from "@/components/camemark/FeatureGrid";
 import RegionsMap from "@/components/camemark/RegionsMap";
 import HowItWorks from "@/components/camemark/HowItWorks";
@@ -44,6 +45,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="overflow-x-hidden">
+        <CategoriesSlider />
         <Hero />
         <FeatureGrid />
         <section className="container py-20 grid gap-12 lg:grid-cols-2 items-start">
