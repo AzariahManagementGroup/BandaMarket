@@ -4,7 +4,7 @@ import {
   ShieldCheck, Lock, CheckCircle2, MapPin, Truck, Wallet, 
   CreditCard, Phone, ArrowRight, Plus, Package, ShoppingCart, 
   Store, Gift, HelpCircle, LayoutDashboard, ShoppingBag, 
-  Globe, Settings, MessageCircle, ArrowLeftRight, Bell, ChevronDown, X, Share2
+  Globe, Settings, MessageCircle, ArrowLeftRight, Bell, ChevronDown, X, Share2, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -402,6 +402,20 @@ const CheckoutPage = () => {
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 flex items-center gap-2">
                 Checkout <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full"><Lock className="h-3 w-3" /> Secure</span>
               </h1>
+              {product && (
+                <Button 
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setProduct(null);
+                    toast.success("🛒 Your cart has been emptied!");
+                  }}
+                  className="h-8 px-3 text-xs font-bold border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl flex items-center gap-1.5"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Empty Cart
+                </Button>
+              )}
             </div>
 
             {/* Stepper Steps - Horizontal Scrollable on Mobile */}
@@ -660,7 +674,22 @@ const CheckoutPage = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 text-center text-xs text-gray-400">Loading order details...</div>
+                      <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 space-y-3">
+                        <div className="h-12 w-12 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
+                          <ShoppingCart className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-gray-900 text-sm">Your Cart is Empty</h4>
+                          <p className="text-xs text-gray-500 max-w-xs mx-auto mt-1">You currently have no products in your cart.</p>
+                        </div>
+                        <Button 
+                          type="button"
+                          onClick={() => navigate("/market-zone")}
+                          className="bg-[#064E3B] hover:bg-emerald-950 text-white font-bold rounded-xl text-xs h-9 px-4"
+                        >
+                          Browse MarketZone Products
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
