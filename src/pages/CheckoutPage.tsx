@@ -120,7 +120,11 @@ const CheckoutPage = () => {
 
     // Fetch dynamic logistics delivery fees set by Admin / Logistics Officer
     fetch(getApiUrl("/api/delivery-fees"))
-      .then(res => res.json())
+      .then(async res => {
+        if (!res.ok) return null;
+        const text = await res.text();
+        try { return JSON.parse(text); } catch (e) { return null; }
+      })
       .then(data => {
         if (data && data.deliveryFees) {
           setDeliveryFees({
@@ -147,7 +151,11 @@ const CheckoutPage = () => {
     }
 
     fetch(getApiUrl("/api/products"))
-      .then(res => res.json())
+      .then(async res => {
+        if (!res.ok) return null;
+        const text = await res.text();
+        try { return JSON.parse(text); } catch (e) { return null; }
+      })
       .then(data => {
         if (data && Array.isArray(data.products) && data.products.length > 0) {
           const found = data.products.find((p: any) => p.id === productId);

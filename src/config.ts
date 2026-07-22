@@ -4,10 +4,12 @@ export const getApiUrl = (endpoint: string) => {
   if (API_BASE_URL) {
     return `${API_BASE_URL.replace(/\/$/, "")}${endpoint}`;
   }
-  // Fallback: If deployed in production and VITE_API_URL isn't explicitly set, default to relative path /api
-  if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
-    return endpoint;
+  // If running locally, return endpoint directly so Vite proxy / public static server routes to /api/index.php
+  if (typeof window !== "undefined") {
+    const port = window.location.port;
+    if (port === "8080" || port === "5173" || window.location.hostname === "localhost") {
+      return endpoint;
+    }
   }
-  // Local development fallback
-  return `http://localhost:5000${endpoint}`;
+  return endpoint;
 };
