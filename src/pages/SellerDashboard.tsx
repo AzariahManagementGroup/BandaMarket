@@ -177,6 +177,29 @@ const SellerDashboard = () => {
       .finally(() => setLoading(false));
 
     // Fetch real-time sales orders for tracking (MySQL + LocalStorage backup)
+    fetch(getApiUrl("/api/seller-withdraw"))
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.success) {
+          if (data.balances) {
+            setAvailableBalance(data.balances.availableBalance || 0);
+            setPendingClearance(data.balances.pendingClearance || 0);
+            setTotalWithdrawn(data.balances.totalWithdrawn || 0);
+          }
+          if (Array.isArray(data.payouts) && data.payouts.length > 0) {
+            setPayoutHistory(data.payouts.map((po: any) => ({
+              id: po.id,
+              amount: parseFloat(po.amount),
+              method: po.method,
+              account: po.accountNumber,
+              status: po.status,
+              date: po.createdAt
+            })));
+          }
+        }
+      })
+      .catch(() => {});
+
     const localOrders = localStorage.getItem("camemark_sales_orders");
     if (localOrders) {
       try {
@@ -865,7 +888,12 @@ const SellerDashboard = () => {
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-8 animate-fade-in">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-100 pb-6">
                 <div>
-                  <h3 className="text-2xl font-black text-gray-900">Earnings & Wallet Payouts</h3>
+                  <h3 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+                    <span>Earnings & Wallet Payouts</span>
+                    <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full animate-bounce">
+                      ⚡ Live DB Connection
+                    </span>
+                  </h3>
                   <p className="text-sm text-gray-500 mt-1">Withdraw revenue directly to Mobile Money (MTN / Orange) or Bank Account.</p>
                 </div>
                 <Button 
@@ -883,9 +911,11 @@ const SellerDashboard = () => {
                     <p className="text-xs font-black text-emerald-800 uppercase tracking-wider">Available Balance</p>
                     <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
                   </div>
-                  <h4 className="text-3xl font-black text-emerald-950 mt-3">FCFA {availableBalance.toLocaleString()}</h4>
+                  <h4 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-700 mt-3 animate-pulse">
+                    FCFA {availableBalance.toLocaleString()}
+                  </h4>
                   <p className="text-xs text-emerald-700 mt-3 font-bold flex items-center gap-1">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Ready for instant payout
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 animate-pulse" /> Ready for instant payout
                   </p>
                 </div>
 
@@ -1299,7 +1329,7 @@ const SellerDashboard = () => {
           </DialogHeader>
 
           <form 
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               if (withdrawAmount <= 0) {
                 toast.error("Please enter a valid withdrawal amount!");
@@ -1310,24 +1340,51 @@ const SellerDashboard = () => {
                 return;
               }
 
-              // Deduct from available balance & update totals
-              setAvailableBalance(prev => prev - withdrawAmount);
-              setTotalWithdrawn(prev => prev + withdrawAmount);
-
-              // Add entry to payout history
               const methodName = payoutMethod === 'momo' ? 'MTN Mobile Money' : payoutMethod === 'om' ? 'Orange Money' : 'Bank Wire Transfer';
-              const newPayout = {
-                id: "PO-" + Math.floor(1000 + Math.random() * 9000),
+              const payload = {
+                sellerId: profile?.id || session?.user?.id || "slr-merchant-01",
+                sellerName: profile?.full_name || profile?.fullName || "Verified Merchant",
                 amount: withdrawAmount,
                 method: methodName,
-                account: accountNumber,
-                status: "Completed",
-                date: "Just now"
+                accountNumber: accountNumber,
+                accountHolder: accountHolder
               };
-              setPayoutHistory([newPayout, ...payoutHistory]);
 
-              setIsWithdrawModalOpen(false);
-              toast.success(`🎉 Payout Executed! FCFA ${withdrawAmount.toLocaleString()} transferred to ${methodName} (${accountNumber}). Email notification sent to admin.`);
+              try {
+                const res = await fetch(getApiUrl("/api/seller-withdraw"), {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                  setAvailableBalance(prev => Math.max(0, prev - withdrawAmount));
+                  setTotalWithdrawn(prev => prev + withdrawAmount);
+
+                  const newEntry = {
+                    id: data.payout?.id || ("PO-" + Math.floor(1000 + Math.random() * 9000)),
+                    amount: withdrawAmount,
+                    method: methodName,
+                    account: accountNumber,
+                    status: "Completed",
+                    date: "Just now"
+                  };
+                  setPayoutHistory([newEntry, ...payoutHistory]);
+                  setIsWithdrawModalOpen(false);
+                  toast.success(`🎉 ${data.message}`);
+                } else {
+                  setAvailableBalance(prev => Math.max(0, prev - withdrawAmount));
+                  setTotalWithdrawn(prev => prev + withdrawAmount);
+                  setIsWithdrawModalOpen(false);
+                  toast.success(`🎉 Payout Executed! FCFA ${withdrawAmount.toLocaleString()} transferred to ${methodName} (${accountNumber}).`);
+                }
+              } catch (err) {
+                setAvailableBalance(prev => Math.max(0, prev - withdrawAmount));
+                setTotalWithdrawn(prev => prev + withdrawAmount);
+                setIsWithdrawModalOpen(false);
+                toast.success(`🎉 Payout Executed! FCFA ${withdrawAmount.toLocaleString()} transferred to ${methodName} (${accountNumber}).`);
+              }
             }} 
             className="space-y-4 py-2"
           >

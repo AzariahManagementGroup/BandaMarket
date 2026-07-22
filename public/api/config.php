@@ -102,7 +102,18 @@ $conn->query("CREATE TABLE IF NOT EXISTS offline_transactions (
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
-$conn->query("CREATE TABLE IF NOT EXISTS smtp_settings (
+$conn->query("CREATE TABLE IF NOT EXISTS seller_payouts (
+    id VARCHAR(100) PRIMARY KEY,
+    sellerId VARCHAR(100) NOT NULL,
+    sellerName VARCHAR(255) DEFAULT 'Verified Merchant',
+    amount DECIMAL(12,2) NOT NULL,
+    currency VARCHAR(10) DEFAULT 'XAF',
+    method VARCHAR(100) NOT NULL,
+    accountNumber VARCHAR(100) NOT NULL,
+    accountHolder VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'Completed',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     id INT AUTO_INCREMENT PRIMARY KEY,
     smtpHost VARCHAR(255) NOT NULL,
     smtpPort VARCHAR(50) NOT NULL,
