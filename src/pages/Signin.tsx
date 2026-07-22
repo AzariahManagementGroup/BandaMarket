@@ -28,12 +28,19 @@ const Signin = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: form.email,
-        password: form.password,
+      const res = await fetch("http://localhost:5000/api/auth/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+        })
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to sign in");
 
-      if (error) throw error;
+      localStorage.setItem("camemark_token", data.token);
+      localStorage.setItem("camemark_user", JSON.stringify(data.user));
 
       toast.success("Welcome back to CameMark!");
       navigate("/dashboard");

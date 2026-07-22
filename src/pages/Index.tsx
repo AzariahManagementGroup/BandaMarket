@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import Navbar from "@/components/camemark/Navbar";
 import Hero from "@/components/camemark/Hero";
 import CategoriesSlider from "@/components/camemark/CategoriesSlider";
@@ -12,11 +13,19 @@ import TrustBar from "@/components/camemark/TrustBar";
 import Footer from "@/components/camemark/Footer";
 
 const Index = () => {
+  const { t, i18n } = useTranslation();
+
   useEffect(() => {
     // Attempt to play a welcome voice
     const playWelcomeVoice = () => {
-      const utterance = new SpeechSynthesisUtterance("Welcome to Cameroon's Digital Market");
-      utterance.lang = "en-US";
+      const message = t("voice.welcome", "Bienvenue sur le marché numérique du Cameroun");
+      const utterance = new SpeechSynthesisUtterance(message);
+      
+      if (i18n.language?.startsWith("fr")) utterance.lang = "fr-FR";
+      else if (i18n.language?.startsWith("es")) utterance.lang = "es-ES";
+      else if (i18n.language?.startsWith("ar")) utterance.lang = "ar-SA";
+      else utterance.lang = "en-US";
+
       utterance.rate = 0.9;
       utterance.pitch = 1.0;
       

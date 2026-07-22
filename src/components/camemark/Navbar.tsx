@@ -90,14 +90,14 @@ const Navbar = () => {
           : "bg-background/70 backdrop-blur-md border-b border-transparent"
       }`}
     >
-      <div className="container flex h-16 md:h-20 items-center justify-between gap-4">
+      <div className="container flex h-24 md:h-28 items-center justify-between gap-4">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2 group shrink-0 relative">
           <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full group-hover:bg-primary/40 transition-colors animate-pulse" />
           <img
             src={logo}
             alt="CameMark Logo — Cameroon's Premier Digital Marketplace and Regional Trading Hub"
-            className="h-10 md:h-12 w-auto animate-float drop-shadow-xl group-hover:scale-110 transition-all duration-500 relative z-10"
+            className="h-24 md:h-32 w-auto animate-float drop-shadow-xl group-hover:scale-110 transition-all duration-500 relative z-10"
           />
         </a>
 
@@ -143,7 +143,10 @@ const Navbar = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover z-50">
               {LANGS.map((l) => (
-                <DropdownMenuItem key={l.code} onClick={() => i18n.changeLanguage(l.code)}>
+                <DropdownMenuItem key={l.code} onClick={() => {
+                  localStorage.setItem('camemark_lang', l.code);
+                  i18n.changeLanguage(l.code);
+                }}>
                   <span className="mr-2">{l.flag}</span>
                   {l.label}
                 </DropdownMenuItem>
@@ -204,7 +207,7 @@ const Navbar = () => {
               {/* Mobile header */}
               <div className="px-5 pt-5 pb-4 border-b border-border bg-leaf relative overflow-hidden">
                 <div className="absolute inset-0 bg-primary/10 blur-xl animate-pulse" />
-                <img src={logo} alt="CameMark Logo — Cameroon's Premier Digital Marketplace and Regional Trading Hub" className="h-12 w-auto mb-3 animate-float drop-shadow-md relative z-10" />
+                <img src={logo} alt="CameMark Logo — Cameroon's Premier Digital Marketplace and Regional Trading Hub" className="h-24 w-auto mb-3 animate-float drop-shadow-md relative z-10" />
                 {/* Breadcrumb on mobile */}
                 <Breadcrumb className="relative z-10">
                   <BreadcrumbList className="text-[10px] font-bold">
@@ -255,7 +258,10 @@ const Navbar = () => {
                     {LANGS.map((l) => (
                       <button
                         key={l.code}
-                        onClick={() => i18n.changeLanguage(l.code)}
+                        onClick={() => {
+                          localStorage.setItem('camemark_lang', l.code);
+                          i18n.changeLanguage(l.code);
+                        }}
                         className={`text-left text-xs font-semibold border rounded-lg px-3 py-2 transition-smooth ${
                           current.code === l.code
                             ? "bg-primary text-primary-foreground border-primary"

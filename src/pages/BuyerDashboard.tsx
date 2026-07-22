@@ -53,19 +53,33 @@ const BuyerDashboard = () => {
 
   useEffect(() => {
     document.title = "Dashboard | CameMark";
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate("/signin");
-      } else {
+    const token = localStorage.getItem("camemark_token");
+    const userStr = localStorage.getItem("camemark_user");
+
+    if (!token && !userStr) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) {
+          navigate("/signin");
+        } else {
+          setSession(session);
+          setLoading(false);
+          fetchDashboardData(session.user.id);
+        }
+      });
+    } else if (userStr) {
+      const user = JSON.parse(userStr);
+      setSession({ user });
+      setProfile(user);
+      setLoading(false);
+    } else {
+      setLoading(false);
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
         setSession(session);
         fetchDashboardData(session.user.id);
       }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) fetchDashboardData(session.user.id);
-      else navigate("/signin");
     });
 
     return () => subscription.unsubscribe();

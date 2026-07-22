@@ -17,7 +17,7 @@ const Footer = () => {
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-background rounded-xl px-4 py-3 inline-flex relative group">
             <div className="absolute inset-0 bg-primary/20 blur-xl group-hover:bg-primary/40 transition-colors animate-pulse rounded-xl" />
-            <img src={logo} alt="CameMark Logo — Cameroon's Premier Digital Marketplace and Regional Trading Hub" className="h-10 w-auto animate-float drop-shadow-md relative z-10" loading="lazy" />
+            <img src={logo} alt="CameMark Logo — Cameroon's Premier Digital Marketplace and Regional Trading Hub" className="h-28 w-auto animate-float drop-shadow-md relative z-10" loading="lazy" />
           </div>
           <p className="text-sm text-primary-foreground/80 leading-relaxed max-w-xs">
             Cameroon's Digital Marketplace, Wallet & Trade Gateway. Empowering regions. Connecting Cameroon. Building a prosperous future.

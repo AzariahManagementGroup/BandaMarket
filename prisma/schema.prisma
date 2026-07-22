@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum AppRole {
+  buyer
+  seller
+  farmer
+  service
+  logistics
+  diaspora
+  org
+  admin
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  shipped
+  delivered
+  cancelled
+}
+
+enum ListingStatus {
+  active
+  draft
+  sold
+  archived
+}
+
+enum KycStatus {
+  pending
+  approved
+  rejected
+  not_submitted
+}
+
+enum BargainStatus {
+  pending
+  accepted
+  rejected
+  countered
+}
+
+model User {
+  id                String        @id @default(uuid())
+  email             String        @unique
+  passwordHash      String
+  fullName          String
+  phone             String?
+  country           String        @default("Cameroon")
+  region            String?
+  city              String?
+  role              AppRole       @default(buyer)
+  referralCode      String?
+  language          String        @default("en")
+  preferredCurrency String        @default("XAF")
+  avatarUrl         String?
+  kycStatus         KycStatus     @default(not_submitted)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  listings          Listing[]     @relation("SellerListings")
+  ordersAsBuyer     Order[]       @relation("BuyerOrders")
+  ordersAsSeller    Order[]       @relation("SellerOrders")
+  bargainsAsBuyer   Bargain[]     @relation("BuyerBargains")
+  bargainsAsSeller  Bargain[]     @relation("SellerBargains")
+  wallet            Wallet?
+  kycVerification   KycVerification?
+  reviewsGiven      Review[]      @relation("ReviewsGiven")
+  reviewsReceived   Review[]      @relation("ReviewsReceived")
+
+  @@map("users")
+}
+
+model KycVerification {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentType   String
+  documentNumber String
+  documentUrl    String?
+  status         KycStatus @default(pending)
+  rejectionReason String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("kyc_verifications")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  icon        String?
+  listings    Listing[]
+  createdAt   DateTime  @default(now())
+
+  @@map("categories")
+}
+
+model Listing {
+  id          String        @id @default(uuid())
+  title       String
+  description String        @db.Text
+  price       Float
+  currency    String        @default("XAF")
+  quantity    Int           @default(1)
+  unit        String        @default("pcs")
+  region      String
+  city        String?
+  status      ListingStatus @default(active)
+  images      Json?
+  
+  categoryId  String
+  category    Category      @relation(fields: [categoryId], references: [id])
+  
+  sellerId    String
+  seller      User          @relation("SellerListings", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  orders      Order[]
+  bargains    Bargain[]
+  reviews     Review[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("listings")
+}
+
+model Order {
+  id           String      @id @default(uuid())
+  orderNumber  String      @unique
+  listingId    String
+  listing      Listing     @relation(fields: [listingId], references: [id])
+  
+  buyerId      String
+  buyer        User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  
+  sellerId     String
+  seller       User        @relation("SellerOrders", fields: [sellerId], references: [id])
+
+  quantity     Int         @default(1)
+  totalPrice   Float
+  currency     String      @default("XAF")
+  status       OrderStatus @default(pending)
+  shippingCity String?
+  shippingAddr String?
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("orders")
+}
+
+model Bargain {
+  id           String        @id @default(uuid())
+  listingId    String
+  listing      Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  
+  buyerId      String
+  buyer        User          @relation("BuyerBargains", fields: [buyerId], references: [id])
+  
+  sellerId     String
+  seller       User          @relation("SellerBargains", fields: [sellerId], references: [id])
+
+  offeredPrice Float
+  status       BargainStatus @default(pending)
+  counterPrice Float?
+  message      String?
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("bargains")
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Float    @default(0.0)
+  currency  String   @default("XAF")
+  updatedAt DateTime @updatedAt
+
+  @@map("wallets")
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  listingId  String
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  
+  reviewerId String
+  reviewer   User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  
+  sellerId   String
+  seller     User     @relation("ReviewsReceived", fields: [sellerId], references: [id])
+
+  rating     Int
+  comment    String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@map("reviews")
+}

@@ -117,31 +117,40 @@ const Signup = () => {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: {
-          full_name: form.fullName, 
-          phone: `${form.phoneCode}${form.phone}`, 
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          fullName: form.fullName,
+          phone: `${form.phoneCode}${form.phone}`,
           country: form.country,
-          region: form.region, 
-          city: form.city, 
-          signup_role: form.role,
-          language: i18n.language, 
-          referral_code: form.referral,
-          preferred_currency: form.currency
-        },
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: error.message, variant: "destructive" });
-      return;
+          region: form.region,
+          city: form.city,
+          role: form.role,
+          referralCode: form.referral,
+          language: i18n.language,
+          preferredCurrency: form.currency
+        })
+      });
+      const data = await res.json();
+      setLoading(false);
+
+      if (!res.ok) {
+        toast({ title: data.error || "Signup failed", variant: "destructive" });
+        return;
+      }
+
+      localStorage.setItem("camemark_token", data.token);
+      localStorage.setItem("camemark_user", JSON.stringify(data.user));
+      toast({ title: "Account created successfully!" });
+      navigate("/dashboard");
+    } catch (err: any) {
+      setLoading(false);
+      toast({ title: err.message || "Failed to connect to server", variant: "destructive" });
     }
-    toast({ title: t("signup.success") });
-    navigate("/dashboard");
   };
 
   const google = async () => {

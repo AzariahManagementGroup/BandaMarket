@@ -30,6 +30,9 @@ const resources = {
       benefitDesc: ["Trade with confidence on a secure and trusted platform.", "Fast, safe and reliable payments across Cameroon.", "Connect with buyers and sellers across all 10 regions.", "Expand your business and unlock new opportunities."],
       success: "Account created! Check your inbox to verify.",
     },
+    voice: {
+      welcome: "Welcome to Cameroon's Digital Market"
+    }
   }},
   fr: { translation: {
     nav: { home: "Accueil", marketplace: "Marché", regions: "Régions", wallet: "Portefeuille", logistics: "Logistique", about: "À propos", contact: "Contact", signin: "Connexion", getStarted: "Commencer" },
@@ -58,6 +61,9 @@ const resources = {
       benefitDesc: ["Échangez en toute confiance.", "Paiements rapides et fiables.", "Connectez-vous aux 10 régions.", "Développez votre entreprise."],
       success: "Compte créé ! Vérifiez votre boîte mail.",
     },
+    voice: {
+      welcome: "Bienvenue sur le marché numérique du Cameroun"
+    }
   }},
   es: { translation: {
     nav: { home: "Inicio", marketplace: "Mercado", regions: "Regiones", wallet: "Billetera", logistics: "Logística", about: "Acerca", contact: "Contacto", signin: "Entrar", getStarted: "Comenzar" },
@@ -86,6 +92,9 @@ const resources = {
       benefitDesc: ["Comercia con confianza.", "Pagos rápidos.", "Conecta con todas las regiones.", "Haz crecer tu negocio."],
       success: "¡Cuenta creada! Revisa tu correo.",
     },
+    voice: {
+      welcome: "Bienvenido al Mercado Digital de Camerún"
+    }
   }},
   ar: { translation: {
     nav: { home: "الرئيسية", marketplace: "السوق", regions: "المناطق", wallet: "المحفظة", logistics: "الخدمات اللوجستية", about: "حول", contact: "اتصال", signin: "تسجيل الدخول", getStarted: "ابدأ" },
@@ -114,11 +123,18 @@ const resources = {
       benefitDesc: ["تداول بثقة.", "مدفوعات سريعة.", "اتصل بكل المناطق.", "نمِّ عملك."],
       success: "تم إنشاء الحساب! تحقق من بريدك.",
     },
+    voice: {
+      welcome: "مرحبًا بكم في سوق الكاميرون الرقمي"
+    }
   }},
 };
 
-i18n.use(LanguageDetector).use(initReactI18next).init({
-  resources, fallbackLng: "en",
+const savedLanguage = localStorage.getItem('camemark_lang') || 'fr';
+
+i18n.use(initReactI18next).init({
+  resources, 
+  lng: savedLanguage,
+  fallbackLng: "fr",
   interpolation: { escapeValue: false },
 });
 
