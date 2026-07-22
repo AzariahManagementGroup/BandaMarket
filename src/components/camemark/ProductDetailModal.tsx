@@ -26,6 +26,22 @@ const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen
   const [deliveryLoc, setDeliveryLoc] = useState<string>("Buea, Southwest Region");
   const [offerMessage, setOfferMessage] = useState<string>(`Hello, I'm interested in buying ${product?.title || 'this item'}. Please let me know if you can accept my offer.`);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [bargainStatus, setBargainStatus] = useState<"pending" | "accepted" | "rejected" | "countered">("pending");
+  
+  // Real-time Countdown Timer (23h 59m 59s)
+  const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 59, seconds: 59 });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
+        if (prev.minutes > 0) return { ...prev, minutes: 59, seconds: 59 };
+        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+        return { hours: 0, minutes: 0, seconds: 0 };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (product?.price) {
@@ -40,40 +56,49 @@ const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen
 
   const handleSendBargainOffer = () => {
     setActiveStep("bargain-chat");
+    setBargainStatus("pending");
     setChatMessages([
       {
         id: 1,
         sender: "user",
-        text: `You made an offer`,
+        text: `You submitted an offer of ${product.currency || 'FCFA'} ${offerPrice.toLocaleString()} / Kg for ${offerQty} Kg`,
         price: offerPrice,
         qty: offerQty,
         total: totalOfferAmount,
-        time: "Today, 10:30 AM"
-      },
-      {
-        id: 2,
-        sender: "seller",
-        text: `Seller Counter Offer`,
-        price: Math.round(offerPrice * 1.05),
-        qty: offerQty,
-        total: Math.round(offerPrice * 1.05 * offerQty),
-        time: "Today, 11:02 AM"
-      },
-      {
-        id: 3,
-        sender: "user",
-        text: offerMessage || `Can you do ${product.currency || 'FCFA'} ${offerPrice.toLocaleString()}?`,
-        time: "Today, 11:15 AM"
-      },
-      {
-        id: 4,
-        sender: "seller",
-        text: `Yes, I can accept ${product.currency || 'FCFA'} ${offerPrice.toLocaleString()} for ${offerQty} ${product.unit || 'Kg'}`,
-        status: "accepted",
-        time: "Today, 11:20 AM"
+        time: "Just now"
       }
     ]);
-    toast.success("🤝 Bargain offer sent to seller!");
+    toast.success("🤝 Bargain offer sent to seller! Waiting for seller response.");
+  };
+
+  const handleSellerAccept = () => {
+    setBargainStatus("accepted");
+    setChatMessages(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        sender: "seller",
+        text: `Yes, I accept your offer of ${product.currency || 'FCFA'} ${offerPrice.toLocaleString()} for ${offerQty} Kg. Proceed to checkout to lock in this deal!`,
+        status: "accepted",
+        time: "Just now"
+      }
+    ]);
+    toast.success("🎉 Seller accepted your bargain offer!");
+  };
+
+  const handleSellerReject = () => {
+    setBargainStatus("rejected");
+    setChatMessages(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        sender: "seller",
+        text: `Sorry, I cannot accept ${product.currency || 'FCFA'} ${offerPrice.toLocaleString()}. Please submit a higher offer.`,
+        status: "rejected",
+        time: "Just now"
+      }
+    ]);
+    toast.error("❌ Seller rejected the offer.");
   };
 
   return (
@@ -325,9 +350,10 @@ const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen
               <Info className="h-4 w-4 text-gray-400" />
             </div>
 
-            {/* Countdown ribbon */}
-            <div className="bg-amber-50 p-2.5 text-center text-amber-900 text-xs font-bold border-b border-amber-200 flex items-center justify-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-amber-600" /> Bargain expires in 23h : 45m : 12s
+            {/* Real-Time Live Countdown Ribbon */}
+            <div className="bg-amber-50 p-2.5 text-center text-amber-900 text-xs font-bold border-b border-amber-200 flex items-center justify-center gap-1.5 animate-pulse">
+              <Clock className="h-3.5 w-3.5 text-amber-600" /> 
+              <span>Bargain expires in {String(timeLeft.hours).padStart(2, '0')}h : {String(timeLeft.minutes).padStart(2, '0')}m : {String(timeLeft.seconds).padStart(2, '0')}s</span>
             </div>
 
             {/* Chat Messages Log */}
@@ -346,8 +372,8 @@ const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen
                     <p>{msg.text}</p>
                     {msg.price && (
                       <div className="mt-2 pt-1 border-t border-black/10 font-bold flex justify-between gap-4">
-                        <span>FCFA {msg.price.toLocaleString()} / Kg ({msg.qty} Kg)</span>
-                        <span className="font-black text-emerald-800">FCFA {msg.total?.toLocaleString()}</span>
+                        <span>{product.currency || 'FCFA'} {msg.price.toLocaleString()} / Kg ({msg.qty} Kg)</span>
+                        <span className="font-black text-emerald-800">{product.currency || 'FCFA'} {msg.total?.toLocaleString()}</span>
                       </div>
                     )}
                     {msg.status === "accepted" && (
@@ -355,34 +381,74 @@ const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen
                         Offer Accepted ✓
                       </div>
                     )}
+                    {msg.status === "rejected" && (
+                      <div className="mt-2 inline-flex items-center gap-1 bg-red-600 text-white font-black px-2 py-0.5 rounded-md text-[10px]">
+                        Offer Declined ❌
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
 
-              {/* Deal Accepted Summary Card */}
-              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs space-y-2 mt-4">
-                <div className="flex justify-between text-gray-600">
-                  <span>Final Price</span>
-                  <span className="font-extrabold text-emerald-900">FCFA {offerPrice.toLocaleString()} / Kg</span>
+              {/* Interactive Seller Simulation Toolbar */}
+              {bargainStatus === "pending" && (
+                <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-amber-900 flex items-center gap-1">
+                      <Store className="h-3.5 w-3.5" /> Seller Response Control Panel
+                    </span>
+                    <span className="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-mono font-bold">Simulator</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800">Test how the seller responds to your bargain offer:</p>
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <Button 
+                      onClick={handleSellerAccept}
+                      className="h-9 text-xs font-extrabold bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl"
+                    >
+                      ✓ Seller Accepts
+                    </Button>
+                    <Button 
+                      onClick={handleSellerReject}
+                      variant="outline"
+                      className="h-9 text-xs font-bold text-red-600 border-red-300 hover:bg-red-50 rounded-xl"
+                    >
+                      ❌ Seller Rejects
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Quantity</span>
-                  <span className="font-bold text-gray-900">{offerQty} Kg</span>
+              )}
+
+              {/* Deal Summary Card (Shows when Accepted) */}
+              {bargainStatus === "accepted" && (
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs space-y-2 mt-4 animate-scale-in">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Final Negotiated Price</span>
+                    <span className="font-extrabold text-emerald-900">{product.currency || 'FCFA'} {offerPrice.toLocaleString()} / Kg</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Quantity</span>
+                    <span className="font-bold text-gray-900">{offerQty} Kg</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-900 font-black text-sm pt-1 border-t border-emerald-200">
+                    <span>Total Deal Amount</span>
+                    <span>{product.currency || 'FCFA'} {totalOfferAmount.toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-emerald-900 font-black text-sm pt-1 border-t border-emerald-200">
-                  <span>Total Amount</span>
-                  <span>FCFA {totalOfferAmount.toLocaleString()}</span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Bottom Actions: Proceed to Checkout or Cancel */}
             <div className="p-4 bg-white border-t border-gray-100 space-y-2 shrink-0">
               <Button 
                 onClick={() => navigate(`/checkout?productId=${product.id}`)}
-                className="w-full h-12 rounded-2xl text-sm font-extrabold bg-[#064E3B] hover:bg-emerald-950 text-white flex items-center justify-center gap-2 shadow-lg"
+                disabled={bargainStatus === "rejected"}
+                className={`w-full h-12 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg ${
+                  bargainStatus === "accepted" 
+                    ? "bg-[#064E3B] hover:bg-emerald-950 text-white" 
+                    : "bg-gray-800 hover:bg-gray-900 text-white"
+                }`}
               >
-                🛒 Proceed to Checkout
+                🛒 {bargainStatus === "accepted" ? "Proceed to Checkout with Accepted Offer" : "Proceed to Checkout"}
               </Button>
               <Button 
                 onClick={() => setActiveStep("detail")}
