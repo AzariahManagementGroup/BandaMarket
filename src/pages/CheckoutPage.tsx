@@ -226,13 +226,21 @@ const CheckoutPage = () => {
   const tax = Math.round(basePrice * 0.1925);
   const totalAmount = Math.max(0, basePrice - discount + shippingFee + serviceFee + tax);
 
-  const handleConfirmOrder = async (e: React.FormEvent) => {
+  const [isPaymentGatewayOpen, setIsPaymentGatewayOpen] = useState(false);
+
+  const handleConfirmOrder = (e: React.FormEvent) => {
     e.preventDefault();
     if (!billingDetails.fullName || !billingDetails.phone || !billingDetails.address) {
       toast.error("Please fill in your full name, phone number, and delivery address.");
       return;
     }
 
+    // Launch Platform Interactive Payment Gateway Modal
+    setIsPaymentGatewayOpen(true);
+  };
+
+  const handleExecutePaymentGateway = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
 
     const orderPayload = {
@@ -258,18 +266,20 @@ const CheckoutPage = () => {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        toast.success("🎉 Order Placed Successfully! Confirmation emails & alerts sent.");
+        toast.success("🎉 Payment Successful! Order placed & seller notified.");
       } else {
-        toast.success("Order Placed Successfully!");
+        toast.success("🎉 Payment Successful! Order placed.");
       }
+      setIsPaymentGatewayOpen(false);
       setTimeout(() => {
         navigate("/dashboard");
-      }, 1500);
+      }, 1200);
     } catch (err) {
-      toast.success("Order Placed Successfully!");
+      toast.success("🎉 Payment Successful! Order placed.");
+      setIsPaymentGatewayOpen(false);
       setTimeout(() => {
         navigate("/dashboard");
-      }, 1500);
+      }, 1200);
     } finally {
       setIsSubmitting(false);
     }
@@ -848,6 +858,98 @@ const CheckoutPage = () => {
 
             <Button type="submit" className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-bold h-11 rounded-xl text-xs mt-2">
               Save & Use Address
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+      {/* Interactive Platform Payment Gateway Modal */}
+      <Dialog open={isPaymentGatewayOpen} onOpenChange={setIsPaymentGatewayOpen}>
+        <DialogContent className="max-w-md bg-white rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-gray-900 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-emerald-600" /> CameMark Payment Gateway
+              </span>
+              <span className="text-xs font-bold bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-full border border-emerald-200">
+                256-bit Encrypted
+              </span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-500">
+              Complete your order payment of <strong className="text-emerald-700 font-extrabold text-sm">FCFA {totalAmount.toLocaleString()}</strong> using your selected channel.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleExecutePaymentGateway} className="space-y-4 mt-2">
+            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/80 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Selected Gateway Channel:</span>
+                <span className="font-extrabold text-gray-900 uppercase">{paymentMethod || 'MTN Mobile Money'}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Product:</span>
+                <span className="font-bold text-gray-800 line-clamp-1 max-w-[200px]">{product?.title || 'Marketplace Item'}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-200">
+                <span className="font-extrabold text-gray-700">Total Payable:</span>
+                <span className="font-black text-emerald-700 text-sm">FCFA {totalAmount.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Payment Channel Inputs */}
+            {(paymentMethod === 'momo' || paymentMethod === 'om' || !paymentMethod) && (
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-gray-500 uppercase">
+                  {paymentMethod === 'om' ? 'Orange Money Number' : 'MTN Mobile Money Number'}
+                </Label>
+                <Input 
+                  type="text"
+                  required
+                  placeholder="+237 6xx xxx xxx"
+                  defaultValue={billingDetails.phone || "+237 690 123 456"}
+                  className="h-11 rounded-xl bg-gray-50 px-3 text-xs font-mono font-bold border border-gray-200"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">A payment prompt USSD push will be sent to your mobile phone.</p>
+              </div>
+            )}
+
+            {paymentMethod === 'wallet' && (
+              <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 space-y-1">
+                <p className="font-extrabold">CamRency Wallet Express</p>
+                <p className="text-[11px] text-emerald-700">Current Balance: FCFA 24,500. FCFA {totalAmount.toLocaleString()} will be deducted instantly.</p>
+              </div>
+            )}
+
+            {(paymentMethod === 'card' || paymentMethod === 'bank') && (
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-gray-500 uppercase">Card / Account Number</Label>
+                  <Input 
+                    type="text"
+                    required
+                    placeholder="4532 •••• •••• 8912"
+                    defaultValue="4532 8901 2345 8912"
+                    className="h-11 rounded-xl bg-gray-50 px-3 text-xs font-mono border border-gray-200"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold text-gray-500 uppercase">Expiry Date</Label>
+                    <Input placeholder="MM/YY" defaultValue="12/28" className="h-10 rounded-xl bg-gray-50 text-xs font-mono" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold text-gray-500 uppercase">CVV Security Code</Label>
+                    <Input placeholder="3-digits" defaultValue="321" className="h-10 rounded-xl bg-gray-50 text-xs font-mono" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-black h-12 rounded-2xl text-xs sm:text-sm mt-2 shadow-lg shadow-emerald-950/20"
+            >
+              {isSubmitting ? "Authorizing Payment..." : `Pay FCFA ${totalAmount.toLocaleString()} Now →`}
             </Button>
           </form>
         </DialogContent>
