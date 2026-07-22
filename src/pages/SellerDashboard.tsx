@@ -37,6 +37,8 @@ const SellerDashboard = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+
   // Store Profile & Settings Form State
   const [storeSettings, setStoreSettings] = useState({
     storeName: "",
