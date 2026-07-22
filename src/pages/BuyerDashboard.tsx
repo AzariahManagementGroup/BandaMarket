@@ -7,7 +7,7 @@ import {
   Plus, ArrowUpRight, Clock, CheckCircle2,
   Package, MapPin, Store, ArrowRight,
   TrendingUp, CreditCard, ExternalLink,
-  Menu, X, Loader2, Shield
+  Menu, X, Loader2, Shield, GraduationCap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -312,6 +312,7 @@ const BuyerDashboard = () => {
 
   const navItems = [
     { icon: LayoutDashboard, label: "Buyer Dashboard", active: true, href: "/dashboard" },
+    { icon: GraduationCap, label: "Camer Market Academy 🎓", href: "/academy", academy: true },
     { icon: Store, label: "Switch to Seller View", href: "/seller-dashboard", highlight: true },
     ...(profile?.role === "admin" || 
         profile?.role === "super_admin" || 

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link, Routes, Route } from "react-router-dom";
-import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard } from "lucide-react";
+import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getApiUrl } from "@/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import UserManager from "@/components/camemark/admin/UserManager";
 import RoleManager from "@/components/camemark/admin/RoleManager";
@@ -37,6 +38,7 @@ const AdminDashboard = () => {
   const navItems = [
     { label: "Overview", icon: LayoutDashboard, path: "" },
     { label: "Marketplace Orders", icon: ShoppingBag, path: "/orders" },
+    { label: "Academy Courses Manager", icon: GraduationCap, path: "/courses" },
     { label: "Payment Gateway Keys", icon: CreditCard, path: "/payment-gateways" },
     { label: "Launch Popup Banner", icon: Image, path: "/popup-banner" },
     { label: "Logistics Delivery Fees", icon: Truck, path: "/delivery-fees" },
@@ -124,6 +126,7 @@ const AdminDashboard = () => {
           <Routes>
             <Route path="/" element={<AdminOverview />} />
             <Route path="/orders" element={<AdminOrders />} />
+            <Route path="/courses" element={<AdminCoursesManager />} />
             <Route path="/payment-gateways" element={<AdminPaymentSettings />} />
             <Route path="/popup-banner" element={<AdminPopupBanner />} />
             <Route path="/delivery-fees" element={<AdminDeliveryFees />} />
@@ -852,6 +855,211 @@ const AdminPaymentSettings = () => {
             {saving ? "Saving Credentials..." : "Save Payment Gateway Keys"}
           </Button>
         </form>
+      </div>
+    </div>
+  );
+};
+
+// Component: Camer Market Academy Courses Manager
+const AdminCoursesManager = () => {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [newCourse, setNewCourse] = useState({
+    title: "",
+    category: "business",
+    instructor: "",
+    level: "All Levels",
+    duration: "4 Weeks",
+    price: "Free Access",
+    image: "",
+    description: "",
+    videoUrl: ""
+  });
+
+  const fetchAdminCourses = () => {
+    fetch(getApiUrl("/api/courses"))
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data.courses)) {
+          setCourses(data.courses);
+        }
+      })
+      .catch(err => console.error("Fetch courses error:", err))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchAdminCourses();
+  }, []);
+
+  const handleUploadCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCourse.title || !newCourse.image) {
+      toast.error("Course Title and Cover Image URL are required.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(getApiUrl("/api/courses"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newCourse)
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        toast.success("🎉 Course published live to Camer Market Academy!");
+        setNewCourse({
+          title: "",
+          category: "business",
+          instructor: "",
+          level: "All Levels",
+          duration: "4 Weeks",
+          price: "Free Access",
+          image: "",
+          description: "",
+          videoUrl: ""
+        });
+        fetchAdminCourses();
+      } else {
+        toast.error("Failed to publish course.");
+      }
+    } catch (err) {
+      toast.error("Error publishing course.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl space-y-8">
+      <div>
+        <h3 className="text-2xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
+          <GraduationCap className="h-6 w-6 text-emerald-600" /> Camer Market Academy Course Upload & Manager
+        </h3>
+        <p className="text-xs text-muted-foreground mt-1">Publish new training courses, video lectures, and certificates to empower Cameroonian entrepreneurs and learners.</p>
+      </div>
+
+      {/* Course Upload Form Card */}
+      <div className="bg-card rounded-2xl p-6 border border-border shadow-sm space-y-4">
+        <h4 className="font-extrabold text-base text-foreground">Upload New Course</h4>
+        <form onSubmit={handleUploadCourse} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-muted-foreground uppercase">Course Title</Label>
+              <Input 
+                placeholder="e.g. IT for Business & Digital Trade"
+                required
+                className="h-11 rounded-xl bg-background border-border text-xs font-bold"
+                value={newCourse.title}
+                onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-muted-foreground uppercase">Category</Label>
+              <select 
+                className="w-full h-11 rounded-xl bg-background px-3 text-xs font-bold border border-border"
+                value={newCourse.category}
+                onChange={(e) => setNewCourse({ ...newCourse, category: e.target.value })}
+              >
+                <option value="it">IT & Software</option>
+                <option value="business">Business & Entrepreneurship</option>
+                <option value="agric">Agriculture & E-Commerce</option>
+                <option value="economy">Digital Economy & Fintech</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-muted-foreground uppercase">Instructor Name</Label>
+              <Input 
+                placeholder="e.g. Dr. Paul Nkongho"
+                className="h-10 rounded-xl bg-background border-border text-xs"
+                value={newCourse.instructor}
+                onChange={(e) => setNewCourse({ ...newCourse, instructor: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-muted-foreground uppercase">Skill Level</Label>
+              <select 
+                className="w-full h-10 rounded-xl bg-background px-3 text-xs font-bold border border-border"
+                value={newCourse.level}
+                onChange={(e) => setNewCourse({ ...newCourse, level: e.target.value })}
+              >
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+                <option value="All Levels">All Levels</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-muted-foreground uppercase">Duration / Pricing</Label>
+              <Input 
+                placeholder="e.g. Free Access / Subsidized Grant"
+                className="h-10 rounded-xl bg-background border-border text-xs"
+                value={newCourse.price}
+                onChange={(e) => setNewCourse({ ...newCourse, price: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Cover Image URL</Label>
+            <Input 
+              placeholder="https://images.unsplash.com/... or hosted image URL"
+              required
+              className="h-10 rounded-xl bg-background border-border text-xs"
+              value={newCourse.image}
+              onChange={(e) => setNewCourse({ ...newCourse, image: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Course Summary & Syllabus Description</Label>
+            <Textarea 
+              placeholder="Explain course goals, curriculum, and key takeaways..."
+              className="rounded-xl bg-background border-border text-xs min-h-[90px]"
+              value={newCourse.description}
+              onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+            />
+          </div>
+
+          <Button type="submit" disabled={saving} className="bg-primary hover:bg-primary-glow text-primary-foreground font-bold h-11 px-8 rounded-xl">
+            {saving ? "Publishing Course..." : "Upload & Publish Course"}
+          </Button>
+        </form>
+      </div>
+
+      {/* Active Published Courses Table */}
+      <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm p-6 space-y-4">
+        <h4 className="font-extrabold text-base text-foreground">Published Courses ({courses.length})</h4>
+        {loading ? (
+          <div className="h-32 rounded-xl bg-muted animate-pulse" />
+        ) : courses.length > 0 ? (
+          <div className="divide-y divide-border">
+            {courses.map((c) => (
+              <div key={c.id} className="py-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-xl bg-muted overflow-hidden shrink-0">
+                    <img src={c.image} alt={c.title} className="h-full w-full object-cover" />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-sm text-foreground">{c.title}</h5>
+                    <p className="text-xs text-muted-foreground">Instructor: {c.instructor} • Category: {c.category}</p>
+                  </div>
+                </div>
+                <span className="text-xs font-black bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-full shrink-0">
+                  {c.price}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground py-4">No custom courses uploaded yet.</p>
+        )}
       </div>
     </div>
   );

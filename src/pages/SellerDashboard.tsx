@@ -5,7 +5,7 @@ import {
   TrendingUp, ShoppingBag, MessageCircle, Settings, Wallet, 
   BarChart3, Truck, Search, Bell, Globe, ChevronDown, 
   ArrowUpRight, Clock, CheckCircle2, MapPin, Eye, Edit, Trash2,
-  Menu, X, Loader2, Shield, ArrowRight, ArrowLeftRight
+  Menu, X, Loader2, Shield, ArrowRight, ArrowLeftRight, GraduationCap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -309,6 +309,7 @@ const SellerDashboard = () => {
 
   const navItems = [
     { id: "dashboard", icon: Store, label: "Seller Dashboard", active: activeTab === "dashboard", href: "/seller-dashboard" },
+    { id: "academy", icon: GraduationCap, label: "Camer Market Academy 🎓", href: "/academy", academy: true },
     { id: "switch", icon: LayoutDashboard, label: "Switch to Buyer View", href: "/dashboard", highlight: true },
     ...(profile?.role === "admin" || profile?.signup_role === "admin" ? [
       { id: "admin", icon: Shield, label: "Admin Panel", href: "/admin", special: true }

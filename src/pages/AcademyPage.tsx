@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   BookOpen, GraduationCap, Award, Users, Search, Play, Star,
@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { getApiUrl } from "@/config";
 import Navbar from "@/components/camemark/Navbar";
 import Footer from "@/components/camemark/Footer";
 
@@ -29,7 +30,7 @@ const AcademyPage = () => {
     { id: "economy", label: "Digital Economy & Fintech" },
   ];
 
-  const courses = [
+  const defaultCourses = [
     {
       id: 1,
       title: "IT for Business & Digital Trade",
@@ -84,9 +85,22 @@ const AcademyPage = () => {
     }
   ];
 
+  const [courses, setCourses] = useState<any[]>(defaultCourses);
+
+  useEffect(() => {
+    fetch(getApiUrl("/api/courses"))
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data.courses) && data.courses.length > 0) {
+          setCourses([...data.courses, ...defaultCourses]);
+        }
+      })
+      .catch(err => console.error("Error fetching courses:", err));
+  }, []);
+
   const filteredCourses = courses.filter(c => {
     const matchesCat = activeCategory === "all" || c.category === activeCategory;
-    const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) || c.instructor.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) || (c.instructor && c.instructor.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCat && matchesSearch;
   });
 
