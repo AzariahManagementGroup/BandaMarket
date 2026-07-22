@@ -28,7 +28,7 @@ const LANGS = [
   { code: "ar", label: "العربية", flag: "🇸🇦" },
 ];
 
-const REGIONS = ["Adamawa","Centre","East","Far North","Littoral","North","Northwest","South","Southwest","West"];
+const REGIONS = ["Adamawa", "Centre", "East", "Far North", "Littoral", "North", "Northwest", "South", "Southwest", "West"];
 
 const Navbar = () => {
   const { t, i18n } = useTranslation();
@@ -95,11 +95,10 @@ const Navbar = () => {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-smooth ${
-        scrolled
+      className={`sticky top-0 z-50 w-full transition-smooth ${scrolled
           ? "bg-background/90 backdrop-blur-xl border-b border-border shadow-card"
           : "bg-background/70 backdrop-blur-md border-b border-transparent"
-      }`}
+        }`}
     >
       <div className="container flex h-24 md:h-28 items-center justify-between gap-4">
         {/* Logo */}
@@ -137,8 +136,10 @@ const Navbar = () => {
                 key={l.key}
                 href={l.href}
                 className={`inline-flex items-center gap-1 transition-smooth ${
-                  l.highlight 
-                    ? "bg-amber-400 text-emerald-950 font-black px-3 py-1.5 rounded-full shadow-md hover:bg-amber-300 hover:scale-105" 
+                  l.highlight
+                    ? "bg-amber-400 text-emerald-950 font-black px-3 py-1.5 rounded-full shadow-md hover:bg-amber-300 hover:scale-105"
+                    : l.academy
+                    ? "bg-emerald-100 text-emerald-900 font-extrabold px-3 py-1.5 rounded-full border border-emerald-300 hover:bg-emerald-200 hover:scale-105"
                     : "story-link text-foreground/85 hover:text-primary"
                 }`}
               >
@@ -277,11 +278,10 @@ const Navbar = () => {
                           localStorage.setItem('camemark_lang', l.code);
                           i18n.changeLanguage(l.code);
                         }}
-                        className={`text-left text-xs font-semibold border rounded-lg px-3 py-2 transition-smooth ${
-                          current.code === l.code
+                        className={`text-left text-xs font-semibold border rounded-lg px-3 py-2 transition-smooth ${current.code === l.code
                             ? "bg-primary text-primary-foreground border-primary"
                             : "border-border hover:bg-primary/5"
-                        }`}
+                          }`}
                       >
                         <span className="mr-1.5">{l.flag}</span>{l.label}
                       </button>

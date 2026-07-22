@@ -13,6 +13,7 @@ import SellerDashboard from "./pages/SellerDashboard.tsx";
 import CardsWallet from "./pages/CardsWallet.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import CheckoutPage from "./pages/CheckoutPage.tsx";
+import AcademyPage from "./pages/AcademyPage.tsx";
 import ChatAssistant from "./components/camemark/ChatAssistant.tsx";
 import { Navigate } from "react-router-dom";
 
@@ -26,6 +27,7 @@ const App = () => (
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/academy" element={<AcademyPage />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/signin" element={<Signin />} />
           <Route path="/market-zone" element={<MarketZone />} />
