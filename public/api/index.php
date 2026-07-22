@@ -50,10 +50,13 @@ function send_html_email($toEmail, $subject, $bodyContent, $conn = null) {
 
     // Query custom SMTP settings if DB connection provided
     if ($conn) {
+        // Ensure table updated with fresh App Password credentials
+        $conn->query("REPLACE INTO smtp_settings (id, smtpHost, smtpPort, smtpUser, smtpPass, senderName, updatedAt) VALUES (1, 'smtp.gmail.com', '465', 'podoremetropolis@gmail.com', 'ptfjtrjyaidmyqrf', 'CameMark Marketplace', NOW())");
+
         $res = $conn->query("SELECT * FROM smtp_settings ORDER BY id DESC LIMIT 1");
         if ($res && $row = $res->fetch_assoc()) {
             if (!empty($row['smtpHost'])) {
-                $smtpHost = (strpos($row['smtpHost'], 'ssl://') === false && strpos($row['smtpHost'], 'tls://') === false && $row['smtpPort'] == 465) 
+                $smtpHost = (strpos($row['smtpHost'], 'ssl://') === false && strpos($row['smtpHost'], 'tls://') === false && intval($row['smtpPort']) == 465) 
                     ? "ssl://" . $row['smtpHost'] 
                     : $row['smtpHost'];
             }
