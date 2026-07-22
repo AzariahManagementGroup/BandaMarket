@@ -708,6 +708,8 @@ const SellerDashboard = () => {
               <Button type="submit" className="bg-[#064E3B] text-white font-bold">Publish Listing</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
       {/* KYC Required Limit Modal */}
       <Dialog open={isKycRequiredModalOpen} onOpenChange={setIsKycRequiredModalOpen}>
         <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 text-center">
