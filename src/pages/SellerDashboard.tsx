@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Store, Package, Plus, DollarSign, 
   TrendingUp, ShoppingBag, MessageCircle, Settings, Wallet, 
@@ -134,7 +134,18 @@ const SellerDashboard = () => {
     toast.success("New product listing published successfully!");
   };
 
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const location = useLocation();
+
+  // Sync URL subpath to activeTab
+  const getTabFromPath = () => {
+    const pathSegments = location.pathname.split("/").filter(Boolean);
+    if (pathSegments.length > 1 && pathSegments[0] === "seller-dashboard") {
+      return pathSegments[1];
+    }
+    return "dashboard";
+  };
+
+  const activeTab = getTabFromPath();
 
   const navItems = [
     { id: "dashboard", icon: Store, label: "Seller Dashboard", active: activeTab === "dashboard", href: "/seller-dashboard" },
@@ -142,13 +153,13 @@ const SellerDashboard = () => {
     ...(profile?.role === "admin" || profile?.signup_role === "admin" ? [
       { id: "admin", icon: Shield, label: "Admin Panel", href: "/admin", special: true }
     ] : []),
-    { id: "listings", icon: Package, label: "My Listings", active: activeTab === "listings" },
-    { id: "orders", icon: ShoppingBag, label: "Sales Orders", active: activeTab === "orders" },
-    { id: "inquiries", icon: MessageCircle, label: "Buyer Inquiries", active: activeTab === "inquiries" },
-    { id: "earnings", icon: Wallet, label: "Earnings & Payouts", active: activeTab === "earnings" },
-    { id: "analytics", icon: BarChart3, label: "Sales Analytics", active: activeTab === "analytics" },
-    { id: "shipments", icon: Truck, label: "Shipments", active: activeTab === "shipments" },
-    { id: "settings", icon: Settings, label: "Store Settings", active: activeTab === "settings" },
+    { id: "listings", icon: Package, label: "My Listings", active: activeTab === "listings", href: "/seller-dashboard/listings" },
+    { id: "orders", icon: ShoppingBag, label: "Sales Orders", active: activeTab === "orders", href: "/seller-dashboard/orders" },
+    { id: "inquiries", icon: MessageCircle, label: "Buyer Inquiries", active: activeTab === "inquiries", href: "/seller-dashboard/inquiries" },
+    { id: "earnings", icon: Wallet, label: "Earnings & Payouts", active: activeTab === "earnings", href: "/seller-dashboard/earnings" },
+    { id: "analytics", icon: BarChart3, label: "Sales Analytics", active: activeTab === "analytics", href: "/seller-dashboard/analytics" },
+    { id: "shipments", icon: Truck, label: "Shipments", active: activeTab === "shipments", href: "/seller-dashboard/shipments" },
+    { id: "settings", icon: Settings, label: "Store Settings", active: activeTab === "settings", href: "/seller-dashboard/settings" },
   ];
 
   if (loading && !session) {
@@ -634,8 +645,8 @@ const SellerDashboard = () => {
 
       {/* New Listing Modal */}
       <Dialog open={isNewListingModalOpen} onOpenChange={setIsNewListingModalOpen}>
-        <DialogContent className="sm:max-w-lg bg-white rounded-3xl p-6">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-lg bg-white rounded-3xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="text-xl font-black text-gray-900">Post New Product Listing</DialogTitle>
             <DialogDescription className="text-xs text-gray-500">
               Fill in product details to make your item available across all 10 regions of Cameroon.

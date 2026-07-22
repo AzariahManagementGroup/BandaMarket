@@ -29,7 +29,7 @@ const App = () => (
           <Route path="/signin" element={<Signin />} />
           <Route path="/market-zone" element={<MarketZone />} />
           <Route path="/dashboard" element={<BuyerDashboard />} />
-          <Route path="/seller-dashboard" element={<SellerDashboard />} />
+          <Route path="/seller-dashboard/*" element={<SellerDashboard />} />
           <Route path="/cards-wallet" element={<CardsWallet />} />
           <Route path="/admin/*" element={<AdminDashboard />} />
           <Route path="/marketplace" element={<Navigate to="/market-zone" replace />} />
