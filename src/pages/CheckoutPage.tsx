@@ -363,7 +363,9 @@ const CheckoutPage = () => {
                 <div className="flex items-center gap-3">
                   <ShoppingCart className="h-4 w-4" /> Cart
                 </div>
-                <span className="h-5 w-5 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center">1</span>
+                <span className={`h-5 w-5 rounded-full font-bold text-[10px] flex items-center justify-center ${product ? "bg-emerald-600 text-white" : "bg-gray-200 text-gray-500"}`}>
+                  {product ? 1 : 0}
+                </span>
               </Link>
               <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
                 <Package className="h-4 w-4" /> Orders
