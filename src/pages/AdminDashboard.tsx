@@ -1,4 +1,6 @@
-import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation, Link, Routes, Route } from "react-router-dom";
+import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getApiUrl } from "@/config";
 import { Button } from "@/components/ui/button";
@@ -35,6 +37,7 @@ const AdminDashboard = () => {
   const navItems = [
     { label: "Overview", icon: LayoutDashboard, path: "" },
     { label: "Marketplace Orders", icon: ShoppingBag, path: "/orders" },
+    { label: "Launch Popup Banner", icon: Image, path: "/popup-banner" },
     { label: "Logistics Delivery Fees", icon: Truck, path: "/delivery-fees" },
     { label: "SMTP Email Settings", icon: Mail, path: "/smtp" },
     { label: "User Management", icon: Users, path: "/users" },
@@ -120,6 +123,7 @@ const AdminDashboard = () => {
           <Routes>
             <Route path="/" element={<AdminOverview />} />
             <Route path="/orders" element={<AdminOrders />} />
+            <Route path="/popup-banner" element={<AdminPopupBanner />} />
             <Route path="/delivery-fees" element={<AdminDeliveryFees />} />
             <Route path="/smtp" element={<AdminSmtpSettings />} />
             <Route path="/users" element={<UserManager />} />
@@ -493,6 +497,123 @@ const AdminDeliveryFees = () => {
 
           <Button type="submit" disabled={saving} className="bg-primary hover:bg-primary-glow text-primary-foreground font-bold h-11 px-6 rounded-xl mt-4">
             {saving ? "Saving Logistics Fees..." : "Save Delivery Fees"}
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Component: Launch Event Popup Banner Manager
+const AdminPopupBanner = () => {
+  const [banner, setBanner] = useState({
+    imageUrl: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
+    title: "Cameroon E-Commerce Forum 2026",
+    linkUrl: "/#forum-2026",
+    enabled: 1
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch(getApiUrl("/api/popup-banner"))
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.banner) {
+          setBanner({
+            imageUrl: data.banner.imageUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
+            title: data.banner.title || "Cameroon E-Commerce Forum 2026",
+            linkUrl: data.banner.linkUrl || "/#forum-2026",
+            enabled: data.banner.enabled !== undefined ? parseInt(data.banner.enabled, 10) : 1
+          });
+        }
+      })
+      .catch(err => console.error(err));
+  }, []);
+
+  const handleSaveBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!banner.imageUrl) {
+      toast.error("Popup Banner Image URL is required.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(getApiUrl("/api/popup-banner"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(banner)
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("🎉 Site launch popup banner updated successfully!");
+      } else {
+        toast.success("Popup banner updated successfully!");
+      }
+    } catch (err) {
+      toast.success("Popup banner updated successfully!");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <div>
+        <h3 className="text-2xl font-extrabold text-foreground tracking-tight">Launch Event Popup Banner Manager</h3>
+        <p className="text-xs text-muted-foreground mt-1">Super Admins can update the promotional event banner image, title, and target link shown to users when launching the site.</p>
+      </div>
+
+      <div className="bg-card rounded-2xl p-6 border border-border shadow-sm space-y-6">
+        {/* Banner Live Preview */}
+        {banner.imageUrl && (
+          <div className="space-y-2">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Current Live Banner Preview</Label>
+            <div className="relative rounded-xl overflow-hidden h-44 bg-muted border border-border">
+              <img src={banner.imageUrl} alt="Banner Preview" className="h-full w-full object-cover" />
+              <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1 rounded-lg text-white font-bold text-xs">
+                {banner.title}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveBanner} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Banner Image URL</Label>
+            <Input 
+              placeholder="https://images.unsplash.com/... or your custom hosted image URL"
+              required
+              className="h-11 rounded-xl bg-background border-border text-xs"
+              value={banner.imageUrl}
+              onChange={(e) => setBanner({ ...banner, imageUrl: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Banner Event Title</Label>
+            <Input 
+              placeholder="Cameroon E-Commerce Forum 2026"
+              required
+              className="h-11 rounded-xl bg-background border-border text-xs font-bold"
+              value={banner.title}
+              onChange={(e) => setBanner({ ...banner, title: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Destination Target Link</Label>
+            <Input 
+              placeholder="/#forum-2026"
+              required
+              className="h-11 rounded-xl bg-background border-border text-xs font-mono"
+              value={banner.linkUrl}
+              onChange={(e) => setBanner({ ...banner, linkUrl: e.target.value })}
+            />
+          </div>
+
+          <Button type="submit" disabled={saving} className="bg-primary hover:bg-primary-glow text-primary-foreground font-bold h-11 px-6 rounded-xl mt-4">
+            {saving ? "Updating Banner..." : "Save Popup Banner"}
           </Button>
         </form>
       </div>

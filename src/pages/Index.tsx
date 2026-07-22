@@ -11,6 +11,7 @@ import HowItWorks from "@/components/camemark/HowItWorks";
 import BuiltFor from "@/components/camemark/BuiltFor";
 import TrustBar from "@/components/camemark/TrustBar";
 import ForumEventSection from "@/components/camemark/ForumEventSection";
+import EventPopupModal from "@/components/camemark/EventPopupModal";
 import Footer from "@/components/camemark/Footer";
 
 const Index = () => {
@@ -55,6 +56,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <EventPopupModal />
       <Navbar />
       <main className="overflow-x-hidden">
         <CategoriesSlider />

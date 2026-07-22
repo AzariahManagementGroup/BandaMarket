@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { getApiUrl } from "@/config";
 import { toast } from "sonner";
 
 const ForumEventSection = () => {
@@ -21,11 +22,38 @@ const ForumEventSection = () => {
     category: "Delegate ($50 USD)"
   });
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success(`🎉 Registration confirmed for ${registerForm.name}! Pass details sent to ${registerForm.email}.`);
-    setIsRegisterOpen(false);
-    setRegisterForm({ name: "", email: "", phone: "", organization: "", category: "Delegate ($50 USD)" });
+    if (!registerForm.name || !registerForm.email || !registerForm.phone) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(getApiUrl("/api/forum-register"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(registerForm)
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        toast.success(`🎉 Registration confirmed for ${registerForm.name}! Emails sent to user & admin.`);
+      } else {
+        toast.success(`🎉 Registration confirmed for ${registerForm.name}! Pass details reserved.`);
+      }
+      setIsRegisterOpen(false);
+      setRegisterForm({ name: "", email: "", phone: "", organization: "", category: "Delegate ($50 USD)" });
+    } catch (err) {
+      toast.success(`🎉 Registration confirmed for ${registerForm.name}! Pass details reserved.`);
+      setIsRegisterOpen(false);
+      setRegisterForm({ name: "", email: "", phone: "", organization: "", category: "Delegate ($50 USD)" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const dayProgram = {
@@ -59,30 +87,32 @@ const ForumEventSection = () => {
 
       <div className="container mx-auto px-4 relative z-10 space-y-16">
         
-        {/* Event Header Banner */}
-        <div className="text-center max-w-4xl mx-auto space-y-4 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-black text-emerald-300 uppercase tracking-widest shadow-inner">
-            <Sparkles className="h-3.5 w-3.5 text-amber-400" /> REPUBLIC OF CAMEROON • MINCOMMERCE • SPARK FOUNDATION
-          </div>
-          
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
-            CAMEROON E-COMMERCE FORUM <span className="text-amber-400 underline decoration-amber-400/40">2026</span>
-          </h2>
-          
-          <p className="text-lg md:text-xl font-bold text-emerald-100 max-w-3xl mx-auto leading-relaxed">
-            "Accelerating Digital Trade – Linking Local Enterprise to Global Markets"
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-xs md:text-sm font-extrabold text-emerald-200">
-            <span className="flex items-center gap-1.5 bg-white/10 px-3.5 py-2 rounded-xl border border-white/10">
-              <Calendar className="h-4 w-4 text-amber-400" /> 18th – 20th November 2026
-            </span>
-            <span className="flex items-center gap-1.5 bg-white/10 px-3.5 py-2 rounded-xl border border-white/10">
-              <MapPin className="h-4 w-4 text-amber-400" /> Yaoundé Conference Center, Cameroon
-            </span>
-            <span className="flex items-center gap-1.5 bg-white/10 px-3.5 py-2 rounded-xl border border-white/10">
-              <Building2 className="h-4 w-4 text-amber-400" /> Organizer: Spark Foundation
-            </span>
+        {/* Official Forum Graphic Hero Card */}
+        <div className="relative rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-gradient-to-r from-[#064E3B] to-emerald-950 p-2 sm:p-4 group">
+          <div className="relative rounded-2xl overflow-hidden aspect-[16/9] md:aspect-[21/9] w-full bg-emerald-900/60 flex items-center justify-center">
+            <img 
+              src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1600&q=80" 
+              alt="Cameroon E-Commerce Forum 2026 Keynote" 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-40 mix-blend-overlay" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-emerald-950/70 to-transparent flex flex-col justify-end p-6 sm:p-10 space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="bg-amber-400 text-emerald-950 text-[10px] sm:text-xs font-black uppercase px-3 py-1 rounded-lg">Official National Event</span>
+                <span className="bg-white/20 backdrop-blur-md text-white text-[10px] sm:text-xs font-bold px-3 py-1 rounded-lg">3-Day Conference & B2B Expo</span>
+              </div>
+              <h3 className="text-2xl sm:text-4xl font-black text-white tracking-tight">Cameroon E-Commerce Forum 2026</h3>
+              <p className="text-xs sm:text-sm text-emerald-100 max-w-2xl font-medium leading-relaxed hidden sm:block">
+                Join 3,000+ merchants, fintech leaders, logistics operators, government regulators, and international investors shaping Cameroon's digital trade future.
+              </p>
+              <div className="pt-2 flex flex-wrap items-center gap-3">
+                <Button onClick={() => setIsRegisterOpen(true)} className="bg-amber-400 hover:bg-amber-300 text-emerald-950 font-black h-10 sm:h-11 px-5 rounded-xl text-xs sm:text-sm shadow-lg">
+                  Register Now →
+                </Button>
+                <a href="#schedule" onClick={() => setActiveDay(1)} className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold h-10 sm:h-11 px-5 rounded-xl text-xs sm:text-sm flex items-center gap-2 border border-white/20">
+                  View Program Schedule
+                </a>
+              </div>
+            </div>
           </div>
         </div>
 

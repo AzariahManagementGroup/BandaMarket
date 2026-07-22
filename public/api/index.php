@@ -790,6 +790,104 @@ if (strpos($uri, 'delivery-fees') !== false) {
     }
 }
 
+// 9. Popup Banner Management Endpoint
+if (strpos($uri, 'popup-banner') !== false) {
+    if ($request_method === 'POST') {
+        $input = file_get_contents("php://input");
+        $data = json_decode($input, true);
+        $imageUrl = isset($data['imageUrl']) ? trim($data['imageUrl']) : '';
+        $title = isset($data['title']) ? trim($data['title']) : 'Cameroon E-Commerce Forum 2026';
+        $linkUrl = isset($data['linkUrl']) ? trim($data['linkUrl']) : '/#forum-2026';
+        $enabled = isset($data['enabled']) ? intval($data['enabled']) : 1;
+        $now = date('Y-m-d H:i:s');
+
+        $stmt = $conn->prepare("INSERT INTO popup_banners (imageUrl, title, linkUrl, enabled, updatedAt) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssis", $imageUrl, $title, $linkUrl, $enabled, $now);
+        if ($stmt->execute()) {
+            http_response_code(200);
+            echo json_encode(["success" => true, "message" => "Popup banner updated successfully!"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to update popup banner."]);
+        }
+        $stmt->close();
+        exit();
+    } else {
+        $result = $conn->query("SELECT imageUrl, title, linkUrl, enabled, updatedAt FROM popup_banners ORDER BY id DESC LIMIT 1");
+        $banner = null;
+        if ($result && $row = $result->fetch_assoc()) {
+            $banner = $row;
+        }
+        http_response_code(200);
+        echo json_encode(["banner" => $banner]);
+        exit();
+    }
+}
+
+// 10. Forum Registration API Endpoint (Sends email to both User & Admin)
+if (strpos($uri, 'forum-register') !== false && $request_method === 'POST') {
+    $input = file_get_contents("php://input");
+    $data = json_decode($input, true);
+
+    $id = "reg-" . round(microtime(true) * 1000);
+    $name = isset($data['name']) ? trim($data['name']) : '';
+    $email = isset($data['email']) ? trim($data['email']) : '';
+    $phone = isset($data['phone']) ? trim($data['phone']) : '';
+    $organization = isset($data['organization']) ? trim($data['organization']) : 'Individual';
+    $category = isset($data['category']) ? trim($data['category']) : 'Delegate ($50 USD)';
+    $now = date('Y-m-d H:i:s');
+
+    if (empty($name) || empty($email) || empty($phone)) {
+        http_response_code(400);
+        echo json_encode(["error" => "Name, Email, and Phone are required."]);
+        exit();
+    }
+
+    $stmt = $conn->prepare("INSERT INTO forum_registrations (id, name, email, phone, organization, category, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssssss", $id, $name, $email, $phone, $organization, $category, $now);
+    
+    if ($stmt->execute()) {
+        // A. Send Confirmation Email to User
+        $userSubject = "🎉 Registration Confirmed: Cameroon E-Commerce Forum 2026";
+        $userMailContent = "
+        <p>Dear <strong>" . htmlspecialchars($name) . "</strong>,</p>
+        <p>Congratulations! Your registration for the <strong>Cameroon E-Commerce Forum 2026</strong> has been confirmed.</p>
+        <p><strong>Registration ID:</strong> " . $id . "<br>
+        <strong>Category / Pass:</strong> " . htmlspecialchars($category) . "<br>
+        <strong>Organization:</strong> " . htmlspecialchars($organization) . "<br>
+        <strong>Dates:</strong> 18th – 20th November 2026<br>
+        <strong>Venue:</strong> Yaoundé Conference Center, Cameroon</p>
+        <p>Organized by <strong>Spark Foundation</strong> & <strong>MINCOMMERCE</strong>.</p>
+        <p>We look forward to hosting you in Yaoundé!</p>
+        <a href='https://camemark.com/#forum-2026' class='btn'>View Forum Schedule</a>";
+
+        send_html_email($email, $userSubject, $userMailContent, $conn);
+
+        // B. Send Admin Alert Email
+        $adminEmail = "taiwodele88@gmail.com";
+        $adminSubject = "🇨🇲 New Forum Registration: " . $name . " (" . $category . ")";
+        $adminMailContent = "
+        <p>Hello Admin,</p>
+        <p>A new delegate has registered for <strong>Cameroon E-Commerce Forum 2026</strong>!</p>
+        <p><strong>Name:</strong> " . htmlspecialchars($name) . "<br>
+        <strong>Email:</strong> " . htmlspecialchars($email) . "<br>
+        <strong>Phone / WhatsApp:</strong> " . htmlspecialchars($phone) . "<br>
+        <strong>Organization:</strong> " . htmlspecialchars($organization) . "<br>
+        <strong>Category:</strong> " . htmlspecialchars($category) . "<br>
+        <strong>Registered At:</strong> " . $now . "</p>";
+
+        send_html_email($adminEmail, $adminSubject, $adminMailContent, $conn);
+
+        http_response_code(200);
+        echo json_encode(["success" => true, "message" => "Registration successful! Confirmation email sent to both delegate and admin."]);
+    } else {
+        http_response_code(500);
+        echo json_encode(["error" => "Failed to save registration."]);
+    }
+    $stmt->close();
+    exit();
+}
+
 http_response_code(404);
 echo json_encode(["error" => "Endpoint not found."]);
 ?>
