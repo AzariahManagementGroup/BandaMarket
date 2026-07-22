@@ -508,19 +508,20 @@ const SellerDashboard = () => {
           {activeTab === "dashboard" && (
             <>
               {/* Welcome Banner */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#064E3B] to-emerald-800 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white shadow-xl shadow-emerald-900/10">
-                <div>
-                  <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#064E3B] via-emerald-800 to-emerald-950 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white shadow-xl shadow-emerald-900/15 animate-fade-in hover:shadow-2xl hover:shadow-emerald-900/20 transition-all duration-500 relative overflow-hidden group">
+                <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all duration-700 pointer-events-none" />
+                <div className="relative z-10">
+                  <span className="inline-block px-3 py-1 bg-white/15 backdrop-blur-md border border-white/20 rounded-full text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 shadow-sm animate-pulse">
                     Merchant Portal 🏪
                   </span>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold">Welcome back, {profile?.full_name?.split(" ")[0] || "Seller"}!</h2>
-                  <p className="text-emerald-100 text-xs sm:text-sm mt-1 max-w-xl">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Welcome back, {profile?.full_name?.split(" ")[0] || "Seller"}!</h2>
+                  <p className="text-emerald-100 text-xs sm:text-sm mt-1 max-w-xl leading-relaxed">
                     Manage your store listings, review buyer inquiries, and track sales revenue across all 10 regions.
                   </p>
                 </div>
                 <Button 
                   onClick={() => setIsNewListingModalOpen(true)}
-                  className="bg-white text-emerald-900 hover:bg-emerald-50 font-bold h-11 sm:h-12 px-5 sm:px-6 rounded-xl shrink-0 shadow-md text-xs sm:text-sm"
+                  className="bg-white text-emerald-950 hover:bg-emerald-50 font-black h-11 sm:h-12 px-5 sm:px-6 rounded-xl shrink-0 shadow-lg text-xs sm:text-sm transition-all duration-300 hover:scale-105 hover:shadow-white/20 relative z-10"
                 >
                   <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" /> Add New Listing
                 </Button>
@@ -528,53 +529,53 @@ const SellerDashboard = () => {
 
               {/* Merchant Stats */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card className="rounded-2xl border-gray-100 shadow-sm p-6">
+                <Card className="rounded-2xl border-gray-100/80 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 p-6 bg-white/90 backdrop-blur-sm group cursor-pointer border border-transparent hover:border-emerald-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Sales Revenue</p>
-                      <h3 className="text-2xl font-black text-gray-900 mt-2">FCFA 0</h3>
+                      <h3 className="text-2xl font-black text-gray-900 mt-2 group-hover:text-emerald-700 transition-colors">FCFA 0</h3>
                       <p className="text-xs text-emerald-600 font-bold mt-1">Ready for payout</p>
                     </div>
-                    <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold">
+                    <div className="h-12 w-12 rounded-2xl bg-emerald-50 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 flex items-center justify-center text-emerald-600 font-bold shadow-sm">
                       <DollarSign className="h-6 w-6" />
                     </div>
                   </div>
                 </Card>
 
-                <Card className="rounded-2xl border-gray-100 shadow-sm p-6">
+                <Card className="rounded-2xl border-gray-100/80 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 p-6 bg-white/90 backdrop-blur-sm group cursor-pointer border border-transparent hover:border-blue-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Listings</p>
-                      <h3 className="text-2xl font-black text-gray-900 mt-2">{listings.length}</h3>
+                      <h3 className="text-2xl font-black text-gray-900 mt-2 group-hover:text-blue-700 transition-colors">{listings.length}</h3>
                       <p className="text-xs text-gray-400 mt-1">Live in Market Zone</p>
                     </div>
-                    <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold">
+                    <div className="h-12 w-12 rounded-2xl bg-blue-50 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 flex items-center justify-center text-blue-600 font-bold shadow-sm">
                       <Package className="h-6 w-6" />
                     </div>
                   </div>
                 </Card>
 
-                <Card className="rounded-2xl border-gray-100 shadow-sm p-6">
+                <Card className="rounded-2xl border-gray-100/80 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 p-6 bg-white/90 backdrop-blur-sm group cursor-pointer border border-transparent hover:border-amber-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending Orders</p>
-                      <h3 className="text-2xl font-black text-gray-900 mt-2">0</h3>
+                      <h3 className="text-2xl font-black text-gray-900 mt-2 group-hover:text-amber-700 transition-colors">0</h3>
                       <p className="text-xs text-amber-600 font-bold mt-1">Awaiting dispatch</p>
                     </div>
-                    <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 font-bold">
+                    <div className="h-12 w-12 rounded-2xl bg-amber-50 group-hover:bg-amber-600 group-hover:text-white transition-all duration-300 flex items-center justify-center text-amber-600 font-bold shadow-sm">
                       <ShoppingBag className="h-6 w-6" />
                     </div>
                   </div>
                 </Card>
 
-                <Card className="rounded-2xl border-gray-100 shadow-sm p-6">
+                <Card className="rounded-2xl border-gray-100/80 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 p-6 bg-white/90 backdrop-blur-sm group cursor-pointer border border-transparent hover:border-purple-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Store Rating</p>
-                      <h3 className="text-2xl font-black text-gray-900 mt-2">5.0 ★</h3>
+                      <h3 className="text-2xl font-black text-gray-900 mt-2 group-hover:text-purple-700 transition-colors">5.0 ★</h3>
                       <p className="text-xs text-emerald-600 font-bold mt-1">100% positive feedback</p>
                     </div>
-                    <div className="h-12 w-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 font-bold">
+                    <div className="h-12 w-12 rounded-2xl bg-purple-50 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 flex items-center justify-center text-purple-600 font-bold shadow-sm">
                       <TrendingUp className="h-6 w-6" />
                     </div>
                   </div>
@@ -596,31 +597,34 @@ const SellerDashboard = () => {
                 {listings.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {listings.map((item) => (
-                      <div key={item.id} className="border border-gray-100 rounded-2xl p-5 hover:shadow-md transition-all flex flex-col justify-between">
+                      <div key={item.id} className="border border-gray-100 rounded-2xl p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group bg-white">
                         {item.imageUrl && (
-                          <div className="h-40 w-full rounded-xl overflow-hidden mb-3 border border-gray-100">
-                            <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
+                          <div className="h-44 w-full rounded-xl overflow-hidden mb-3 border border-gray-100 relative">
+                            <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                            <div className="absolute top-2 right-2 bg-emerald-950/80 text-white backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider">
+                              Verified
+                            </div>
                           </div>
                         )}
                         <div>
                           <div className="flex justify-between items-start mb-3">
                             <div>
-                              <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md">
+                              <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md border border-emerald-100">
                                 {item.region}
                               </span>
-                              <h4 className="font-extrabold text-gray-900 mt-2">{item.title}</h4>
+                              <h4 className="font-extrabold text-gray-900 mt-2 text-base group-hover:text-emerald-700 transition-colors">{item.title}</h4>
                             </div>
                             <span className="font-black text-emerald-700 text-lg">
                               {item.price.toLocaleString()} {item.currency}
                             </span>
                           </div>
-                          <p className="text-xs text-gray-500 line-clamp-2 mb-4">{item.description || "No description provided."}</p>
+                          <p className="text-xs text-gray-500 line-clamp-2 mb-4 leading-relaxed">{item.description || "No description provided."}</p>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-50">
-                          <span>Stock: {item.quantity} {item.unit}</span>
+                        <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
+                          <span className="font-semibold text-gray-600">Stock: {item.quantity} {item.unit}</span>
                           <div className="flex items-center gap-2">
-                            <Button onClick={() => handleEditClick(item)} size="sm" variant="outline" className="h-8 text-xs font-bold border-emerald-600 text-emerald-700 hover:bg-emerald-50">Edit</Button>
-                            <Button onClick={() => handleDeleteListing(item.id)} size="sm" variant="ghost" className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50">Delete</Button>
+                            <Button onClick={() => handleEditClick(item)} size="sm" variant="outline" className="h-8 text-xs font-bold border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded-lg">Edit</Button>
+                            <Button onClick={() => handleDeleteListing(item.id)} size="sm" variant="ghost" className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg">Delete</Button>
                           </div>
                         </div>
                       </div>
