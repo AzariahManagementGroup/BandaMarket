@@ -7,7 +7,7 @@ import {
   Plus, ArrowUpRight, Clock, CheckCircle2,
   Package, MapPin, Store, ArrowRight,
   TrendingUp, CreditCard, ExternalLink,
-  Menu, X, Loader2, Shield, GraduationCap
+  Menu, X, Loader2, Shield, GraduationCap, Radio, Layers, WifiOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -310,26 +310,29 @@ const BuyerDashboard = () => {
     setLoading(false);
   };
 
+  const [activeNavTab, setActiveNavTab] = useState<string>("dashboard");
+
   const navItems = [
-    { icon: LayoutDashboard, label: "Buyer Dashboard", active: true, href: "/dashboard" },
-    { icon: GraduationCap, label: "Camer Market Academy 🎓", href: "/academy", academy: true },
-    { icon: Store, label: "Switch to Seller View", href: "/seller-dashboard", highlight: true },
+    { id: "dashboard", icon: LayoutDashboard, label: "Buyer Dashboard", href: "/dashboard" },
+    { id: "offline", icon: WifiOff, label: "COCF Offline 📶", href: "/offline-commerce", cocf: true },
+    { id: "academy", icon: GraduationCap, label: "Camer Market Academy 🎓", href: "/academy", academy: true },
+    { id: "seller", icon: Store, label: "Switch to Seller View", href: "/seller-dashboard", highlight: true },
     ...(profile?.role === "admin" || 
         profile?.role === "super_admin" || 
         profile?.signup_role === "admin" ||
         session?.user?.email === "info@azariahmg.com" ? [
-      { icon: Shield, label: "Admin Panel", href: "/admin", special: true }
+      { id: "admin", icon: Shield, label: "Admin Panel", href: "/admin", special: true }
     ] : []),
-    { icon: ShoppingBag, label: "Marketplace", href: "/market-zone" },
-    { icon: List, label: "Categories", href: "#" },
-    { icon: MessageCircle, label: "Bargains", href: "#" },
-    { icon: List, label: "Orders", href: "#" },
-    { icon: Wallet, label: "Wallet", href: "#" },
-    { icon: Heart, label: "Saved Items", href: "#" },
-    { icon: Map, label: "Regions", href: "#" },
-    { icon: Truck, label: "Logistics", href: "#" },
-    { icon: MessageCircle, label: "Messages", badge: unreadCount, href: "#" },
-    { icon: Settings, label: "Settings", href: "#" },
+    { id: "marketplace", icon: ShoppingBag, label: "Marketplace", href: "/market-zone" },
+    { id: "categories", icon: Layers, label: "Categories", href: "/market-zone?tab=categories" },
+    { id: "bargains", icon: MessageCircle, label: "Bargains", href: "/market-zone?tab=bargains" },
+    { id: "orders", icon: Package, label: "Orders", href: "/dashboard?tab=orders" },
+    { id: "wallet", icon: Wallet, label: "Wallet", href: "/cards-wallet" },
+    { id: "saved", icon: Heart, label: "Saved Items", href: "/market-zone?tab=saved" },
+    { id: "regions", icon: Map, label: "Regions", href: "/market-zone?tab=regions" },
+    { id: "logistics", icon: Truck, label: "Logistics", href: "/#logistics" },
+    { id: "messages", icon: MessageCircle, label: "Messages", badge: unreadCount, href: "/dashboard?tab=messages" },
+    { id: "settings", icon: Settings, label: "Settings", href: "/dashboard?tab=settings" },
   ];
 
   if (loading && !session) {
@@ -350,32 +353,44 @@ const BuyerDashboard = () => {
         </div>
 
         <nav className="space-y-1">
-          {navItems.map((item, i) => (
-            <button
-              key={item.label}
-              onClick={() => item.href !== "#" && navigate(item.href)}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${
-                item.active 
-                  ? "bg-[#064E3B] text-white shadow-lg shadow-emerald-900/20" 
-                  : item.highlight
-                    ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold border border-emerald-200/60"
-                    : item.special
-                      ? "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200/50"
-                      : "text-gray-500 hover:bg-emerald-50 hover:text-emerald-700"
-              } animate-fade-in-right`}
-              style={{ animationDelay: `${i * 0.05}s` }}
-            >
-              <div className="flex items-center gap-3">
-                <item.icon className={`h-5 w-5 ${item.active ? "text-white" : "group-hover:text-emerald-600"}`} />
-                <span className="text-sm font-semibold">{item.label}</span>
-              </div>
-              {item.badge > 0 && (
-                <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full">
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          ))}
+          {navItems.map((item, i) => {
+            const isActive = activeNavTab === item.id || (item.id === "dashboard" && window.location.pathname === "/dashboard" && !window.location.search);
+            return (
+              <button
+                key={item.label}
+                onClick={() => {
+                  setActiveNavTab(item.id);
+                  if (item.href !== "#") navigate(item.href);
+                }}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-300 group hover:scale-[1.02] transform ${
+                  isActive 
+                    ? "bg-[#064E3B] text-white shadow-xl shadow-emerald-950/20 font-black ring-2 ring-emerald-600/30" 
+                    : item.cocf
+                      ? "bg-[#064E3B]/90 text-amber-300 hover:bg-[#064E3B] font-extrabold border border-amber-400/40 shadow-sm"
+                      : item.academy
+                        ? "bg-amber-500/10 text-amber-900 hover:bg-amber-500/20 font-extrabold border border-amber-300/50"
+                        : item.highlight
+                          ? "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-extrabold border border-emerald-200"
+                          : item.special
+                            ? "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200/70 font-extrabold"
+                            : "text-gray-600 hover:bg-emerald-50/80 hover:text-emerald-900 font-medium"
+                } animate-fade-in-right`}
+                style={{ animationDelay: `${i * 0.04}s` }}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className={`h-4 w-4 transition-transform duration-300 group-hover:scale-110 ${
+                    isActive ? "text-white animate-pulse" : item.cocf ? "text-amber-300" : "group-hover:text-emerald-700"
+                  }`} />
+                  <span className="text-xs sm:text-sm">{item.label}</span>
+                </div>
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm animate-pulse">
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         <div className="mt-auto pt-10">
