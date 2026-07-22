@@ -99,23 +99,7 @@ const MarketZone = () => {
   });
 
   const handleOrderClick = (product: any) => {
-    setSelectedProduct(product);
-    const userStr = localStorage.getItem("camemark_user");
-    if (userStr) {
-      try {
-        const u = JSON.parse(userStr);
-        setGuestDetails(prev => ({
-          ...prev,
-          fullName: u.fullName || u.full_name || "",
-          email: u.email || "",
-          phone: u.phone || "",
-          country: u.country || "Cameroon",
-          region: u.region || (region !== "All Regions" ? region : "Littoral"),
-          city: u.city || "Douala"
-        }));
-      } catch (e) {}
-    }
-    setIsCheckoutOpen(true);
+    navigate(`/checkout?productId=${product.id}`);
   };
 
   const handleCompleteGuestOrder = async (e: React.FormEvent) => {

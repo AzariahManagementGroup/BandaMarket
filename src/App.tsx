@@ -12,6 +12,7 @@ import BuyerDashboard from "./pages/BuyerDashboard.tsx";
 import SellerDashboard from "./pages/SellerDashboard.tsx";
 import CardsWallet from "./pages/CardsWallet.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
+import CheckoutPage from "./pages/CheckoutPage.tsx";
 import ChatAssistant from "./components/camemark/ChatAssistant.tsx";
 import { Navigate } from "react-router-dom";
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/signup" element={<Signup />} />
           <Route path="/signin" element={<Signin />} />
           <Route path="/market-zone" element={<MarketZone />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/dashboard" element={<BuyerDashboard />} />
           <Route path="/seller-dashboard/*" element={<SellerDashboard />} />
           <Route path="/cards-wallet" element={<CardsWallet />} />
