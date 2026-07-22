@@ -838,8 +838,7 @@ const BuyerDashboard = () => {
           <p className="text-[10px] text-center text-gray-400 italic">Fees will be deducted from your CamRency Wallet.</p>
         </DialogContent>
       </Dialog>
-        </main>
-      </div>
+    </div>
 
       {/* Profile Settings Modal */}
       <Dialog open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen}>
