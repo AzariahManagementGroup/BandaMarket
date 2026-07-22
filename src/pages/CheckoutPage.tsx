@@ -212,10 +212,10 @@ const CheckoutPage = () => {
       </header>
 
       {/* Main Checkout Container */}
-      <div className="flex-1 flex flex-col lg:flex-row">
+      <div className="flex-1 w-full max-w-7xl mx-auto flex flex-col lg:flex-row min-h-0">
         {/* Left Side Drawer Navigation - Only shown for Logged In Users */}
         {profile && (
-          <aside className="w-full lg:w-64 bg-white border-r border-gray-200 p-4 space-y-1 shrink-0 hidden lg:block">
+          <aside className="w-full lg:w-60 xl:w-64 bg-white border-r border-gray-200 p-4 space-y-1 shrink-0 hidden lg:block">
             <div className="space-y-1 text-xs font-medium text-gray-600">
               <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
                 <LayoutDashboard className="h-4 w-4" /> Buyer Dashboard
@@ -265,7 +265,7 @@ const CheckoutPage = () => {
         )}
 
         {/* Center Checkout Content */}
-        <main className="flex-1 p-4 lg:p-8 space-y-6 max-w-5xl">
+        <main className="flex-1 p-4 lg:p-6 xl:p-8 space-y-6 min-w-0">
           {/* Header Progress Stepper */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-200">
             <div>
@@ -512,12 +512,9 @@ const CheckoutPage = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 text-center text-xs text-gray-400">Loading order items...</div>
+                      <div className="p-4 text-center text-xs text-gray-400">Loading order details...</div>
                     )}
                   </div>
-                </div>
-              </div>
-            </div>
                 </div>
               </div>
             </div>
@@ -554,7 +551,7 @@ const CheckoutPage = () => {
         </main>
 
         {/* Right Summary Sidebar Panel */}
-        <aside className="w-full lg:w-80 bg-white border-l border-gray-200 p-6 space-y-6 shrink-0">
+        <aside className="w-full lg:w-72 xl:w-80 bg-white border-l border-gray-200 p-6 space-y-6 shrink-0">
           <div className="space-y-4">
             <h3 className="font-black text-lg text-gray-900">Order Summary</h3>
 
