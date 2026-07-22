@@ -360,7 +360,9 @@ const BuyerDashboard = () => {
                 key={item.label}
                 onClick={() => {
                   setActiveNavTab(item.id);
-                  if (item.href !== "#") navigate(item.href);
+                  if (item.id !== "marketplace" && item.id !== "dashboard" && item.href !== "#" && !item.href.startsWith("/dashboard")) {
+                    navigate(item.href);
+                  }
                 }}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-300 group hover:scale-[1.02] transform ${
                   isActive 
@@ -488,58 +490,326 @@ const BuyerDashboard = () => {
         </header>
 
         {/* Dashboard Body */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-8 custom-scrollbar">
-          {/* Welcome Section */}
-          <div className="animate-fade-in space-y-1">
-            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 flex items-center gap-2">
-              <span>Welcome back,</span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 animate-pulse underline decoration-emerald-400/40">
-                {profile?.full_name?.split(" ")[0] || "taiwo"}
-              </span>
-              <span className="inline-block animate-bounce origin-bottom-right">👋</span>
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-500 font-medium">Find quality products, support local farmers, and enjoy secure shopping across Cameroon.</p>
-          </div>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-8 custom-scrollbar">
+          {activeNavTab === "marketplace" ? (
+            <div className="space-y-6 animate-fade-in">
+              {/* Marketplace Header */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-black text-gray-900">Marketplace</h1>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">Discover products, services, and regional goods across Cameroon.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                    <ShoppingCart className="h-4 w-4 text-emerald-700" /> Cart (1 item)
+                  </span>
+                </div>
+              </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard 
-              title="Wallet Balance" 
-              value={`${wallet?.currency || "FCFA"} ${wallet?.balance?.toLocaleString() || "0"}`} 
-              subValue={`Preferred: ${profile?.preferred_currency || "XAF"}`} 
-              icon={Wallet} 
-              action="Add Money"
-              onClickAction={() => handleWalletAction("add")}
-              delay={0.1}
-            />
-            <StatCard 
-              title="Active Orders" 
-              value={orders.filter(o => o.status !== "delivered" && o.status !== "cancelled").length.toString()} 
-              subValue="Real-time tracking" 
-              icon={ShoppingBag} 
-              iconColor="text-emerald-600 bg-emerald-50"
-              delay={0.2}
-            />
-            <StatCard 
-              title="Saved Items" 
-              value="0" 
-              subValue="Feature coming soon" 
-              icon={Heart} 
-              iconColor="text-emerald-600 bg-emerald-50"
-              delay={0.3}
-            />
-            <StatCard 
-              title="Monthly Spend" 
-              value="FCFA 0" 
-              subValue="Tracking your budget" 
-              icon={TrendingUp} 
-              iconColor="text-emerald-600 bg-emerald-50"
-              isTrend
-              delay={0.4}
-            />
-          </div>
+              {/* Category Pills Bar */}
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                {[
+                  { name: "Agriculture", icon: "🌾", active: true },
+                  { name: "Food & Beverages", icon: "🥖" },
+                  { name: "Fashion", icon: "👗" },
+                  { name: "Beauty", icon: "💄" },
+                  { name: "Electronics", icon: "📱" },
+                  { name: "Home", icon: "🏠" },
+                  { name: "Construction", icon: "🏗️" },
+                  { name: "Services", icon: "🔧" },
+                  { name: "Handmade", icon: "🏺" },
+                  { name: "Wholesale", icon: "📦" }
+                ].map((cat, idx) => (
+                  <button 
+                    key={idx}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all shrink-0 ${
+                      cat.active ? "bg-[#064E3B] text-white shadow-md" : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.name}</span>
+                  </button>
+                ))}
+              </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+              {/* Filters & Sorting Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm text-xs font-bold">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select defaultValue="all-cat">
+                    <SelectTrigger className="h-9 w-36 bg-gray-50 border-gray-200 text-xs">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all-cat">All Categories</SelectItem>
+                      <SelectItem value="agric">Agriculture</SelectItem>
+                      <SelectItem value="fashion">Fashion</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select defaultValue="all-reg">
+                    <SelectTrigger className="h-9 w-36 bg-gray-50 border-gray-200 text-xs">
+                      <SelectValue placeholder="All Regions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all-reg">All Regions</SelectItem>
+                      <SelectItem value="littoral">Littoral (Douala)</SelectItem>
+                      <SelectItem value="centre">Centre (Yaoundé)</SelectItem>
+                      <SelectItem value="southwest">South West (Buea)</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <span className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 cursor-pointer hover:bg-gray-100">
+                    Bargain Available
+                  </span>
+                  <span className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl cursor-pointer font-bold">
+                    ✓ Verified Sellers
+                  </span>
+                  <span className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 cursor-pointer hover:bg-gray-100">
+                    Farm Fresh
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button className="text-gray-400 hover:text-gray-600 text-xs">Clear Filters</button>
+                  <Button size="sm" className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold text-xs h-9 px-4 rounded-xl">
+                    Apply Filters
+                  </Button>
+                </div>
+              </div>
+
+              {/* 3-Column Main Marketplace Layout */}
+              <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                
+                {/* Left 3 Columns: Product Grid */}
+                <div className="xl:col-span-3 space-y-4">
+                  <div className="flex items-center justify-between text-xs text-gray-500 font-bold">
+                    <span>Showing 1-12 of 1,248 products</span>
+                    <div className="flex items-center gap-2">
+                      <span>Sort By:</span>
+                      <span className="text-gray-900 font-black">Recommended</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                    {[
+                      { id: 1, title: "Red Palm Oil (1L)", seller: "Best Palm Cooperative", region: "South West", price: 2100, tag: "Farm Fresh", img: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=400&q=80", rating: "4.8 (126)", isBargain: false },
+                      { id: 2, title: "Organic Cocoa Beans (1kg)", seller: "Cocoa Farmers Union", region: "Centre", price: 3500, tag: "Bargain", img: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=400&q=80", rating: "4.7 (98)", isBargain: true },
+                      { id: 3, title: "Plantains (1 Bunch)", seller: "Green Valley Farms", region: "Littoral", price: 800, tag: "Farm Fresh", img: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=400&q=80", rating: "4.6 (76)", isBargain: false },
+                      { id: 4, title: "Fresh Tomatoes (1kg)", seller: "Healthy Fields Co-op", region: "North West", price: 1600, tag: "Farm Fresh", img: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=400&q=80", rating: "4.7 (112)", isBargain: false },
+                      { id: 5, title: "Robusta Coffee (1kg)", seller: "Highland Coffee Farmers", region: "Ouest", price: 4200, tag: "Bargain", img: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=400&q=80", rating: "4.8 (89)", isBargain: true },
+                      { id: 6, title: "Handmade Basket", seller: "Artisans du Cameroun", region: "Adamawa", price: 3600, tag: "Handmade", img: "https://images.unsplash.com/photo-1590736969955-71cc94801759?auto=format&fit=crop&w=400&q=80", rating: "4.7 (64)", isBargain: false }
+                    ].map((prod) => (
+                      <div key={prod.id} className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col">
+                        <div className="h-44 bg-gray-100 relative overflow-hidden">
+                          <img src={prod.img} alt={prod.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          <span className={`absolute top-3 left-3 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-sm ${
+                            prod.tag === "Bargain" ? "bg-amber-400 text-amber-950" : "bg-emerald-600 text-white"
+                          }`}>
+                            {prod.tag}
+                          </span>
+                        </div>
+                        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                          <div>
+                            <h4 className="font-extrabold text-gray-900 text-sm line-clamp-1">{prod.title}</h4>
+                            <p className="text-[11px] text-gray-400 mt-0.5">{prod.seller} • <span className="text-emerald-700 font-bold">{prod.region}</span></p>
+                            <span className="text-[10px] text-amber-500 font-bold mt-1 block">★ {prod.rating}</span>
+                          </div>
+                          <div>
+                            <span className="text-base font-black text-gray-900 block">FCFA {prod.price.toLocaleString()}</span>
+                            <div className="flex items-center gap-2 mt-2">
+                              <button 
+                                onClick={() => navigate(`/checkout?productId=${prod.id}`)}
+                                className="h-9 px-3 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center justify-center shrink-0"
+                              >
+                                <ShoppingCart className="h-4 w-4" />
+                              </button>
+                              <Button 
+                                onClick={() => navigate(`/checkout?productId=${prod.id}`)}
+                                className={`w-full font-extrabold text-xs h-9 rounded-xl ${
+                                  prod.isBargain ? "bg-amber-400 hover:bg-amber-500 text-amber-950" : "bg-[#064E3B] hover:bg-emerald-950 text-white"
+                                }`}
+                              >
+                                {prod.isBargain ? "Start Bargain" : "View Product"}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Guarantees Bar at Bottom */}
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-3 pt-6 border-t border-gray-200 text-center text-xs">
+                    <div className="p-3 bg-white rounded-2xl border border-gray-100 space-y-1">
+                      <ShieldCheck className="h-5 w-5 text-emerald-600 mx-auto" />
+                      <p className="font-extrabold text-[11px]">Secure Payments</p>
+                      <p className="text-[9px] text-gray-400">Encrypted security</p>
+                    </div>
+                    <div className="p-3 bg-white rounded-2xl border border-gray-100 space-y-1">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600 mx-auto" />
+                      <p className="font-extrabold text-[11px]">Verified Sellers</p>
+                      <p className="text-[9px] text-gray-400">Verified merchants</p>
+                    </div>
+                    <div className="p-3 bg-white rounded-2xl border border-gray-100 space-y-1">
+                      <Truck className="h-5 w-5 text-emerald-600 mx-auto" />
+                      <p className="font-extrabold text-[11px]">Fast Delivery</p>
+                      <p className="text-[9px] text-gray-400">Across Cameroon</p>
+                    </div>
+                    <div className="p-3 bg-white rounded-2xl border border-gray-100 space-y-1">
+                      <MessageCircle className="h-5 w-5 text-emerald-600 mx-auto" />
+                      <p className="font-extrabold text-[11px]">Bargain & Negotiate</p>
+                      <p className="text-[9px] text-gray-400">Get best deals</p>
+                    </div>
+                    <div className="p-3 bg-white rounded-2xl border border-gray-100 space-y-1">
+                      <Package className="h-5 w-5 text-emerald-600 mx-auto" />
+                      <p className="font-extrabold text-[11px]">Farm Fresh</p>
+                      <p className="text-[9px] text-gray-400">Fresh from farms</p>
+                    </div>
+                    <div className="p-3 bg-white rounded-2xl border border-gray-100 space-y-1">
+                      <Globe className="h-5 w-5 text-emerald-600 mx-auto" />
+                      <p className="font-extrabold text-[11px]">AfCFTA Ready</p>
+                      <p className="text-[9px] text-gray-400">Trade across Africa</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Side Widgets */}
+                <div className="space-y-6">
+                  
+                  {/* Widget 1: Today's Bargain Deals */}
+                  <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-sm text-gray-900 flex items-center gap-1.5">
+                        🔥 Today's Bargain Deals
+                      </h4>
+                      <span className="text-[10px] text-emerald-700 font-bold cursor-pointer">View all</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {[
+                        { title: "Fresh Pineapples (1pc)", price: "FCFA 1,200", old: "FCFA 1,800", off: "-33%", img: "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?auto=format&fit=crop&w=150&q=80" },
+                        { title: "Cameroon Peppers (500g)", price: "FCFA 800", old: "FCFA 1,200", off: "-33%", img: "https://images.unsplash.com/photo-1588879460405-59427f7f4577?auto=format&fit=crop&w=150&q=80" },
+                        { title: "Dry Okra (250g)", price: "FCFA 900", old: "FCFA 1,400", off: "-36%", img: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=150&q=80" }
+                      ].map((b, i) => (
+                        <div key={i} className="flex items-center justify-between p-2 rounded-2xl bg-gray-50 border border-gray-100 text-xs">
+                          <div className="flex items-center gap-2.5">
+                            <img src={b.img} alt={b.title} className="h-10 w-10 rounded-xl object-cover" />
+                            <div>
+                              <p className="font-extrabold text-gray-900 text-[11px] line-clamp-1">{b.title}</p>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-black text-emerald-700 text-xs">{b.price}</span>
+                                <span className="text-[9px] text-gray-400 line-through">{b.old}</span>
+                                <span className="text-[9px] font-bold bg-red-100 text-red-700 px-1 rounded">{b.off}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-black bg-amber-400 text-amber-950 px-2 py-1 rounded-lg">Bargain</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Widget 2: Top Rated Sellers */}
+                  <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-sm text-gray-900">Top Rated Sellers</h4>
+                      <span className="text-[10px] text-emerald-700 font-bold cursor-pointer">View all</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {[
+                        { rank: 1, name: "Best Palm Cooperative", location: "South West", rating: "4.8 (126)" },
+                        { rank: 2, name: "Green Valley Farms", location: "Littoral", rating: "4.8 (98)" },
+                        { rank: 3, name: "Highland Coffee Farmers", location: "Ouest", rating: "4.7 (89)" },
+                        { rank: 4, name: "Healthy Fields Co-op", location: "North West", rating: "4.7 (112)" }
+                      ].map((s) => (
+                        <div key={s.rank} className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="h-5 w-5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black flex items-center justify-center">{s.rank}</span>
+                            <div>
+                              <p className="font-extrabold text-gray-900 text-[11px]">{s.name}</p>
+                              <p className="text-[9px] text-gray-400">{s.location} • ★ {s.rating}</p>
+                            </div>
+                          </div>
+                          <Button size="sm" variant="outline" className="h-7 text-[10px] font-bold rounded-lg px-2.5">
+                            Follow
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Widget 3: Cameroon 10 Economic Blocs Map */}
+                  <div className="bg-[#064E3B] text-white rounded-3xl p-5 space-y-3 shadow-lg relative overflow-hidden">
+                    <h4 className="font-black text-sm text-amber-400">Explore Cameroon's 10 Economic Blocs</h4>
+                    <p className="text-[11px] text-emerald-100 leading-snug">Trade directly with verified cooperatives across Far North, Littoral, Centre, and South West.</p>
+                    <Button 
+                      onClick={() => navigate("/market-zone")}
+                      className="w-full bg-amber-400 hover:bg-amber-500 text-emerald-950 font-black text-xs h-9 rounded-xl mt-2"
+                    >
+                      Explore Region →
+                    </Button>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Welcome Section */}
+              <div className="animate-fade-in space-y-1">
+                <h2 className="text-2xl sm:text-3xl font-black text-gray-900 flex items-center gap-2">
+                  <span>Welcome back,</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 animate-pulse underline decoration-emerald-400/40">
+                    {profile?.full_name?.split(" ")[0] || "taiwo"}
+                  </span>
+                  <span className="inline-block animate-bounce origin-bottom-right">👋</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-500 font-medium">Find quality products, support local farmers, and enjoy secure shopping across Cameroon.</p>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard 
+                  title="Wallet Balance" 
+                  value={`${wallet?.currency || "FCFA"} ${wallet?.balance?.toLocaleString() || "0"}`} 
+                  subValue={`Preferred: ${profile?.preferred_currency || "XAF"}`} 
+                  icon={Wallet} 
+                  action="Add Money"
+                  onClickAction={() => handleWalletAction("add")}
+                  delay={0.1}
+                />
+                <StatCard 
+                  title="Active Orders" 
+                  value={orders.length.toString()} 
+                  subValue="0 items in delivery" 
+                  icon={Package} 
+                  action="View Orders"
+                  onClickAction={() => navigate("/dashboard?tab=orders")}
+                  delay={0.2}
+                />
+                <StatCard 
+                  title="Saved Items" 
+                  value="12" 
+                  subValue="Products in wishlist" 
+                  icon={Heart} 
+                  action="View Saved"
+                  onClickAction={() => navigate("/market-zone?tab=saved")}
+                  delay={0.3}
+                />
+                <StatCard 
+                  title="Bargain Deals" 
+                  value={bargains.length.toString()} 
+                  subValue="Active negotiations" 
+                  icon={MessageCircle} 
+                  action="Explore Deals"
+                  onClickAction={() => navigate("/market-zone?tab=bargains")}
+                  delay={0.4}
+                />
+              </div>
+            </>
+          )}
+        </main>
 
       {/* Card Creation Modal */}
       <Dialog open={!card && isWalletModalOpen && walletAction === "add"} onOpenChange={setIsWalletModalOpen}>
