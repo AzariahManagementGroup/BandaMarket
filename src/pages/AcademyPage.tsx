@@ -207,20 +207,26 @@ const AcademyPage = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             
-            {/* Left Content Column */}
+            {/* Left Content Column with Dynamic Animations */}
             <div className="space-y-6 text-left">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-black text-amber-300 uppercase tracking-widest">
-                <Sparkles className="h-4 w-4 text-amber-400" /> Learn. Grow. Succeed.
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-black text-amber-300 uppercase tracking-widest animate-bounce shadow-lg">
+                <Sparkles className="h-4 w-4 text-amber-400 animate-spin" /> 🎓 CamerMark National Academy
               </div>
 
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
-                Empowering Learners. <br />
-                <span className="text-amber-400 underline decoration-amber-400/40">Building Businesses.</span> <br />
-                Transforming Cameroon & Africa.
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight transition-all duration-700">
+                <span className="block text-white transition-transform hover:scale-105 duration-300">
+                  Empowering Learners.
+                </span>
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-200 animate-pulse underline decoration-amber-400/40 my-1">
+                  Building Businesses.
+                </span>
+                <span className="block text-emerald-200">
+                  Transforming Cameroon & Africa.
+                </span>
               </h1>
 
               <p className="text-base sm:text-lg text-emerald-100/90 font-medium max-w-xl leading-relaxed">
-                Access quality courses in business, technology, agriculture, digital skills and more. Learn at your pace, anytime, anywhere. Build the skills to shape your future.
+                Access quality courses in <span className="font-bold text-amber-300">Business, Technology, Agriculture</span> & Digital Trade. Learn at your own pace, anytime across all 10 regions of Cameroon.
               </p>
 
               <div className="pt-2 flex flex-wrap items-center gap-4">
