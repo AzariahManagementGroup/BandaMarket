@@ -137,6 +137,11 @@ const Signup = () => {
           preferredCurrency: form.currency
         })
       });
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Backend server API is not connected or returning HTML. Please ensure Node.js server.ts is running on production.");
+      }
+
       const data = await res.json();
       setLoading(false);
 
