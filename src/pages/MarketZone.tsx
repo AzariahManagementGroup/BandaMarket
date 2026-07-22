@@ -526,6 +526,8 @@ const MarketZone = () => {
             </DialogFooter>
           </form>
         </DialogContent>
+      </Dialog>
+
       {/* Interactive 3-Screen Product & Bargain Modal */}
       <ProductDetailModal 
         product={viewProduct} 
