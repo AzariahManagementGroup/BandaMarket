@@ -278,10 +278,10 @@ const CheckoutPage = () => {
   return (
     <div className="min-h-screen bg-[#F8FAF9] flex flex-col font-sans text-gray-800">
       {/* Header Bar */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 px-4 lg:px-8 h-16 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-4 flex-1">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="CameMark Logo" className="h-9 w-auto object-contain" />
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
+            <img src={logo} alt="CameMark Logo" className="h-7 sm:h-9 w-auto object-contain" />
           </Link>
           <div className="hidden md:flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 w-full max-w-md">
             <Input 
@@ -291,25 +291,25 @@ const CheckoutPage = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div className="hidden sm:flex items-center gap-1 text-xs text-gray-500 font-bold bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200">
             <Globe className="h-3.5 w-3.5" /> EN
           </div>
           
           {profile ? (
-            <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
+            <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-gray-200">
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-black text-gray-900">{profile?.fullName || profile?.full_name || "Verified Buyer"}</p>
                 <p className="text-[10px] font-bold text-emerald-600 flex items-center justify-end gap-0.5">
                   <CheckCircle2 className="h-3 w-3" /> Verified Buyer
                 </p>
               </div>
-              <div className="h-9 w-9 rounded-full bg-emerald-100 overflow-hidden border-2 border-emerald-500 shadow-sm shrink-0">
+              <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-emerald-100 overflow-hidden border-2 border-emerald-500 shadow-sm shrink-0">
                 <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.fullName || "Buyer"}`} alt="User Avatar" />
               </div>
             </div>
           ) : (
-            <Link to="/signin" className="text-xs font-extrabold text-emerald-700 hover:text-emerald-950 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+            <Link to="/signin" className="text-xs font-extrabold text-emerald-700 hover:text-emerald-950 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200">
               Sign In
             </Link>
           )}
@@ -370,38 +370,38 @@ const CheckoutPage = () => {
         )}
 
         {/* Center Checkout Content */}
-        <main className="flex-1 p-4 lg:p-6 xl:p-8 space-y-6 min-w-0">
+        <main className="flex-1 p-3 sm:p-6 xl:p-8 space-y-6 min-w-0">
           {/* Header Progress Stepper */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-200">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-black text-gray-900 flex items-center gap-2">
-                Checkout <span className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full"><Lock className="h-3 w-3" /> Secure Checkout</span>
+          <div className="flex flex-col gap-3 sm:gap-4 pb-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 flex items-center gap-2">
+                Checkout <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full"><Lock className="h-3 w-3" /> Secure</span>
               </h1>
             </div>
 
-            {/* Stepper Steps */}
-            <div className="flex items-center gap-2 text-xs font-bold">
-              <Link to={`/checkout?productId=${product?.id || productId || ''}`} className="flex items-center gap-1.5 text-emerald-700 hover:text-emerald-900 transition-colors">
-                <span className="h-6 w-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px]">✓</span>
+            {/* Stepper Steps - Horizontal Scrollable on Mobile */}
+            <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold overflow-x-auto pb-1 custom-scrollbar">
+              <Link to={`/checkout?productId=${product?.id || productId || ''}`} className="flex items-center gap-1 sm:gap-1.5 text-emerald-700 hover:text-emerald-900 transition-colors shrink-0">
+                <span className="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] sm:text-[11px]">✓</span>
                 <span>Cart</span>
               </Link>
-              <div className={`h-0.5 w-6 ${currentStep >= 2 ? "bg-emerald-500" : "bg-gray-200"}`} />
-              <div className={`flex items-center gap-1.5 ${currentStep >= 2 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
-                <span className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] ${currentStep >= 2 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
+              <div className={`h-0.5 w-3 sm:w-6 shrink-0 ${currentStep >= 2 ? "bg-emerald-500" : "bg-gray-200"}`} />
+              <div className={`flex items-center gap-1 sm:gap-1.5 shrink-0 ${currentStep >= 2 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
+                <span className={`h-5 w-5 sm:h-6 sm:w-6 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] ${currentStep >= 2 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
                   {currentStep > 2 ? "✓" : "2"}
                 </span>
                 <span className={currentStep >= 2 ? "text-gray-900" : ""}>Checkout</span>
               </div>
-              <div className={`h-0.5 w-6 ${currentStep >= 3 ? "bg-emerald-500" : "bg-gray-200"}`} />
-              <div className={`flex items-center gap-1.5 ${currentStep >= 3 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
-                <span className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] ${currentStep >= 3 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
+              <div className={`h-0.5 w-3 sm:w-6 shrink-0 ${currentStep >= 3 ? "bg-emerald-500" : "bg-gray-200"}`} />
+              <div className={`flex items-center gap-1 sm:gap-1.5 shrink-0 ${currentStep >= 3 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
+                <span className={`h-5 w-5 sm:h-6 sm:w-6 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] ${currentStep >= 3 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
                   {currentStep > 3 ? "✓" : "3"}
                 </span>
                 <span className={currentStep >= 3 ? "text-gray-900" : ""}>Payment</span>
               </div>
-              <div className={`h-0.5 w-6 ${currentStep >= 4 ? "bg-emerald-500" : "bg-gray-200"}`} />
-              <div className={`flex items-center gap-1.5 ${currentStep >= 4 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
-                <span className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] ${currentStep >= 4 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
+              <div className={`h-0.5 w-3 sm:w-6 shrink-0 ${currentStep >= 4 ? "bg-emerald-500" : "bg-gray-200"}`} />
+              <div className={`flex items-center gap-1 sm:gap-1.5 shrink-0 ${currentStep >= 4 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
+                <span className={`h-5 w-5 sm:h-6 sm:w-6 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] ${currentStep >= 4 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
                   4
                 </span>
                 <span className={currentStep >= 4 ? "text-gray-900" : ""}>Review</span>
