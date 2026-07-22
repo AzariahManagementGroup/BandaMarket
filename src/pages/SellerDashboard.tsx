@@ -540,8 +540,12 @@ const SellerDashboard = () => {
                     <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
                     <span>Merchant Portal 🏪</span>
                   </div>
-                  <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white drop-shadow-sm mt-2">
-                    Welcome back, <span className="text-emerald-300 underline decoration-emerald-400/40 underline-offset-4">{profile?.full_name?.split(" ")[0] || "Seller"}</span>!
+                  <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white drop-shadow-sm mt-2 flex items-center gap-2 flex-wrap">
+                    <span>Welcome back,</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-emerald-300 animate-pulse underline decoration-emerald-400/40 underline-offset-4">
+                      {profile?.full_name?.split(" ")[0] || "taiwo"}
+                    </span>
+                    <span className="inline-block animate-bounce origin-bottom-right">👋</span>
                   </h2>
                   <p className="text-emerald-100/90 text-xs sm:text-sm max-w-xl leading-relaxed pt-1 font-medium">
                     Manage your store listings, review buyer inquiries, and track sales revenue across all 10 regions.

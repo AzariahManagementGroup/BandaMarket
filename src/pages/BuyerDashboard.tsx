@@ -475,9 +475,15 @@ const BuyerDashboard = () => {
         {/* Dashboard Body */}
         <main className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-8 custom-scrollbar">
           {/* Welcome Section */}
-          <div className="animate-fade-in">
-            <h2 className="text-2xl font-extrabold text-gray-900">Welcome back, {profile?.full_name?.split(" ")[0] || "Buyer"} 👋</h2>
-            <p className="text-sm text-gray-500 mt-1">Find quality products, support local, and enjoy secure shopping across Cameroon.</p>
+          <div className="animate-fade-in space-y-1">
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 flex items-center gap-2">
+              <span>Welcome back,</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 animate-pulse underline decoration-emerald-400/40">
+                {profile?.full_name?.split(" ")[0] || "taiwo"}
+              </span>
+              <span className="inline-block animate-bounce origin-bottom-right">👋</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 font-medium">Find quality products, support local farmers, and enjoy secure shopping across Cameroon.</p>
           </div>
 
           {/* Stats Grid */}
