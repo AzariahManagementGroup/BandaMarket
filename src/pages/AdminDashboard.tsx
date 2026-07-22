@@ -397,6 +397,10 @@ const AdminSmtpSettings = () => {
           </Button>
         </form>
       </div>
+    </div>
+  );
+};
+
 // Component: Admin & Logistics Officer Delivery Fees Manager
 const AdminDeliveryFees = () => {
   const [fees, setFees] = useState({
