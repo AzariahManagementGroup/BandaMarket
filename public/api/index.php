@@ -105,39 +105,48 @@ function send_html_email($toEmail, $subject, $bodyContent, $conn = null) {
 
     $emailData = implode("\r\n", $headers) . "\r\n\r\n" . $message . "\r\n.";
 
+    // Helper to read multi-line SMTP responses
+    $readSmtp = function($sock) {
+        $data = "";
+        while ($line = fgets($sock, 512)) {
+            $data .= $line;
+            if (substr($line, 3, 1) === " ") break;
+        }
+        return $data;
+    };
+
     $socket = @fsockopen($smtpHost, $smtpPort, $errno, $errstr, 15);
     if (!$socket) {
-        // Fallback to mail() if socket blocked
         $mailHeaders = "MIME-Version: 1.0\r\nContent-type:text/html;charset=UTF-8\r\nFrom: CameMark <" . $smtpUser . ">\r\n";
         @mail($toEmail, $subject, $message, $mailHeaders);
         return false;
     }
 
-    $response = fgets($socket, 512);
+    $readSmtp($socket); // 220 banner
 
     fputs($socket, "EHLO CameMark\r\n");
-    $response = fgets($socket, 512);
+    $readSmtp($socket); // 250 capabilities
 
     fputs($socket, "AUTH LOGIN\r\n");
-    $response = fgets($socket, 512);
+    $readSmtp($socket); // 334 VXNlcm5hbWU6
 
     fputs($socket, base64_encode($smtpUser) . "\r\n");
-    $response = fgets($socket, 512);
+    $readSmtp($socket); // 334 UGFzc3dvcmQ6
 
     fputs($socket, base64_encode($smtpPass) . "\r\n");
-    $response = fgets($socket, 512);
+    $readSmtp($socket); // 235 2.7.0 Authentication successful
 
     fputs($socket, "MAIL FROM: <" . $smtpUser . ">\r\n");
-    $response = fgets($socket, 512);
+    $readSmtp($socket); // 250 2.1.0 OK
 
     fputs($socket, "RCPT TO: <" . $toEmail . ">\r\n");
-    $response = fgets($socket, 512);
+    $readSmtp($socket); // 250 2.1.5 OK
 
     fputs($socket, "DATA\r\n");
-    $response = fgets($socket, 512);
+    $readSmtp($socket); // 354 Go ahead
 
     fputs($socket, $emailData . "\r\n");
-    $response = fgets($socket, 512);
+    $readSmtp($socket); // 250 2.0.0 OK
 
     fputs($socket, "QUIT\r\n");
     fclose($socket);
