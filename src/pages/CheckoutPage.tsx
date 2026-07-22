@@ -4,7 +4,7 @@ import {
   ShieldCheck, Lock, CheckCircle2, MapPin, Truck, Wallet, 
   CreditCard, Phone, ArrowRight, Plus, Package, ShoppingCart, 
   Store, Gift, HelpCircle, LayoutDashboard, ShoppingBag, 
-  Globe, Settings, MessageCircle, ArrowLeftRight, Bell, ChevronDown, X 
+  Globe, Settings, MessageCircle, ArrowLeftRight, Bell, ChevronDown, X, Share2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -643,9 +643,20 @@ const CheckoutPage = () => {
                             <span className="text-[10px] text-emerald-700 font-bold">Qty: 1</span>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right space-y-1">
                           <p className="font-black text-emerald-700 text-sm">FCFA {basePrice.toLocaleString()}</p>
-                          <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">Bargain Verified</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const productUrl = window.location.href;
+                              const productImg = product?.imageUrl || `${window.location.origin}/og-image.png`;
+                              const shareText = `🛒 *${product?.title}*\n💰 Price: FCFA ${basePrice.toLocaleString()}\n📍 Seller: ${product?.sellerName || 'Verified Merchant'}\n🖼️ View Image: ${productImg}\n\n👉 Order directly on CameMark: ${productUrl}`;
+                              window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, "_blank");
+                            }}
+                            className="inline-flex items-center gap-1 text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded-full shadow-sm"
+                          >
+                            <Share2 className="h-2.5 w-2.5" /> Share Item
+                          </button>
                         </div>
                       </div>
                     ) : (
