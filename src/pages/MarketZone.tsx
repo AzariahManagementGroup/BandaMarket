@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import ProductDetailModal from "@/components/camemark/ProductDetailModal";
 
 const MarketZone = () => {
   const [searchParams] = useSearchParams();
@@ -22,6 +23,8 @@ const MarketZone = () => {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
   const [userCurrency, setUserCurrency] = useState("XAF");
+  const [viewProduct, setViewProduct] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const handleShareProduct = (product: any, platform: string = "whatsapp") => {
     const productUrl = `${window.location.origin}/checkout?productId=${product.id}`;
@@ -240,7 +243,14 @@ const MarketZone = () => {
           ) : products.length > 0 ? (
             <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products.map((product) => (
-                <div key={product.id} className="group rounded-2xl border border-border bg-card overflow-hidden hover-lift shadow-sm flex flex-col">
+                <div 
+                  key={product.id} 
+                  onClick={() => {
+                    setViewProduct(product);
+                    setIsDetailModalOpen(true);
+                  }}
+                  className="group rounded-2xl border border-border bg-card overflow-hidden hover-lift shadow-sm flex flex-col cursor-pointer"
+                >
                   <div className="h-44 bg-muted flex items-center justify-center relative overflow-hidden">
                     {product.imageUrl ? (
                       <img src={product.imageUrl} alt={product.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -293,14 +303,21 @@ const MarketZone = () => {
                         variant="outline" 
                         size="sm" 
                         className="w-full text-xs h-8 border-primary/30 hover:bg-primary/5"
-                        onClick={() => handleAction("Bargain")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setViewProduct(product);
+                          setIsDetailModalOpen(true);
+                        }}
                       >
                         <MessageCircle className="h-3.5 w-3.5 mr-1" /> Bargain
                       </Button>
                       <Button 
                         size="sm" 
                         className="w-full text-xs h-8 bg-primary hover:bg-primary-glow text-primary-foreground font-bold"
-                        onClick={() => handleAction("Order", product)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAction("Order", product);
+                        }}
                       >
                         <ShoppingCart className="h-3.5 w-3.5 mr-1" /> Order
                       </Button>
@@ -509,7 +526,12 @@ const MarketZone = () => {
             </DialogFooter>
           </form>
         </DialogContent>
-      </Dialog>
+      {/* Interactive 3-Screen Product & Bargain Modal */}
+      <ProductDetailModal 
+        product={viewProduct} 
+        isOpen={isDetailModalOpen} 
+        onClose={() => setIsDetailModalOpen(false)} 
+      />
     </div>
   );
 };
