@@ -70,7 +70,7 @@ const SellerDashboard = () => {
           setLoading(false);
         }
       });
-    if (userStr) {
+    } else if (userStr) {
       const user = JSON.parse(userStr);
       setSession({ user });
       const currentProfile = {
