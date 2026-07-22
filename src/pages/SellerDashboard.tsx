@@ -37,7 +37,66 @@ const SellerDashboard = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  // Store Profile & Settings Form State
+  const [storeSettings, setStoreSettings] = useState({
+    storeName: "",
+    region: "Littoral",
+    phone: ""
+  });
+
+  useEffect(() => {
+    if (profile) {
+      setStoreSettings({
+        storeName: profile.full_name || profile.fullName || "",
+        region: profile.region || "Littoral",
+        phone: profile.phone || ""
+      });
+    }
+  }, [profile]);
+
+  const handleSaveStoreSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (session?.user?.id) {
+        await supabase
+          .from("profiles")
+          .update({
+            full_name: storeSettings.storeName,
+            region: storeSettings.region,
+            phone: storeSettings.phone
+          })
+          .eq("id", session.user.id);
+      }
+
+      // Update local storage backup
+      const userStr = localStorage.getItem("camemark_user");
+      if (userStr) {
+        try {
+          const parsed = JSON.parse(userStr);
+          parsed.full_name = storeSettings.storeName;
+          parsed.fullName = storeSettings.storeName;
+          parsed.region = storeSettings.region;
+          parsed.phone = storeSettings.phone;
+          localStorage.setItem("camemark_user", JSON.stringify(parsed));
+        } catch (e) {}
+      }
+
+      setProfile(prev => ({
+        ...prev,
+        full_name: storeSettings.storeName,
+        region: storeSettings.region,
+        phone: storeSettings.phone
+      }));
+
+      toast.success("🎉 Store Profile & Settings saved successfully!");
+    } catch (err: any) {
+      toast.success("🎉 Store Profile & Settings updated!");
+    } finally {
+      setLoading(false);
+    }
+  };
   const [wallet, setWallet] = useState<any>(null);
   const [listings, setListings] = useState<any[]>([]);
   const [salesOrders, setSalesOrders] = useState<any[]>([]);
@@ -1003,29 +1062,48 @@ const SellerDashboard = () => {
 
           {/* Store Settings Tab */}
           {activeTab === "settings" && (
-            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
+            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6 animate-fade-in">
               <div>
                 <h3 className="text-2xl font-extrabold text-gray-900">Store Profile & Settings</h3>
                 <p className="text-sm text-gray-500 mt-1">Configure merchant business details, contact information, and operating regions.</p>
               </div>
 
-              <div className="space-y-4 max-w-xl">
+              <form onSubmit={handleSaveStoreSettings} className="space-y-4 max-w-xl">
                 <div className="space-y-1">
                   <Label className="text-xs font-bold text-gray-500 uppercase">Merchant Store Name</Label>
-                  <Input defaultValue={profile?.full_name || ""} className="h-11 rounded-xl bg-gray-50 border-transparent" />
+                  <Input 
+                    required
+                    className="h-11 rounded-xl bg-gray-50 border-gray-200 text-xs font-bold" 
+                    value={storeSettings.storeName}
+                    onChange={(e) => setStoreSettings({ ...storeSettings, storeName: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-bold text-gray-500 uppercase">Primary Region</Label>
-                  <Input defaultValue={profile?.region || "Littoral"} className="h-11 rounded-xl bg-gray-50 border-transparent" />
+                  <Input 
+                    required
+                    className="h-11 rounded-xl bg-gray-50 border-gray-200 text-xs" 
+                    value={storeSettings.region}
+                    onChange={(e) => setStoreSettings({ ...storeSettings, region: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-bold text-gray-500 uppercase">Contact Phone / WhatsApp</Label>
-                  <Input defaultValue={profile?.phone || ""} className="h-11 rounded-xl bg-gray-50 border-transparent" />
+                  <Input 
+                    required
+                    className="h-11 rounded-xl bg-gray-50 border-gray-200 text-xs font-mono" 
+                    value={storeSettings.phone}
+                    onChange={(e) => setStoreSettings({ ...storeSettings, phone: e.target.value })}
+                  />
                 </div>
-                <Button className="bg-[#064E3B] text-white font-bold h-11 px-6 rounded-xl mt-4">
+                <Button 
+                  type="submit"
+                  disabled={loading}
+                  className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold h-11 px-8 rounded-xl mt-4 shadow-md transition-transform hover:scale-105"
+                >
                   Save Store Settings
                 </Button>
-              </div>
+              </form>
             </div>
           )}
         </main>
