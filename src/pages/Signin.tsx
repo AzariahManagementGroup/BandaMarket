@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logo from "@/assets/camemark-logo.png";
 
+import { getApiUrl } from "@/config";
+
 const Signin = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -28,7 +30,7 @@ const Signin = () => {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/signin", {
+      const res = await fetch(getApiUrl("/api/auth/signin"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

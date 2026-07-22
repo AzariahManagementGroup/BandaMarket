@@ -18,6 +18,8 @@ import {
 import logo from "@/assets/camemark-logo.png";
 import map from "@/assets/cameroon-map.png";
 
+import { getApiUrl } from "@/config";
+
 const COUNTRY_REGIONS: Record<string, string[]> = {
   "Cameroon": ["Adamawa","Centre","East","Far North","Littoral","North","Northwest","South","Southwest","West"],
   "Nigeria": ["Lagos","Abuja","Kano","Rivers","Oyo","Other"],
@@ -118,7 +120,7 @@ const Signup = () => {
     }
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/signup", {
+      const res = await fetch(getApiUrl("/api/auth/signup"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
