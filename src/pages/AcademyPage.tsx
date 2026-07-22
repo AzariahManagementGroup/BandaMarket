@@ -25,6 +25,14 @@ const AcademyPage = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("momo");
   const [enrollForm, setEnrollForm] = useState({ name: "", email: "", phone: "" });
 
+  const categories = [
+    { id: "all", label: "All Categories" },
+    { id: "it", label: "IT & Software" },
+    { id: "business", label: "Business & Entrepreneurship" },
+    { id: "agric", label: "Agriculture & E-Commerce" },
+    { id: "economy", label: "Digital Economy & Fintech" },
+  ];
+
   useEffect(() => {
     // Check logged in user session
     const userStr = localStorage.getItem("camemark_user");
