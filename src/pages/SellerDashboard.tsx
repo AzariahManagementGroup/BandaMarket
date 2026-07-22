@@ -908,6 +908,7 @@ const SellerDashboard = () => {
             </Button>
           </DialogFooter>
         </DialogContent>
+      </Dialog>
       {/* Edit Listing Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="sm:max-w-lg bg-white rounded-3xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
