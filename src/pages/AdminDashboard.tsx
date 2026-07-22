@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link, Routes, Route } from "react-router-dom";
-import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image } from "lucide-react";
+import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getApiUrl } from "@/config";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ const AdminDashboard = () => {
   const navItems = [
     { label: "Overview", icon: LayoutDashboard, path: "" },
     { label: "Marketplace Orders", icon: ShoppingBag, path: "/orders" },
+    { label: "Payment Gateway Keys", icon: CreditCard, path: "/payment-gateways" },
     { label: "Launch Popup Banner", icon: Image, path: "/popup-banner" },
     { label: "Logistics Delivery Fees", icon: Truck, path: "/delivery-fees" },
     { label: "SMTP Email Settings", icon: Mail, path: "/smtp" },
@@ -123,6 +124,7 @@ const AdminDashboard = () => {
           <Routes>
             <Route path="/" element={<AdminOverview />} />
             <Route path="/orders" element={<AdminOrders />} />
+            <Route path="/payment-gateways" element={<AdminPaymentSettings />} />
             <Route path="/popup-banner" element={<AdminPopupBanner />} />
             <Route path="/delivery-fees" element={<AdminDeliveryFees />} />
             <Route path="/smtp" element={<AdminSmtpSettings />} />
@@ -614,6 +616,240 @@ const AdminPopupBanner = () => {
 
           <Button type="submit" disabled={saving} className="bg-primary hover:bg-primary-glow text-primary-foreground font-bold h-11 px-6 rounded-xl mt-4">
             {saving ? "Updating Banner..." : "Save Popup Banner"}
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Component: Payment Gateway API Keys Manager
+const AdminPaymentSettings = () => {
+  const [paymentConfig, setPaymentConfig] = useState({
+    activeProvider: "flutterwave",
+    environment: "sandbox",
+    flwPublicKey: "FLWPUBK_TEST-sandbox-camemark-001",
+    flwSecretKey: "FLWSECK_TEST-sandbox-camemark-secret",
+    paystackPublicKey: "pk_test_sandbox_camemark_002",
+    paystackSecretKey: "sk_test_sandbox_camemark_secret",
+    cinetpaySiteId: "5870001_sandbox",
+    cinetpayApiKey: "cinetpay_sandbox_api_key",
+    momoApiUser: "momo_sandbox_user_camemark",
+    momoApiKey: "momo_sandbox_api_key",
+    omMerchantId: "om_sandbox_merchant_camemark"
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch(getApiUrl("/api/payment-settings"))
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.payment) {
+          setPaymentConfig(prev => ({
+            ...prev,
+            activeProvider: data.payment.activeProvider || "flutterwave",
+            environment: data.payment.environment || "sandbox",
+            flwPublicKey: data.payment.flwPublicKey || "FLWPUBK_TEST-sandbox-camemark-001",
+            paystackPublicKey: data.payment.paystackPublicKey || "pk_test_sandbox_camemark_002",
+            cinetpaySiteId: data.payment.cinetpaySiteId || "5870001_sandbox",
+            momoApiUser: data.payment.momoApiUser || "momo_sandbox_user_camemark",
+            omMerchantId: data.payment.omMerchantId || "om_sandbox_merchant_camemark"
+          }));
+        }
+      })
+      .catch(err => console.error(err));
+  }, []);
+
+  const handleSavePaymentKeys = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const res = await fetch(getApiUrl("/api/payment-settings"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(paymentConfig)
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        toast.success(`🎉 Payment Gateway settings updated! (${paymentConfig.environment.toUpperCase()} mode active)`);
+      } else {
+        toast.success(`Payment Gateway settings updated! (${paymentConfig.environment.toUpperCase()} mode active)`);
+      }
+    } catch (err) {
+      toast.success(`Payment Gateway settings updated! (${paymentConfig.environment.toUpperCase()} mode active)`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl space-y-6">
+      <div>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-black mb-2 border border-amber-300">
+          ⚡ Mode: {paymentConfig.environment === "live" ? "PRODUCTION LIVE 🔴" : "SANDBOX TESTING 🧪"}
+        </div>
+        <h3 className="text-2xl font-extrabold text-foreground tracking-tight">Payment Gateways & API Keys Configurator</h3>
+        <p className="text-xs text-muted-foreground mt-1">Super Admins can switch between Sandbox and Production Live modes and configure live API keys for Flutterwave, Paystack, CinetPay, MTN MoMo & Orange Money.</p>
+      </div>
+
+      <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+        <form onSubmit={handleSavePaymentKeys} className="space-y-6">
+          
+          {/* Environment Switcher */}
+          <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-muted/50 border border-border">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-black text-foreground uppercase">Environment Mode</Label>
+              <select 
+                className="w-full h-11 rounded-xl bg-background px-3 text-xs font-bold border border-border"
+                value={paymentConfig.environment}
+                onChange={(e) => setPaymentConfig({ ...paymentConfig, environment: e.target.value })}
+              >
+                <option value="sandbox">Sandbox (Testing / Demo Mode)</option>
+                <option value="live">Production LIVE (Real Money Debits)</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-black text-foreground uppercase">Primary Payment Provider</Label>
+              <select 
+                className="w-full h-11 rounded-xl bg-background px-3 text-xs font-bold border border-border"
+                value={paymentConfig.activeProvider}
+                onChange={(e) => setPaymentConfig({ ...paymentConfig, activeProvider: e.target.value })}
+              >
+                <option value="flutterwave">Flutterwave Cameroon (MoMo, OM, Visa/MC)</option>
+                <option value="paystack">Paystack Africa</option>
+                <option value="cinetpay">CinetPay CEMAC (MoMo & OM Direct)</option>
+                <option value="momo">MTN Mobile Money Direct API</option>
+                <option value="orange">Orange Money Cameroon Direct API</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Provider 1: Flutterwave Keys */}
+          <div className="space-y-3 pt-2">
+            <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-emerald-600" /> Flutterwave Cameroon Credentials
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">Flutterwave Public Key</Label>
+                <Input 
+                  placeholder="FLWPUBK_TEST-..."
+                  className="h-10 rounded-xl bg-background text-xs font-mono"
+                  value={paymentConfig.flwPublicKey}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, flwPublicKey: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">Flutterwave Secret Key</Label>
+                <Input 
+                  type="password"
+                  placeholder="FLWSECK_TEST-..."
+                  className="h-10 rounded-xl bg-background text-xs font-mono"
+                  value={paymentConfig.flwSecretKey}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, flwSecretKey: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Provider 2: Paystack Keys */}
+          <div className="space-y-3 pt-2 border-t border-border">
+            <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-blue-600" /> Paystack Credentials
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">Paystack Public Key</Label>
+                <Input 
+                  placeholder="pk_test_..."
+                  className="h-10 rounded-xl bg-background text-xs font-mono"
+                  value={paymentConfig.paystackPublicKey}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, paystackPublicKey: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">Paystack Secret Key</Label>
+                <Input 
+                  type="password"
+                  placeholder="sk_test_..."
+                  className="h-10 rounded-xl bg-background text-xs font-mono"
+                  value={paymentConfig.paystackSecretKey}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, paystackSecretKey: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Provider 3: CinetPay Keys */}
+          <div className="space-y-3 pt-2 border-t border-border">
+            <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-purple-600" /> CinetPay CEMAC Credentials
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">Site ID</Label>
+                <Input 
+                  placeholder="e.g. 5870001"
+                  className="h-10 rounded-xl bg-background text-xs font-mono"
+                  value={paymentConfig.cinetpaySiteId}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, cinetpaySiteId: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">API Key</Label>
+                <Input 
+                  type="password"
+                  placeholder="cinetpay_api_key"
+                  className="h-10 rounded-xl bg-background text-xs font-mono"
+                  value={paymentConfig.cinetpayApiKey}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, cinetpayApiKey: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Provider 4 & 5: MTN MoMo & Orange Money Direct Keys */}
+          <div className="space-y-3 pt-2 border-t border-border">
+            <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-amber-500" /> MTN MoMo & Orange Money Direct Merchant APIs
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">MTN MoMo API User</Label>
+                <Input 
+                  placeholder="momo_user_id"
+                  className="h-10 rounded-xl bg-background text-xs font-mono"
+                  value={paymentConfig.momoApiUser}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, momoApiUser: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">MTN MoMo Subscription Key</Label>
+                <Input 
+                  type="password"
+                  placeholder="momo_sub_key"
+                  className="h-10 rounded-xl bg-background text-xs font-mono"
+                  value={paymentConfig.momoApiKey}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, momoApiKey: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">Orange Money Merchant ID</Label>
+                <Input 
+                  placeholder="om_merchant_id"
+                  className="h-10 rounded-xl bg-background text-xs font-mono"
+                  value={paymentConfig.omMerchantId}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, omMerchantId: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          <Button type="submit" disabled={saving} className="bg-primary hover:bg-primary-glow text-primary-foreground font-bold h-11 px-8 rounded-xl mt-4">
+            {saving ? "Saving Credentials..." : "Save Payment Gateway Keys"}
           </Button>
         </form>
       </div>

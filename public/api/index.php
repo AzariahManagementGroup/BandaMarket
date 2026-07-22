@@ -888,6 +888,61 @@ if (strpos($uri, 'forum-register') !== false && $request_method === 'POST') {
     exit();
 }
 
+// 11. Payment Gateway Configuration Settings Endpoint (Flutterwave, Paystack, CinetPay, MoMo, Orange Money)
+if (strpos($uri, 'payment-settings') !== false) {
+    if ($request_method === 'POST') {
+        $input = file_get_contents("php://input");
+        $data = json_decode($input, true);
+
+        $activeProvider = isset($data['activeProvider']) ? trim($data['activeProvider']) : 'flutterwave';
+        $environment = isset($data['environment']) ? trim($data['environment']) : 'sandbox';
+        
+        $flwPublicKey = isset($data['flwPublicKey']) ? trim($data['flwPublicKey']) : '';
+        $flwSecretKey = isset($data['flwSecretKey']) ? trim($data['flwSecretKey']) : '';
+        $paystackPublicKey = isset($data['paystackPublicKey']) ? trim($data['paystackPublicKey']) : '';
+        $paystackSecretKey = isset($data['paystackSecretKey']) ? trim($data['paystackSecretKey']) : '';
+        $cinetpaySiteId = isset($data['cinetpaySiteId']) ? trim($data['cinetpaySiteId']) : '';
+        $cinetpayApiKey = isset($data['cinetpayApiKey']) ? trim($data['cinetpayApiKey']) : '';
+        $momoApiUser = isset($data['momoApiUser']) ? trim($data['momoApiUser']) : '';
+        $momoApiKey = isset($data['momoApiKey']) ? trim($data['momoApiKey']) : '';
+        $omMerchantId = isset($data['omMerchantId']) ? trim($data['omMerchantId']) : '';
+        $now = date('Y-m-d H:i:s');
+
+        $stmt = $conn->prepare("INSERT INTO payment_settings (activeProvider, environment, flwPublicKey, flwSecretKey, paystackPublicKey, paystackSecretKey, cinetpaySiteId, cinetpayApiKey, momoApiUser, momoApiKey, omMerchantId, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssssssssss", $activeProvider, $environment, $flwPublicKey, $flwSecretKey, $paystackPublicKey, $paystackSecretKey, $cinetpaySiteId, $cinetpayApiKey, $momoApiUser, $momoApiKey, $omMerchantId, $now);
+        
+        if ($stmt->execute()) {
+            http_response_code(200);
+            echo json_encode(["success" => true, "message" => "Payment Gateway API credentials updated successfully!"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to save payment settings."]);
+        }
+        $stmt->close();
+        exit();
+    } else {
+        $result = $conn->query("SELECT activeProvider, environment, flwPublicKey, paystackPublicKey, cinetpaySiteId, momoApiUser, omMerchantId, updatedAt FROM payment_settings ORDER BY id DESC LIMIT 1");
+        $settings = null;
+        if ($result && $row = $result->fetch_assoc()) {
+            $settings = $row;
+        }
+        http_response_code(200);
+        echo json_encode([
+            "payment" => $settings || [
+                "activeProvider" => "flutterwave",
+                "environment" => "sandbox",
+                "flwPublicKey" => "FLWPUBK_TEST-sandbox-camemark-001",
+                "paystackPublicKey" => "pk_test_sandbox_camemark_002",
+                "cinetpaySiteId" => "5870001_sandbox",
+                "momoApiUser" => "momo_sandbox_user_camemark",
+                "omMerchantId" => "om_sandbox_merchant_camemark",
+                "updatedAt" => date('Y-m-d H:i:s')
+            ]
+        ]);
+        exit();
+    }
+}
+
 http_response_code(404);
 echo json_encode(["error" => "Endpoint not found."]);
 ?>
