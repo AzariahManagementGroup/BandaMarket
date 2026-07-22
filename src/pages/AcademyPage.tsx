@@ -133,6 +133,12 @@ const AcademyPage = () => {
       .catch(err => console.error("Error fetching courses:", err));
   }, []);
 
+  const filteredCourses = courses.filter(c => {
+    const matchesCat = activeCategory === "all" || c.category === activeCategory;
+    const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) || (c.instructor && c.instructor.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesCat && matchesSearch;
+  });
+
   const handleEnrollClick = (course: any) => {
     // 1. Mandatory Sign In / Sign Up Check
     if (!userSession) {
