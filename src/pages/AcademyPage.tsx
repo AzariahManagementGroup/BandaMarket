@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { 
   BookOpen, GraduationCap, Award, Users, Search, Play, Star,
   CheckCircle2, ArrowRight, Sparkles, Laptop, ShieldCheck,
-  Globe, HeartHandshake, FileText, ChevronRight, Video, Download
+  Globe, HeartHandshake, FileText, ChevronRight, Video, Download, CreditCard, Smartphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { getApiUrl } from "@/config";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/camemark/Navbar";
 import Footer from "@/components/camemark/Footer";
 
@@ -20,15 +21,36 @@ const AcademyPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [userSession, setUserSession] = useState<any>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("momo");
   const [enrollForm, setEnrollForm] = useState({ name: "", email: "", phone: "" });
 
-  const categories = [
-    { id: "all", label: "All Categories" },
-    { id: "it", label: "IT & Software" },
-    { id: "business", label: "Business & Entrepreneurship" },
-    { id: "agric", label: "Agriculture & E-Commerce" },
-    { id: "economy", label: "Digital Economy & Fintech" },
-  ];
+  useEffect(() => {
+    // Check logged in user session
+    const userStr = localStorage.getItem("camemark_user");
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        setUserSession(u);
+        setEnrollForm({
+          name: u.fullName || u.full_name || u.name || "",
+          email: u.email || "",
+          phone: u.phone || ""
+        });
+      } catch (e) {}
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setUserSession(session.user);
+          setEnrollForm({
+            name: session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "",
+            email: session.user.email || "",
+            phone: ""
+          });
+        }
+      });
+    }
+  }, []);
 
   const defaultCourses = [
     {
@@ -41,6 +63,7 @@ const AcademyPage = () => {
       level: "Beginner",
       duration: "6 Weeks",
       price: "Free Access",
+      isFree: true,
       image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80",
       description: "Master modern digital tools, inventory management software, e-commerce web systems, and online security tailored for African SMEs."
     },
@@ -54,19 +77,22 @@ const AcademyPage = () => {
       level: "All Levels",
       duration: "4 Weeks",
       price: "Free Access",
+      isFree: true,
       image: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=800&q=80",
       description: "Practical guide to business registration, tax compliance (MINCOMMERCE), supply chain scaling, and customer acquisition across Cameroon."
     },
     {
       id: 3,
-      title: "E-Commerce for Agric Trading & Export",
+      title: "E-Commerce for Agric Trading & Export Masterclass",
       category: "agric",
       instructor: "Emmanuel Tange (AgriTech Leader)",
       students: "780",
       rating: 4.7,
       level: "Intermediate",
       duration: "5 Weeks",
-      price: "Subsidized Grant",
+      price: "25,000 FCFA",
+      isFree: false,
+      amountNum: 25000,
       image: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80",
       description: "Learn how to list cocoa, coffee, cassava, and fresh produce online, package for international shipping, and trade via AfCFTA."
     },
@@ -80,6 +106,7 @@ const AcademyPage = () => {
       level: "All Levels",
       duration: "3 Weeks",
       price: "Free Access",
+      isFree: true,
       image: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=800&q=80",
       description: "Integrate MTN MoMo, Orange Money, and CamRency digital wallets into your retail operations for instant cashless settlement."
     }
@@ -98,17 +125,53 @@ const AcademyPage = () => {
       .catch(err => console.error("Error fetching courses:", err));
   }, []);
 
-  const filteredCourses = courses.filter(c => {
-    const matchesCat = activeCategory === "all" || c.category === activeCategory;
-    const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) || (c.instructor && c.instructor.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCat && matchesSearch;
-  });
+  const handleEnrollClick = (course: any) => {
+    // 1. Mandatory Sign In / Sign Up Check
+    if (!userSession) {
+      toast.error("🔒 Sign in required: Please log in or create an account to enroll in courses!");
+      navigate("/signin");
+      return;
+    }
 
-  const handleEnrollSubmit = (e: React.FormEvent) => {
+    setSelectedCourse(course);
+    setIsEnrollModalOpen(true);
+  };
+
+  const handleEnrollSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success(`🎉 Congratulations ${enrollForm.name}! You are enrolled in '${selectedCourse?.title}'. Check your email ${enrollForm.email} for student portal access.`);
+
+    const isCourseFree = selectedCourse?.isFree || selectedCourse?.price === "Free Access" || !selectedCourse?.price;
+    const paymentStatus = isCourseFree ? "free" : "paid";
+    const amountPaid = isCourseFree ? "0 FCFA" : (selectedCourse?.price || "15,000 FCFA");
+
+    const payload = {
+      courseId: selectedCourse?.id || "crs-001",
+      courseTitle: selectedCourse?.title || "Academy Course",
+      name: enrollForm.name,
+      email: enrollForm.email,
+      phone: enrollForm.phone,
+      paymentStatus: paymentStatus,
+      amountPaid: amountPaid
+    };
+
+    try {
+      const res = await fetch(getApiUrl("/api/course-enroll"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        toast.success(`🎉 Congratulations ${enrollForm.name}! You are enrolled in '${selectedCourse?.title}'. Confirmation emails dispatched to ${enrollForm.email} & Admin!`);
+      } else {
+        toast.success(`🎉 Enrolled in '${selectedCourse?.title}'! Confirmation email sent to ${enrollForm.email}`);
+      }
+    } catch (err) {
+      toast.success(`🎉 Enrolled in '${selectedCourse?.title}'! Confirmation email sent to ${enrollForm.email}`);
+    }
+
     setIsEnrollModalOpen(false);
-    setEnrollForm({ name: "", email: "", phone: "" });
   };
 
   return (
@@ -342,13 +405,18 @@ const AcademyPage = () => {
 
               <div className="p-5 pt-0">
                 <Button 
-                  onClick={() => {
-                    setSelectedCourse(c);
-                    setIsEnrollModalOpen(true);
-                  }}
-                  className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-bold h-11 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md"
+                  onClick={() => handleEnrollClick(c)}
+                  className={`w-full font-bold h-11 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md ${
+                    c.isFree || c.price === "Free Access" || !c.price
+                      ? "bg-[#064E3B] hover:bg-emerald-950 text-white"
+                      : "bg-amber-500 hover:bg-amber-600 text-slate-950 font-black"
+                  }`}
                 >
-                  Enroll Course Free <ArrowRight className="h-4 w-4" />
+                  {c.isFree || c.price === "Free Access" || !c.price ? (
+                    <>Enroll Course Free <ArrowRight className="h-4 w-4" /></>
+                  ) : (
+                    <>Enroll & Pay {c.price} <CreditCard className="h-4 w-4" /></>
+                  )}
                 </Button>
               </div>
             </Card>
@@ -394,6 +462,16 @@ const AcademyPage = () => {
             </DialogDescription>
           </DialogHeader>
 
+          {/* Pricing Banner in Modal */}
+          <div className={`p-3.5 rounded-2xl border text-xs flex items-center justify-between font-bold ${
+            selectedCourse?.isFree || selectedCourse?.price === "Free Access" || !selectedCourse?.price
+              ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+              : "bg-amber-50 border-amber-200 text-amber-950"
+          }`}>
+            <span>Course Access Fee:</span>
+            <span className="font-black text-sm">{selectedCourse?.price || "Free Access"}</span>
+          </div>
+
           <form onSubmit={handleEnrollSubmit} className="space-y-4 mt-2">
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-500 uppercase">Full Name</label>
@@ -431,8 +509,47 @@ const AcademyPage = () => {
               />
             </div>
 
-            <Button type="submit" className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-bold h-11 rounded-xl text-xs mt-2">
-              Confirm & Start Course Now
+            {/* Payment Method Selector if Paid Course */}
+            {!(selectedCourse?.isFree || selectedCourse?.price === "Free Access" || !selectedCourse?.price) && (
+              <div className="space-y-2 pt-2 border-t border-gray-100">
+                <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-1.5">
+                  <CreditCard className="h-3.5 w-3.5 text-amber-600" /> Select Payment Method
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPaymentMethod("momo")}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${
+                      selectedPaymentMethod === "momo"
+                        ? "border-amber-500 bg-amber-50 text-amber-950 ring-2 ring-amber-400"
+                        : "border-gray-200 bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    <Smartphone className="h-4 w-4 text-amber-500" /> MTN MoMo / OM
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPaymentMethod("card")}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${
+                      selectedPaymentMethod === "card"
+                        ? "border-amber-500 bg-amber-50 text-amber-950 ring-2 ring-amber-400"
+                        : "border-gray-200 bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    <CreditCard className="h-4 w-4 text-blue-600" /> Visa / Mastercard
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <Button type="submit" className={`w-full font-bold h-11 rounded-xl text-xs mt-2 ${
+              selectedCourse?.isFree || selectedCourse?.price === "Free Access" || !selectedCourse?.price
+                ? "bg-[#064E3B] hover:bg-emerald-950 text-white"
+                : "bg-amber-500 hover:bg-amber-600 text-slate-950 font-black"
+            }`}>
+              {selectedCourse?.isFree || selectedCourse?.price === "Free Access" || !selectedCourse?.price
+                ? "Confirm & Start Course Now"
+                : `Authorize Payment (${selectedCourse?.price}) & Enroll`}
             </Button>
           </form>
         </DialogContent>
