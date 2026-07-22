@@ -321,6 +321,99 @@ if (strpos($uri, 'signin') !== false || (strpos($uri, 'api') !== false && $reque
     exit();
 }
 
+// 4. Products API Endpoints
+if (strpos($uri, 'products') !== false) {
+    if ($request_method === 'POST') {
+        $input = file_get_contents("php://input");
+        $data = json_decode($input, true);
+
+        $id = "lst-" . round(microtime(true) * 1000);
+        $sellerId = isset($data['sellerId']) ? $data['sellerId'] : '';
+        $sellerName = isset($data['sellerName']) ? $data['sellerName'] : 'Merchant';
+        $sellerEmail = isset($data['sellerEmail']) ? $data['sellerEmail'] : '';
+        $title = isset($data['title']) ? trim($data['title']) : '';
+        $description = isset($data['description']) ? trim($data['description']) : '';
+        $price = isset($data['price']) ? floatval($data['price']) : 0;
+        $currency = isset($data['currency']) ? $data['currency'] : 'XAF';
+        $quantity = isset($data['quantity']) ? intval($data['quantity']) : 1;
+        $unit = isset($data['unit']) ? $data['unit'] : 'pcs';
+        $category = isset($data['category']) ? $data['category'] : 'Agriculture & Produce';
+        $region = isset($data['region']) ? $data['region'] : 'Littoral';
+        $city = isset($data['city']) ? $data['city'] : 'Douala';
+        $imageUrl = isset($data['imageUrl']) ? $data['imageUrl'] : '';
+        $now = date('Y-m-d H:i:s');
+
+        if (empty($title) || $price <= 0) {
+            http_response_code(400);
+            echo json_encode(["error" => "Title and a valid price are required."]);
+            exit();
+        }
+
+        $stmt = $conn->prepare("INSERT INTO products (id, sellerId, title, description, price, currency, quantity, unit, category, region, city, imageUrl, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)");
+        $stmt->bind_param("ssssdsissssss", $id, $sellerId, $title, $description, $price, $currency, $quantity, $unit, $category, $region, $city, $imageUrl, $now);
+        
+        if ($stmt->execute()) {
+            // 1. Send Product Published Confirmation Email
+            if (!empty($sellerEmail)) {
+                $emailContent = "
+                <p>Hello <strong>" . htmlspecialchars($sellerName) . "</strong>,</p>
+                <p>🎉 Your new product listing <strong>'" . htmlspecialchars($title) . "'</strong> has been published successfully on CameMark!</p>
+                <p><strong>Price:</strong> " . number_format($price) . " " . htmlspecialchars($currency) . "<br>
+                <strong>Region:</strong> " . htmlspecialchars($region) . " (" . htmlspecialchars($city) . ")<br>
+                <strong>Quantity in Stock:</strong> " . $quantity . " " . htmlspecialchars($unit) . "</p>
+                <p>Your item is now live and visible to buyers across all 10 regions of Cameroon on the Market Zone.</p>
+                <a href='https://camemark.com/market-zone' class='btn'>View Market Zone</a>";
+
+                send_html_email($sellerEmail, "Product Published: " . $title, $emailContent);
+            }
+
+            // 2. Create In-App Notification
+            if (!empty($sellerId)) {
+                create_inapp_notification($conn, $sellerId, "Product Listing Live! 📦", "Your product '" . $title . "' is now published live on the Market Zone.");
+            }
+
+            http_response_code(200);
+            echo json_encode([
+                "success" => true,
+                "message" => "Product published successfully!",
+                "product" => [
+                    "id" => $id,
+                    "title" => $title,
+                    "description" => $description,
+                    "price" => $price,
+                    "currency" => $currency,
+                    "quantity" => $quantity,
+                    "unit" => $unit,
+                    "category" => $category,
+                    "region" => $region,
+                    "city" => $city,
+                    "imageUrl" => $imageUrl,
+                    "status" => "active",
+                    "createdAt" => $now
+                ]
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to publish product: " . $stmt->error]);
+        }
+        $stmt->close();
+        exit();
+    } else {
+        // GET Request - Fetch all active products
+        $sql = "SELECT p.*, u.fullName as sellerName, u.email as sellerEmail FROM products p LEFT JOIN users u ON p.sellerId = u.id WHERE p.status = 'active' ORDER BY p.createdAt DESC";
+        $result = $conn->query($sql);
+        $products = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $products[] = $row;
+            }
+        }
+        http_response_code(200);
+        echo json_encode(["products" => $products]);
+        exit();
+    }
+}
+
 http_response_code(404);
 echo json_encode(["error" => "Endpoint not found."]);
 ?>

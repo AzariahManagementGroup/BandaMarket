@@ -4,6 +4,7 @@ import { Store, MapPin, Package, AlertCircle, ShoppingCart, MessageCircle } from
 import Navbar from "@/components/camemark/Navbar";
 import Footer from "@/components/camemark/Footer";
 import { supabase } from "@/integrations/supabase/client";
+import { getApiUrl } from "@/config";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -44,21 +45,20 @@ const MarketZone = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("products")
-          .select(`*, profiles!inner(region, full_name)`)
-          .eq("status", "active");
+        const response = await fetch(getApiUrl("/api/products"));
+        const data = await response.json();
 
-        if (error) throw error;
-        
-        // Filter locally if region isn't "All Regions" for this demo
-        const filtered = region === "All Regions" 
-          ? data 
-          : data.filter((p: any) => p.profiles?.region === region);
-          
-        setProducts(filtered || []);
+        if (response.ok && Array.isArray(data.products)) {
+          const filtered = region === "All Regions" 
+            ? data.products 
+            : data.products.filter((p: any) => p.region === region);
+          setProducts(filtered);
+        } else {
+          setProducts([]);
+        }
       } catch (err) {
-        console.error("Error fetching regional products:", err);
+        console.error("Error fetching products:", err);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -108,13 +108,17 @@ const MarketZone = () => {
             <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products.map((product) => (
                 <div key={product.id} className="group rounded-2xl border border-border bg-card overflow-hidden hover-lift shadow-sm flex flex-col">
-                  <div className="h-40 bg-muted flex items-center justify-center relative overflow-hidden">
-                    <Package className="h-10 w-10 text-muted-foreground/30" />
+                  <div className="h-44 bg-muted flex items-center justify-center relative overflow-hidden">
+                    {product.imageUrl ? (
+                      <img src={product.imageUrl} alt={product.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    ) : (
+                      <Package className="h-10 w-10 text-muted-foreground/30" />
+                    )}
                     <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors" />
                   </div>
                   <div className="p-4 flex-1 flex flex-col">
                     <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-                      <Store className="h-3 w-3" /> {product.profiles?.full_name || "Verified Seller"}
+                      <Store className="h-3 w-3" /> {product.sellerName || product.profiles?.full_name || "Verified Merchant"}
                     </div>
                     <h3 className="font-bold text-foreground text-sm line-clamp-1">{product.title}</h3>
                     <div className="mt-2 flex flex-col">
