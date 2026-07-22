@@ -3,6 +3,11 @@
 require_once __DIR__ . '/config.php';
 
 // Route matching based on request URL
+if (strpos($uri, 'send-email') !== false) {
+    require_once __DIR__ . '/send-email.php';
+    exit();
+}
+
 if (strpos($uri, 'seller-withdraw') !== false) {
     require_once __DIR__ . '/seller-withdraw.php';
     exit();
