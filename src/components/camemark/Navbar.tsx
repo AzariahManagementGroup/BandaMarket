@@ -71,6 +71,7 @@ const Navbar = () => {
   const links = [
     { key: "home", label: t("nav.home"), href: "/" },
     { key: "marketplace", label: t("nav.marketplace"), href: "/market-zone" },
+    { key: "forum", label: "Forum 2026 🇨🇲", href: "/#forum-2026", highlight: true },
     { key: "regions", label: t("nav.regions"), href: "#regions", caret: true },
     { key: "wallet", label: t("nav.wallet"), href: "#wallet" },
     { key: "logistics", label: t("nav.logistics"), href: "#logistics" },
@@ -135,7 +136,11 @@ const Navbar = () => {
               <a
                 key={l.key}
                 href={l.href}
-                className="story-link inline-flex items-center gap-1 text-foreground/85 hover:text-primary transition-smooth"
+                className={`inline-flex items-center gap-1 transition-smooth ${
+                  l.highlight 
+                    ? "bg-amber-400 text-emerald-950 font-black px-3 py-1.5 rounded-full shadow-md hover:bg-amber-300 hover:scale-105" 
+                    : "story-link text-foreground/85 hover:text-primary"
+                }`}
               >
                 {l.label}
               </a>
