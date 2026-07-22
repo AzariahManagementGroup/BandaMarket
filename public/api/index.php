@@ -37,8 +37,52 @@ function generate_uuid() {
     );
 }
 
+// Function to send welcome email on first login
+function send_first_login_welcome_email($toEmail, $fullName) {
+    $subject = "Welcome to CameMark — Your Account is Ready!";
+    
+    $message = "
+    <html>
+    <head>
+      <title>Welcome to CameMark</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; }
+        .card { max-width: 550px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .header { background: #064e3b; padding: 30px; text-align: center; color: #ffffff; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
+        .content { padding: 30px; color: #334155; line-height: 1.6; }
+        .btn { display: inline-block; background: #059669; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; margin-top: 20px; }
+        .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; }
+      </style>
+    </head>
+    <body>
+      <div class='card'>
+        <div class='header'>
+          <h1>Welcome to CameMark! 🇨🇲</h1>
+        </div>
+        <div class='content'>
+          <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
+          <p>Congratulations on logging into your CameMark account for the first time!</p>
+          <p>You now have access to Cameroon's premier digital marketplace. Trade, explore products across all 10 regions, and access your CamRency Wallet securely.</p>
+          <a href='https://camemark.com/dashboard' class='btn'>Go to Dashboard</a>
+        </div>
+        <div class='footer'>
+          &copy; " . date('Y') . " CameMark. All rights reserved.
+        </div>
+      </div>
+    </body>
+    </html>
+    ";
+
+    $headers = "MIME-Version: 1.0" . "\r\n";
+    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+    $headers .= "From: CameMark Support <support@camemark.com>" . "\r\n";
+
+    @mail($toEmail, $subject, $message, $headers);
+}
+
 // 1. Sign Up Endpoint
-if (strpos($uri, 'signup') !== false || strpos($uri, 'api') !== false && $request_method === 'POST') {
+if (strpos($uri, 'signup') !== false || (strpos($uri, 'api') !== false && $request_method === 'POST')) {
     $input = file_get_contents("php://input");
     $data = json_decode($input, true);
     
@@ -116,7 +160,7 @@ if (strpos($uri, 'signup') !== false || strpos($uri, 'api') !== false && $reques
 }
 
 // 2. Sign In Endpoint
-if (strpos($uri, 'signin') !== false || strpos($uri, 'api') !== false && $request_method === 'POST') {
+if (strpos($uri, 'signin') !== false || (strpos($uri, 'api') !== false && $request_method === 'POST')) {
     $input = file_get_contents("php://input");
     $data = json_decode($input, true);
 
@@ -129,16 +173,30 @@ if (strpos($uri, 'signin') !== false || strpos($uri, 'api') !== false && $reques
         exit();
     }
 
-    $stmt = $conn->prepare("SELECT id, email, passwordHash, fullName, phone, country, region, city, role, language, preferredCurrency FROM users WHERE email = ?");
+    $stmt = $conn->prepare("SELECT id, email, passwordHash, fullName, phone, country, region, city, role, language, preferredCurrency, lastLoginAt FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($row = $result->fetch_assoc()) {
         if (password_verify($password, $row['passwordHash'])) {
+            $isFirstLogin = empty($row['lastLoginAt']);
+
+            // Update lastLoginAt timestamp
+            $now = date('Y-m-d H:i:s');
+            $ustmt = $conn->prepare("UPDATE users SET lastLoginAt = ? WHERE id = ?");
+            $ustmt->bind_param("ss", $now, $row['id']);
+            $ustmt->execute();
+            $ustmt->close();
+
+            // Send first login welcome email if applicable
+            if ($isFirstLogin) {
+                send_first_login_welcome_email($row['email'], $row['fullName']);
+            }
+
             unset($row['passwordHash']);
             http_response_code(200);
-            echo json_encode(["user" => $row, "token" => "token-" . $row['id']]);
+            echo json_encode(["user" => $row, "token" => "token-" . $row['id'], "firstLogin" => $isFirstLogin]);
         } else {
             http_response_code(400);
             echo json_encode(["error" => "Invalid email or password."]);

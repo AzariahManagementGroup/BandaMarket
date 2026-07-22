@@ -62,6 +62,7 @@ model User {
   preferredCurrency String        @default("XAF")
   avatarUrl         String?
   kycStatus         KycStatus     @default(not_submitted)
+  lastLoginAt       DateTime?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
