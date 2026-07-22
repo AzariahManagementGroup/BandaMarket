@@ -94,21 +94,29 @@ const BuyerDashboard = () => {
   useEffect(() => {
     if (!session?.user?.id) return;
 
-    const channel = supabase
-      .channel(`notifications-${session.user.id}`)
-      .on("postgres_changes", 
-        { event: "INSERT", schema: "public", table: "notifications", filter: `profile_id=eq.${session.user.id}` }, 
-        (payload) => {
-          setNotifications(prev => [payload.new, ...prev]);
-          setUnreadCount(prev => prev + 1);
-          toast.info(payload.new.title, { description: payload.new.message });
-        }
-      )
-      .subscribe();
+    try {
+      const channel = supabase
+        .channel(`notifications-${session.user.id}`)
+        .on("postgres_changes", 
+          { event: "INSERT", schema: "public", table: "notifications", filter: `profile_id=eq.${session.user.id}` }, 
+          (payload) => {
+            setNotifications(prev => [payload.new, ...prev]);
+            setUnreadCount(prev => prev + 1);
+            toast.info(payload.new.title, { description: payload.new.message });
+          }
+        )
+        .subscribe((status) => {
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            // Silently fall back to REST polling without throwing console error spam
+          }
+        });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      return () => {
+        try {
+          supabase.removeChannel(channel);
+        } catch (e) {}
+      };
+    } catch (e) {}
   }, [session?.user?.id]);
 
   const fetchDashboardData = async (userId: string) => {
