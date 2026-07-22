@@ -18,6 +18,13 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "@/components/ui/dialog";
 import { getApiUrl } from "@/config";
 import { toast } from "sonner";
 import logo from "@/assets/camemark-logo.png";
@@ -32,11 +39,32 @@ const CheckoutPage = () => {
   const [product, setProduct] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
 
-  // Form State
-  const [deliveryAddressType, setDeliveryAddressType] = useState("home");
+  const [deliveryAddressType, setDeliveryAddressType] = useState("custom_0");
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [paymentMethod, setPaymentMethod] = useState("wallet");
   
+  const [userAddresses, setUserAddresses] = useState<any[]>([
+    {
+      id: "custom_0",
+      title: "Home Address",
+      address: "Nkolbisson, Avenue Kennedy, Yaoundé",
+      city: "Yaoundé",
+      region: "Centre",
+      country: "Cameroon",
+      phone: "+237 690 123 456",
+      isDefault: true
+    }
+  ]);
+  const [isAddAddressModalOpen, setIsAddAddressModalOpen] = useState(false);
+  const [newAddressForm, setNewAddressForm] = useState({
+    title: "",
+    address: "",
+    city: "Douala",
+    region: "Littoral",
+    country: "Cameroon",
+    phone: ""
+  });
+
   const [billingDetails, setBillingDetails] = useState({
     fullName: "",
     email: "",
@@ -110,6 +138,50 @@ const CheckoutPage = () => {
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, [productId]);
+
+  const handleAddNewAddress = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAddressForm.address || !newAddressForm.phone) {
+      toast.error("Please enter a valid address and phone number.");
+      return;
+    }
+
+    const newId = "custom_" + Date.now();
+    const created = {
+      id: newId,
+      title: newAddressForm.title || `${newAddressForm.city} Address`,
+      address: newAddressForm.address,
+      city: newAddressForm.city,
+      region: newAddressForm.region,
+      country: newAddressForm.country,
+      phone: newAddressForm.phone,
+      isDefault: false
+    };
+
+    setUserAddresses(prev => [...prev, created]);
+    setDeliveryAddressType(newId);
+    setBillingDetails(prev => ({
+      ...prev,
+      address: newAddressForm.address,
+      city: newAddressForm.city,
+      region: newAddressForm.region,
+      country: newAddressForm.country
+    }));
+    setIsAddAddressModalOpen(false);
+    setNewAddressForm({ title: "", address: "", city: "Douala", region: "Littoral", country: "Cameroon", phone: "" });
+    toast.success("New delivery address added & selected!");
+  };
+
+  // Real-time Stepper Progress Calculation
+  const isAddressFilled = Boolean(deliveryAddressType && (billingDetails.address || userAddresses.length > 0));
+  const isShippingSelected = Boolean(shippingMethod);
+  const isPaymentSelected = Boolean(paymentMethod);
+  const isContactFilled = Boolean(billingDetails.fullName && billingDetails.phone);
+
+  let currentStep = 1; // Step 1: Cart (Done)
+  if (isAddressFilled && isShippingSelected) currentStep = 2; // Step 2: Checkout in progress / address set
+  if (isAddressFilled && isShippingSelected && isPaymentSelected) currentStep = 3; // Step 3: Payment configured
+  if (isAddressFilled && isShippingSelected && isPaymentSelected && isContactFilled) currentStep = 4; // Step 4: Ready for Review & Confirmation
 
   const basePrice = product ? (typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0) : 13200;
   const shippingFee = shippingMethod === "express" 
@@ -280,20 +352,26 @@ const CheckoutPage = () => {
                 <span className="h-6 w-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px]">✓</span>
                 <span>Cart</span>
               </div>
-              <div className="h-0.5 w-6 bg-emerald-500" />
-              <div className="flex items-center gap-1.5 text-emerald-800">
-                <span className="h-6 w-6 rounded-full bg-[#064E3B] text-white flex items-center justify-center text-[11px]">2</span>
-                <span className="font-extrabold text-gray-900">Checkout</span>
+              <div className={`h-0.5 w-6 ${currentStep >= 2 ? "bg-emerald-500" : "bg-gray-200"}`} />
+              <div className={`flex items-center gap-1.5 ${currentStep >= 2 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
+                <span className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] ${currentStep >= 2 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
+                  {currentStep > 2 ? "✓" : "2"}
+                </span>
+                <span className={currentStep >= 2 ? "text-gray-900" : ""}>Checkout</span>
               </div>
-              <div className="h-0.5 w-6 bg-gray-200" />
-              <div className="flex items-center gap-1.5 text-gray-400">
-                <span className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-[11px]">3</span>
-                <span>Payment</span>
+              <div className={`h-0.5 w-6 ${currentStep >= 3 ? "bg-emerald-500" : "bg-gray-200"}`} />
+              <div className={`flex items-center gap-1.5 ${currentStep >= 3 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
+                <span className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] ${currentStep >= 3 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
+                  {currentStep > 3 ? "✓" : "3"}
+                </span>
+                <span className={currentStep >= 3 ? "text-gray-900" : ""}>Payment</span>
               </div>
-              <div className="h-0.5 w-6 bg-gray-200" />
-              <div className="flex items-center gap-1.5 text-gray-400">
-                <span className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-[11px]">4</span>
-                <span>Review</span>
+              <div className={`h-0.5 w-6 ${currentStep >= 4 ? "bg-emerald-500" : "bg-gray-200"}`} />
+              <div className={`flex items-center gap-1.5 ${currentStep >= 4 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
+                <span className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] ${currentStep >= 4 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
+                  4
+                </span>
+                <span className={currentStep >= 4 ? "text-gray-900" : ""}>Review</span>
               </div>
             </div>
           </div>
@@ -309,41 +387,42 @@ const CheckoutPage = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div 
-                    onClick={() => setDeliveryAddressType("home")}
-                    className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
-                      deliveryAddressType === "home" ? "border-emerald-600 bg-emerald-50/40 ring-2 ring-emerald-500/20" : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <input type="radio" checked={deliveryAddressType === "home"} onChange={() => {}} className="accent-emerald-600" />
-                        <span className="font-extrabold text-xs text-gray-900">Home - Yaoundé</span>
+                  {userAddresses.map((addr) => (
+                    <div 
+                      key={addr.id}
+                      onClick={() => {
+                        setDeliveryAddressType(addr.id);
+                        setBillingDetails(prev => ({
+                          ...prev,
+                          address: addr.address,
+                          city: addr.city,
+                          region: addr.region,
+                          country: addr.country
+                        }));
+                      }}
+                      className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                        deliveryAddressType === addr.id ? "border-emerald-600 bg-emerald-50/40 ring-2 ring-emerald-500/20" : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <input type="radio" checked={deliveryAddressType === addr.id} onChange={() => {}} className="accent-emerald-600" />
+                          <span className="font-extrabold text-xs text-gray-900">{addr.title}</span>
+                        </div>
+                        {addr.isDefault && <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">Default</span>}
                       </div>
-                      <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">Default</span>
+                      <p className="text-[11px] text-gray-500 pl-5 leading-tight">{addr.address}, {addr.city}, {addr.region}</p>
+                      <p className="text-[10px] text-gray-400 pl-5 mt-1 font-mono">{addr.phone}</p>
                     </div>
-                    <p className="text-[11px] text-gray-500 pl-5 leading-tight">Nkolbisson, Avenue Kennedy, Yaoundé, Centre Region</p>
-                    <p className="text-[10px] text-gray-400 pl-5 mt-1 font-mono">+237 690 123 456</p>
-                  </div>
-
-                  <div 
-                    onClick={() => setDeliveryAddressType("office")}
-                    className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
-                      deliveryAddressType === "office" ? "border-emerald-600 bg-emerald-50/40 ring-2 ring-emerald-500/20" : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <input type="radio" checked={deliveryAddressType === "office"} onChange={() => {}} className="accent-emerald-600" />
-                        <span className="font-extrabold text-xs text-gray-900">Office - Douala</span>
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-gray-500 pl-5 leading-tight">Bonanjo, Boulevard de la Liberté, Douala, Littoral Region</p>
-                    <p className="text-[10px] text-gray-400 pl-5 mt-1 font-mono">+237 677 654 321</p>
-                  </div>
+                  ))}
                 </div>
 
-                <Button type="button" variant="outline" className="w-full border-dashed border-gray-300 text-xs font-bold text-gray-600 h-10 rounded-xl">
+                <Button 
+                  type="button" 
+                  onClick={() => setIsAddAddressModalOpen(true)} 
+                  variant="outline" 
+                  className="w-full border-dashed border-gray-300 text-xs font-bold text-emerald-800 hover:bg-emerald-50 h-10 rounded-xl"
+                >
                   + Add New Address
                 </Button>
               </div>
@@ -644,6 +723,82 @@ const CheckoutPage = () => {
           </div>
         </aside>
       </div>
+
+      {/* Add New Custom Address Modal */}
+      <Dialog open={isAddAddressModalOpen} onOpenChange={setIsAddAddressModalOpen}>
+        <DialogContent className="max-w-md bg-white rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-extrabold text-gray-900 flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-emerald-600" /> Add Custom Delivery Address
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-500">
+              Enter your exact home, office, or local address in Cameroon for shipping.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleAddNewAddress} className="space-y-4 mt-2">
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-gray-500 uppercase">Address Label / Title</Label>
+              <Input 
+                placeholder="e.g. Home - Yaoundé, Shop - Douala"
+                required
+                className="h-10 rounded-xl bg-gray-50 text-xs"
+                value={newAddressForm.title}
+                onChange={(e) => setNewAddressForm({ ...newAddressForm, title: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-gray-500 uppercase">City / Town</Label>
+                <Input 
+                  placeholder="e.g. Yaoundé, Douala, Bamenda"
+                  required
+                  className="h-10 rounded-xl bg-gray-50 text-xs"
+                  value={newAddressForm.city}
+                  onChange={(e) => setNewAddressForm({ ...newAddressForm, city: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-gray-500 uppercase">Region / State</Label>
+                <Input 
+                  placeholder="e.g. Centre, Littoral, West"
+                  required
+                  className="h-10 rounded-xl bg-gray-50 text-xs"
+                  value={newAddressForm.region}
+                  onChange={(e) => setNewAddressForm({ ...newAddressForm, region: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-gray-500 uppercase">Street Address / Landmark</Label>
+              <Textarea 
+                placeholder="e.g. Nkolbisson, Avenue Kennedy, opposite First Trust Bank"
+                required
+                className="rounded-xl bg-gray-50 text-xs min-h-[70px]"
+                value={newAddressForm.address}
+                onChange={(e) => setNewAddressForm({ ...newAddressForm, address: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-gray-500 uppercase">Contact Phone / WhatsApp</Label>
+              <Input 
+                placeholder="+237 6xx xxx xxx"
+                required
+                className="h-10 rounded-xl bg-gray-50 text-xs font-mono"
+                value={newAddressForm.phone}
+                onChange={(e) => setNewAddressForm({ ...newAddressForm, phone: e.target.value })}
+              />
+            </div>
+
+            <Button type="submit" className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-bold h-11 rounded-xl text-xs mt-2">
+              Save & Use Address
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
