@@ -72,7 +72,7 @@ const AcademyPage = () => {
       duration: "6 Weeks",
       price: "Free Access",
       isFree: true,
-      image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80",
+      image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80",
       description: "Master modern digital tools, inventory management software, e-commerce web systems, and online security tailored for African SMEs."
     },
     {
@@ -86,7 +86,7 @@ const AcademyPage = () => {
       duration: "4 Weeks",
       price: "Free Access",
       isFree: true,
-      image: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=800&q=80",
+      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80",
       description: "Practical guide to business registration, tax compliance (MINCOMMERCE), supply chain scaling, and customer acquisition across Cameroon."
     },
     {
@@ -101,7 +101,7 @@ const AcademyPage = () => {
       price: "25,000 FCFA",
       isFree: false,
       amountNum: 25000,
-      image: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80",
+      image: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80",
       description: "Learn how to list cocoa, coffee, cassava, and fresh produce online, package for international shipping, and trade via AfCFTA."
     },
     {
@@ -115,7 +115,7 @@ const AcademyPage = () => {
       duration: "3 Weeks",
       price: "Free Access",
       isFree: true,
-      image: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=800&q=80",
+      image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80",
       description: "Integrate MTN MoMo, Orange Money, and CamRency digital wallets into your retail operations for instant cashless settlement."
     }
   ];

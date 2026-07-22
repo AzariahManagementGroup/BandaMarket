@@ -26,6 +26,33 @@ if ($conn->connect_error) {
     }
 }
 
+// Automatic Schema Initialization for Academy Tables
+$conn->query("CREATE TABLE IF NOT EXISTS courses (
+    id VARCHAR(100) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    category VARCHAR(100) DEFAULT 'business',
+    instructor VARCHAR(255) DEFAULT 'Camer Market Academy Instructor',
+    level VARCHAR(50) DEFAULT 'All Levels',
+    duration VARCHAR(50) DEFAULT '4 Weeks',
+    price VARCHAR(100) DEFAULT 'Free Access',
+    image TEXT NOT NULL,
+    description TEXT,
+    videoUrl TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+$conn->query("CREATE TABLE IF NOT EXISTS course_enrollments (
+    id VARCHAR(100) PRIMARY KEY,
+    courseId VARCHAR(100) NOT NULL,
+    courseTitle VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(100),
+    paymentStatus VARCHAR(50) DEFAULT 'free',
+    amountPaid VARCHAR(100) DEFAULT '0 FCFA',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $request_method = $_SERVER['REQUEST_METHOD'];
 
