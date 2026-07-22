@@ -97,23 +97,23 @@ const Navbar = () => {
   return (
     <header
       className={`sticky top-0 z-50 w-full transition-smooth ${scrolled
-          ? "bg-background/90 backdrop-blur-xl border-b border-border shadow-card"
-          : "bg-background/70 backdrop-blur-md border-b border-transparent"
+          ? "bg-background/95 backdrop-blur-xl border-b border-border shadow-card"
+          : "bg-background/80 backdrop-blur-md border-b border-transparent"
         }`}
     >
-      <div className="container flex h-24 md:h-28 items-center justify-between gap-4">
+      <div className="container flex h-16 md:h-18 items-center justify-between gap-3 px-4">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2 group shrink-0 relative">
-          <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full group-hover:bg-primary/40 transition-colors animate-pulse" />
+          <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full group-hover:bg-primary/30 transition-colors" />
           <img
             src={logo}
             alt="CameMark Logo — Cameroon's Premier Digital Marketplace and Regional Trading Hub"
-            className="h-24 md:h-32 w-auto animate-float drop-shadow-xl group-hover:scale-110 transition-all duration-500 relative z-10"
+            className="h-10 md:h-12 w-auto drop-shadow-md group-hover:scale-105 transition-all duration-300 relative z-10"
           />
         </a>
 
         {/* Desktop full menu */}
-        <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold">
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-xs xl:text-sm font-semibold">
           {links.map((l) => {
             if (l.key === "regions") {
               return (
