@@ -60,18 +60,15 @@ const SellerDashboard = () => {
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
   // Earnings & Payout State
-  const [availableBalance, setAvailableBalance] = useState<number>(485000);
-  const [pendingClearance, setPendingClearance] = useState<number>(125000);
-  const [totalWithdrawn, setTotalWithdrawn] = useState<number>(350000);
+  const [availableBalance, setAvailableBalance] = useState<number>(0);
+  const [pendingClearance, setPendingClearance] = useState<number>(0);
+  const [totalWithdrawn, setTotalWithdrawn] = useState<number>(0);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [payoutMethod, setPayoutMethod] = useState<string>("momo");
-  const [withdrawAmount, setWithdrawAmount] = useState<number>(50000);
-  const [accountNumber, setAccountNumber] = useState<string>("+237 690 123 456");
-  const [accountHolder, setAccountHolder] = useState<string>("Taiwo Merchant Account");
-  const [payoutHistory, setPayoutHistory] = useState<any[]>([
-    { id: "PO-8812", amount: 150000, method: "MTN Mobile Money", account: "+237 690 123 456", status: "Completed", date: "Today, 14:30" },
-    { id: "PO-7701", amount: 200000, method: "Orange Money", account: "+237 670 987 654", status: "Completed", date: "Yesterday, 09:15" }
-  ]);
+  const [withdrawAmount, setWithdrawAmount] = useState<number>(5000);
+  const [accountNumber, setAccountNumber] = useState<string>("");
+  const [accountHolder, setAccountHolder] = useState<string>("");
+  const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
 
   const handleEditClick = (product: any) => {
     setEditingProduct(product);
@@ -888,11 +885,8 @@ const SellerDashboard = () => {
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-8 animate-fade-in">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-100 pb-6">
                 <div>
-                  <h3 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-                    <span>Earnings & Wallet Payouts</span>
-                    <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full animate-bounce">
-                      ⚡ Live DB Connection
-                    </span>
+                  <h3 className="text-2xl font-black text-gray-900">
+                    Earnings & Wallet Payouts
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">Withdraw revenue directly to Mobile Money (MTN / Orange) or Bank Account.</p>
                 </div>

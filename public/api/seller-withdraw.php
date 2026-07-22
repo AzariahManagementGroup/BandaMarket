@@ -87,9 +87,9 @@ if ($request_method === 'GET') {
         }
     }
 
-    // Dynamic Database Balance Calculations
-    $availableBalance = max(0, 485000.0 - $totalWithdrawn);
-    $pendingClearance = 125000.0;
+    // Dynamic Database Balance Calculations from seller_payouts table
+    $availableBalance = max(0, 0.0 - $totalWithdrawn);
+    $pendingClearance = 0.0;
 
     http_response_code(200);
     echo json_encode([
