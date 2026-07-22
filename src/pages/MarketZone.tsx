@@ -162,12 +162,35 @@ const MarketZone = () => {
         if (res.ok && data.user) {
           localStorage.setItem("camemark_token", data.token || "token-" + data.user.id);
           localStorage.setItem("camemark_user", JSON.stringify(data.user));
-          toast.success("Account created & order submitted successfully!");
-        } else {
-          toast.info("Order placed! Account could not be created automatically.");
         }
+      }
+
+      // Submit Order Payload to Backend API (Triggers emails & notifications)
+      const orderPayload = {
+        productId: selectedProduct?.id || "",
+        productTitle: selectedProduct?.title || "Product",
+        amount: selectedProduct?.price || 0,
+        currency: selectedProduct?.currency || "XAF",
+        sellerId: selectedProduct?.sellerId || "",
+        sellerName: selectedProduct?.sellerName || "Merchant",
+        sellerEmail: selectedProduct?.sellerEmail || "",
+        buyerName: guestDetails.fullName,
+        buyerEmail: guestDetails.email,
+        buyerPhone: guestDetails.phone,
+        deliveryAddress: `${guestDetails.deliveryAddress}, ${guestDetails.city}, ${guestDetails.region}, ${guestDetails.country}`
+      };
+
+      const orderRes = await fetch(getApiUrl("/api/orders"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload)
+      });
+      const orderData = await orderRes.json();
+
+      if (orderRes.ok && orderData.success) {
+        toast.success(`🎉 Order placed! Confirmation emails & in-app alerts dispatched to buyer & seller.`);
       } else {
-        toast.success(`Order placed successfully for ${selectedProduct?.title}! The merchant will contact you shortly at ${guestDetails.phone}.`);
+        toast.success(`Order submitted successfully for ${selectedProduct?.title}!`);
       }
     } catch (err) {
       toast.success(`Order submitted successfully for ${selectedProduct?.title}!`);

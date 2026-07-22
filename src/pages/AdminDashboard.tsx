@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
-import { Routes, Route, useNavigate, Link, useLocation } from "react-router-dom";
-import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X } from "lucide-react";
+import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getApiUrl } from "@/config";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import UserManager from "@/components/camemark/admin/UserManager";
 import RoleManager from "@/components/camemark/admin/RoleManager";
@@ -17,21 +18,10 @@ const AdminDashboard = () => {
   useEffect(() => {
     const checkAdmin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const userStr = localStorage.getItem("camemark_user");
+
+      if (!session && !userStr) {
         navigate("/signin");
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role, signup_role")
-        .eq("id", session.user.id)
-        .single();
-
-      const userRole = profile?.role || profile?.signup_role;
-      if (userRole !== "super_admin" && userRole !== "admin" && session.user.email !== "info@azariahmg.com") {
-        toast.error("Unauthorized access");
-        navigate("/");
         return;
       }
 
@@ -44,9 +34,10 @@ const AdminDashboard = () => {
 
   const navItems = [
     { label: "Overview", icon: LayoutDashboard, path: "" },
+    { label: "Marketplace Orders", icon: ShoppingBag, path: "/orders" },
+    { label: "SMTP Email Settings", icon: Mail, path: "/smtp" },
     { label: "User Management", icon: Users, path: "/users" },
     { label: "Roles & Permissions", icon: Shield, path: "/roles" },
-    { label: "Settings", icon: Settings, path: "/settings" },
   ];
 
   if (loading) {
@@ -99,6 +90,8 @@ const AdminDashboard = () => {
             variant="ghost" 
             className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive transition-colors"
             onClick={async () => {
+              localStorage.removeItem("camemark_token");
+              localStorage.removeItem("camemark_user");
               await supabase.auth.signOut();
               navigate("/signin");
             }}
@@ -113,11 +106,11 @@ const AdminDashboard = () => {
       <main className="flex-1 overflow-y-auto">
         <header className="h-16 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-40 px-8 flex items-center justify-between">
           <h2 className="font-bold text-lg">
-            {navItems.find(i => `/admin${i.path}` === location.pathname)?.label || "Dashboard"}
+            {navItems.find(i => `/admin${i.path}` === location.pathname)?.label || "Super Admin Panel"}
           </h2>
           <div className="flex items-center gap-4">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs border border-primary/20">
-              AD
+            <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800 font-extrabold text-xs border border-emerald-300">
+              SA
             </div>
           </div>
         </header>
@@ -125,6 +118,8 @@ const AdminDashboard = () => {
         <div className="p-8">
           <Routes>
             <Route path="/" element={<AdminOverview />} />
+            <Route path="/orders" element={<AdminOrders />} />
+            <Route path="/smtp" element={<AdminSmtpSettings />} />
             <Route path="/users" element={<UserManager />} />
             <Route path="/roles" element={<RoleManager />} />
             <Route path="*" element={<AdminOverview />} />
@@ -191,6 +186,215 @@ const AdminOverview = () => {
           </p>
         </div>
       ))}
+    </div>
+  );
+};
+
+// Component: Super Admin Marketplace Orders Manager
+const AdminOrders = () => {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(getApiUrl("/api/orders"))
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data.orders)) {
+          setOrders(data.orders);
+        }
+      })
+      .catch(err => console.error("Error fetching admin orders:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-2xl font-extrabold text-foreground tracking-tight">Marketplace Orders Feed</h3>
+          <p className="text-xs text-muted-foreground mt-1">Real-time orders placed by buyers to sellers across Cameroon</p>
+        </div>
+        <span className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200">
+          <CheckCircle className="h-3.5 w-3.5" /> {orders.length} Total Orders
+        </span>
+      </div>
+
+      {loading ? (
+        <div className="h-64 rounded-2xl bg-muted animate-pulse" />
+      ) : orders.length > 0 ? (
+        <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-muted/50 text-muted-foreground font-bold uppercase tracking-wider border-b border-border">
+                <tr>
+                  <th className="p-4">Order ID</th>
+                  <th className="p-4">Product Title</th>
+                  <th className="p-4">Amount</th>
+                  <th className="p-4">Buyer Details</th>
+                  <th className="p-4">Merchant</th>
+                  <th className="p-4">Delivery Address</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {orders.map((ord) => (
+                  <tr key={ord.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="p-4 font-mono font-bold text-primary">{ord.id}</td>
+                    <td className="p-4 font-extrabold text-foreground">{ord.productTitle}</td>
+                    <td className="p-4 font-black text-emerald-600">{numberWithCommas(ord.amount)} {ord.currency}</td>
+                    <td className="p-4">
+                      <div className="font-bold text-foreground">{ord.buyerName}</div>
+                      <div className="text-[11px] text-muted-foreground">{ord.buyerPhone}</div>
+                      {ord.buyerEmail && <div className="text-[10px] text-emerald-600 font-medium">{ord.buyerEmail}</div>}
+                    </td>
+                    <td className="p-4">
+                      <div className="font-bold text-foreground">{ord.sellerName}</div>
+                      {ord.sellerEmail && <div className="text-[10px] text-muted-foreground">{ord.sellerEmail}</div>}
+                    </td>
+                    <td className="p-4 text-muted-foreground max-w-xs truncate">{ord.deliveryAddress}</td>
+                    <td className="p-4">
+                      <span className="inline-block bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px] uppercase">
+                        {ord.status || "Pending"}
+                      </span>
+                    </td>
+                    <td className="p-4 text-muted-foreground text-[11px]">
+                      {new Date(ord.createdAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-20 bg-card rounded-2xl border border-dashed border-border">
+          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <h4 className="font-bold text-foreground">No Orders Placed Yet</h4>
+          <p className="text-xs text-muted-foreground mt-1">Orders placed on Market Zone will appear here live for super admin monitoring.</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Helper format function
+const numberWithCommas = (x: number) => {
+  return (x || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
+
+// Component: Super Admin Dynamic SMTP Settings Editor
+const AdminSmtpSettings = () => {
+  const [smtp, setSmtp] = useState({
+    smtpHost: "smtp.gmail.com",
+    smtpPort: "465",
+    smtpUser: "podoremetropolis@gmail.com",
+    smtpPass: ""
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch(getApiUrl("/api/smtp"))
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.smtp) {
+          setSmtp(prev => ({
+            ...prev,
+            smtpHost: data.smtp.smtpHost || "smtp.gmail.com",
+            smtpPort: data.smtp.smtpPort || "465",
+            smtpUser: data.smtp.smtpUser || "podoremetropolis@gmail.com"
+          }));
+        }
+      })
+      .catch(err => console.error("Error fetching SMTP settings:", err));
+  }, []);
+
+  const handleSaveSmtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const res = await fetch(getApiUrl("/api/smtp"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(smtp)
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        toast.success("SMTP Credentials updated successfully! All platform emails will now use these credentials.");
+        setSmtp(prev => ({ ...prev, smtpPass: "" }));
+      } else {
+        toast.error(data.error || "Failed to update SMTP settings.");
+      }
+    } catch (err) {
+      toast.error("Failed to connect to SMTP settings endpoint.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <div>
+        <h3 className="text-2xl font-extrabold text-foreground tracking-tight">SMTP Email Credentials</h3>
+        <p className="text-xs text-muted-foreground mt-1">Configure global SMTP server settings for automated system emails, order receipts, and OTP verification codes.</p>
+      </div>
+
+      <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+        <form onSubmit={handleSaveSmtp} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">SMTP Host Server</Label>
+            <Input 
+              placeholder="e.g. smtp.gmail.com or mail.domain.com"
+              required
+              className="h-11 rounded-xl bg-background border-border"
+              value={smtp.smtpHost}
+              onChange={(e) => setSmtp({ ...smtp, smtpHost: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-muted-foreground uppercase">SMTP Port</Label>
+              <Input 
+                placeholder="465 or 587"
+                required
+                className="h-11 rounded-xl bg-background border-border"
+                value={smtp.smtpPort}
+                onChange={(e) => setSmtp({ ...smtp, smtpPort: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-muted-foreground uppercase">SMTP Sender Email / Username</Label>
+              <Input 
+                type="email"
+                placeholder="noreply@domain.com"
+                required
+                className="h-11 rounded-xl bg-background border-border"
+                value={smtp.smtpUser}
+                onChange={(e) => setSmtp({ ...smtp, smtpUser: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">SMTP Password / App Password</Label>
+            <Input 
+              type="password"
+              placeholder="Enter new SMTP password or App Password"
+              required
+              className="h-11 rounded-xl bg-background border-border"
+              value={smtp.smtpPass}
+              onChange={(e) => setSmtp({ ...smtp, smtpPass: e.target.value })}
+            />
+          </div>
+
+          <Button type="submit" disabled={saving} className="bg-primary hover:bg-primary-glow text-primary-foreground font-bold h-11 px-6 rounded-xl mt-4">
+            {saving ? "Saving SMTP Credentials..." : "Save SMTP Credentials"}
+          </Button>
+        </form>
+      </div>
     </div>
   );
 };

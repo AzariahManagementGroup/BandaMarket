@@ -41,12 +41,27 @@ function generate_uuid() {
     );
 }
 
-// Helper function to send email via Gmail SSL/TLS Socket SMTP
-function send_html_email($toEmail, $subject, $bodyContent) {
+// Helper function to send email via SSL/TLS Socket SMTP (Dynamic DB Config)
+function send_html_email($toEmail, $subject, $bodyContent, $conn = null) {
     $smtpHost = "ssl://smtp.gmail.com";
     $smtpPort = 465;
     $smtpUser = "podoremetropolis@gmail.com";
     $smtpPass = "ptfjtrjyaidmyqrf";
+
+    // Query custom SMTP settings if DB connection provided
+    if ($conn) {
+        $res = $conn->query("SELECT * FROM smtp_settings ORDER BY id DESC LIMIT 1");
+        if ($res && $row = $res->fetch_assoc()) {
+            if (!empty($row['smtpHost'])) {
+                $smtpHost = (strpos($row['smtpHost'], 'ssl://') === false && strpos($row['smtpHost'], 'tls://') === false && $row['smtpPort'] == 465) 
+                    ? "ssl://" . $row['smtpHost'] 
+                    : $row['smtpHost'];
+            }
+            if (!empty($row['smtpPort'])) $smtpPort = intval($row['smtpPort']);
+            if (!empty($row['smtpUser'])) $smtpUser = $row['smtpUser'];
+            if (!empty($row['smtpPass'])) $smtpPass = $row['smtpPass'];
+        }
+    }
 
     $message = "
     <html>
@@ -546,6 +561,171 @@ if (strpos($uri, 'notifications') !== false) {
     http_response_code(200);
     echo json_encode(["notifications" => $notifications]);
     exit();
+}
+
+// 6. Orders API Endpoints
+if (strpos($uri, 'orders') !== false) {
+    if ($request_method === 'POST') {
+        $input = file_get_contents("php://input");
+        $data = json_decode($input, true);
+
+        $id = "ord-" . round(microtime(true) * 1000);
+        $productId = isset($data['productId']) ? $data['productId'] : '';
+        $productTitle = isset($data['productTitle']) ? trim($data['productTitle']) : '';
+        $amount = isset($data['amount']) ? floatval($data['amount']) : 0;
+        $currency = isset($data['currency']) ? $data['currency'] : 'XAF';
+        $sellerId = isset($data['sellerId']) ? $data['sellerId'] : '';
+        $sellerName = isset($data['sellerName']) ? $data['sellerName'] : 'Merchant';
+        $sellerEmail = isset($data['sellerEmail']) ? $data['sellerEmail'] : '';
+        $buyerName = isset($data['buyerName']) ? trim($data['buyerName']) : '';
+        $buyerEmail = isset($data['buyerEmail']) ? trim($data['buyerEmail']) : '';
+        $buyerPhone = isset($data['buyerPhone']) ? trim($data['buyerPhone']) : '';
+        $deliveryAddress = isset($data['deliveryAddress']) ? trim($data['deliveryAddress']) : '';
+        $now = date('Y-m-d H:i:s');
+
+        if (empty($productTitle) || empty($buyerName) || empty($buyerPhone)) {
+            http_response_code(400);
+            echo json_encode(["error" => "Product, Buyer Name, and Phone are required."]);
+            exit();
+        }
+
+        $stmt = $conn->prepare("INSERT INTO orders (id, productId, productTitle, amount, currency, sellerId, sellerName, sellerEmail, buyerName, buyerEmail, buyerPhone, deliveryAddress, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)");
+        $stmt->bind_param("sssdsssssssss", $id, $productId, $productTitle, $amount, $currency, $sellerId, $sellerName, $sellerEmail, $buyerName, $buyerEmail, $buyerPhone, $deliveryAddress, $now);
+        
+        if ($stmt->execute()) {
+            // A. Send Order Confirmation Email to Buyer
+            if (!empty($buyerEmail)) {
+                $buyerMailContent = "
+                <p>Hello <strong>" . htmlspecialchars($buyerName) . "</strong>,</p>
+                <p>🎉 Your order for <strong>'" . htmlspecialchars($productTitle) . "'</strong> has been placed successfully!</p>
+                <p><strong>Order ID:</strong> " . $id . "<br>
+                <strong>Total Amount:</strong> " . number_format($amount) . " " . htmlspecialchars($currency) . "<br>
+                <strong>Delivery Address:</strong> " . htmlspecialchars($deliveryAddress) . "</p>
+                <p>Merchant <strong>" . htmlspecialchars($sellerName) . "</strong> will contact you at <strong>" . htmlspecialchars($buyerPhone) . "</strong> for dispatch.</p>
+                <a href='https://camemark.com/market-zone' class='btn'>Continue Shopping</a>";
+
+                send_html_email($buyerEmail, "Order Confirmation: " . $productTitle, $buyerMailContent, $conn);
+            }
+
+            // B. Send New Order Alert Email to Seller
+            if (!empty($sellerEmail)) {
+                $sellerMailContent = "
+                <p>Hello <strong>" . htmlspecialchars($sellerName) . "</strong>,</p>
+                <p>🛍️ You have received a new order for <strong>'" . htmlspecialchars($productTitle) . "'</strong>!</p>
+                <p><strong>Order ID:</strong> " . $id . "<br>
+                <strong>Order Value:</strong> " . number_format($amount) . " " . htmlspecialchars($currency) . "<br>
+                <strong>Buyer Name:</strong> " . htmlspecialchars($buyerName) . "<br>
+                <strong>Buyer Phone / WhatsApp:</strong> " . htmlspecialchars($buyerPhone) . "<br>
+                <strong>Delivery Address:</strong> " . htmlspecialchars($deliveryAddress) . "</p>
+                <p>Please contact the buyer directly to arrange delivery.</p>
+                <a href='https://camemark.com/seller-dashboard/orders' class='btn'>View Orders</a>";
+
+                send_html_email($sellerEmail, "New Order Received: " . $productTitle, $sellerMailContent, $conn);
+            }
+
+            // C. Create In-App Notification for Seller
+            if (!empty($sellerId)) {
+                create_inapp_notification($conn, $sellerId, "New Order Received! 🛒", "New order from " . $buyerName . " for '" . $productTitle . "' (" . number_format($amount) . " " . $currency . "). Phone: " . $buyerPhone);
+            }
+
+            http_response_code(200);
+            echo json_encode([
+                "success" => true,
+                "message" => "Order placed successfully!",
+                "order" => [
+                    "id" => $id,
+                    "productTitle" => $productTitle,
+                    "amount" => $amount,
+                    "currency" => $currency,
+                    "sellerName" => $sellerName,
+                    "buyerName" => $buyerName,
+                    "buyerPhone" => $buyerPhone,
+                    "deliveryAddress" => $deliveryAddress,
+                    "status" => "pending",
+                    "createdAt" => $now
+                ]
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to save order: " . $stmt->error]);
+        }
+        $stmt->close();
+        exit();
+    } else {
+        // GET Request - Fetch all orders for Admin or filtered by sellerId/buyerEmail
+        $sellerId = isset($_GET['sellerId']) ? $_GET['sellerId'] : '';
+        $buyerEmail = isset($_GET['buyerEmail']) ? $_GET['buyerEmail'] : '';
+
+        if (!empty($sellerId)) {
+            $stmt = $conn->prepare("SELECT * FROM orders WHERE sellerId = ? ORDER BY createdAt DESC");
+            $stmt->bind_param("s", $sellerId);
+        } else if (!empty($buyerEmail)) {
+            $stmt = $conn->prepare("SELECT * FROM orders WHERE buyerEmail = ? ORDER BY createdAt DESC");
+            $stmt->bind_param("s", $buyerEmail);
+        } else {
+            $stmt = $conn->prepare("SELECT * FROM orders ORDER BY createdAt DESC");
+        }
+
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $orders = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $orders[] = $row;
+            }
+        }
+        $stmt->close();
+
+        http_response_code(200);
+        echo json_encode(["orders" => $orders]);
+        exit();
+    }
+}
+
+// 7. SMTP Settings API Endpoints
+if (strpos($uri, 'smtp') !== false) {
+    if ($request_method === 'POST') {
+        $input = file_get_contents("php://input");
+        $data = json_decode($input, true);
+
+        $smtpHost = isset($data['smtpHost']) ? trim($data['smtpHost']) : '';
+        $smtpPort = isset($data['smtpPort']) ? trim($data['smtpPort']) : '465';
+        $smtpUser = isset($data['smtpUser']) ? trim($data['smtpUser']) : '';
+        $smtpPass = isset($data['smtpPass']) ? trim($data['smtpPass']) : '';
+        $now = date('Y-m-d H:i:s');
+
+        if (empty($smtpHost) || empty($smtpUser)) {
+            http_response_code(400);
+            echo json_encode(["error" => "SMTP Host and SMTP User are required."]);
+            exit();
+        }
+
+        $stmt = $conn->prepare("INSERT INTO smtp_settings (smtpHost, smtpPort, smtpUser, smtpPass, updatedAt) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssss", $smtpHost, $smtpPort, $smtpUser, $smtpPass, $now);
+        if ($stmt->execute()) {
+            http_response_code(200);
+            echo json_encode(["success" => true, "message" => "SMTP credentials updated successfully!"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to update SMTP settings."]);
+        }
+        $stmt->close();
+        exit();
+    } else {
+        $result = $conn->query("SELECT smtpHost, smtpPort, smtpUser, updatedAt FROM smtp_settings ORDER BY id DESC LIMIT 1");
+        $settings = null;
+        if ($result && $row = $result->fetch_assoc()) {
+            $settings = $row;
+        }
+        http_response_code(200);
+        echo json_encode(["smtp" => $settings || [
+            "smtpHost" => "smtp.gmail.com",
+            "smtpPort" => "465",
+            "smtpUser" => "podoremetropolis@gmail.com",
+            "updatedAt" => date('Y-m-d H:i:s')
+        ]]);
+        exit();
+    }
 }
 
 http_response_code(404);
