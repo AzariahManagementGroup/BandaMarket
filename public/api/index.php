@@ -37,8 +37,13 @@ function generate_uuid() {
     );
 }
 
-// Helper function to send email
+// Helper function to send email via Gmail SSL/TLS Socket SMTP
 function send_html_email($toEmail, $subject, $bodyContent) {
+    $smtpHost = "ssl://smtp.gmail.com";
+    $smtpPort = 465;
+    $smtpUser = "podoremetropolis@gmail.com";
+    $smtpPass = "ptfjtrjyaidmyqrf";
+
     $message = "
     <html>
     <head>
@@ -50,6 +55,7 @@ function send_html_email($toEmail, $subject, $bodyContent) {
         .header h1 { margin: 0; font-size: 22px; font-weight: 700; }
         .content { padding: 30px; color: #334155; line-height: 1.6; }
         .btn { display: inline-block; background: #059669; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; margin-top: 20px; }
+        .warning-box { background: #fffbe6; border: 1px solid #ffe58f; padding: 15px; border-radius: 10px; margin-top: 20px; font-size: 13px; color: #8c6b00; }
         .otp-box { font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #064e3b; background: #f0fdf4; border: 2px dashed #059669; padding: 15px; text-align: center; border-radius: 10px; margin: 20px 0; }
         .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; }
       </style>
@@ -70,16 +76,54 @@ function send_html_email($toEmail, $subject, $bodyContent) {
     </html>
     ";
 
-    $domain = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'camemark.com';
-    $fromHeader = "noreply@" . $domain;
+    $headers = [
+        "From: CameMark Marketplace <" . $smtpUser . ">",
+        "To: <" . $toEmail . ">",
+        "Subject: " . $subject,
+        "MIME-Version: 1.0",
+        "Content-Type: text/html; charset=UTF-8"
+    ];
 
-    $headers = "MIME-Version: 1.0" . "\r\n";
-    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-    $headers .= "From: CameMark <" . $fromHeader . ">" . "\r\n";
-    $headers .= "Reply-To: support@" . $domain . "\r\n";
-    $headers .= "X-Mailer: PHP/" . phpversion();
+    $emailData = implode("\r\n", $headers) . "\r\n\r\n" . $message . "\r\n.";
 
-    @mail($toEmail, $subject, $message, $headers);
+    $socket = @fsockopen($smtpHost, $smtpPort, $errno, $errstr, 15);
+    if (!$socket) {
+        // Fallback to mail() if socket blocked
+        $mailHeaders = "MIME-Version: 1.0\r\nContent-type:text/html;charset=UTF-8\r\nFrom: CameMark <" . $smtpUser . ">\r\n";
+        @mail($toEmail, $subject, $message, $mailHeaders);
+        return false;
+    }
+
+    $response = fgets($socket, 512);
+
+    fputs($socket, "EHLO CameMark\r\n");
+    $response = fgets($socket, 512);
+
+    fputs($socket, "AUTH LOGIN\r\n");
+    $response = fgets($socket, 512);
+
+    fputs($socket, base64_encode($smtpUser) . "\r\n");
+    $response = fgets($socket, 512);
+
+    fputs($socket, base64_encode($smtpPass) . "\r\n");
+    $response = fgets($socket, 512);
+
+    fputs($socket, "MAIL FROM: <" . $smtpUser . ">\r\n");
+    $response = fgets($socket, 512);
+
+    fputs($socket, "RCPT TO: <" . $toEmail . ">\r\n");
+    $response = fgets($socket, 512);
+
+    fputs($socket, "DATA\r\n");
+    $response = fgets($socket, 512);
+
+    fputs($socket, $emailData . "\r\n");
+    $response = fgets($socket, 512);
+
+    fputs($socket, "QUIT\r\n");
+    fclose($socket);
+
+    return true;
 }
 
 // Helper function to create in-app notification
@@ -362,6 +406,12 @@ if (strpos($uri, 'products') !== false) {
                 <strong>Region:</strong> " . htmlspecialchars($region) . " (" . htmlspecialchars($city) . ")<br>
                 <strong>Quantity in Stock:</strong> " . $quantity . " " . htmlspecialchars($unit) . "</p>
                 <p>Your item is now live and visible to buyers across all 10 regions of Cameroon on the Market Zone.</p>
+                
+                <div class='warning-box'>
+                  <strong>⚠️ Important Merchant Notice:</strong><br>
+                  If your seller account is not yet verified, you are currently limited to <strong>1 product listing</strong>. To publish additional products and receive the Verified Merchant trust badge, please submit your KYC verification documents on your dashboard.
+                </div>
+
                 <a href='https://camemark.com/market-zone' class='btn'>View Market Zone</a>";
 
                 send_html_email($sellerEmail, "Product Published: " . $title, $emailContent);
@@ -369,7 +419,7 @@ if (strpos($uri, 'products') !== false) {
 
             // 2. Create In-App Notification
             if (!empty($sellerId)) {
-                create_inapp_notification($conn, $sellerId, "Product Listing Live! 📦", "Your product '" . $title . "' is now published live on the Market Zone.");
+                create_inapp_notification($conn, $sellerId, "Product Listing Live! 📦", "Your product '" . $title . "' is now live on Market Zone. Complete KYC verification to unlock unlimited listings!");
             }
 
             http_response_code(200);
