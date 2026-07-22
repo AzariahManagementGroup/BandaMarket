@@ -417,16 +417,98 @@ const BuyerDashboard = () => {
         </div>
       </aside>
 
+      {/* Mobile Drawer Navigation Menu */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop overlay */}
+          <div 
+            onClick={() => setIsMobileMenuOpen(false)} 
+            className="fixed inset-0 bg-gray-900/60 backdrop-blur-xs animate-fade-in" 
+          />
+
+          {/* Drawer container */}
+          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col p-6 overflow-y-auto animate-slide-in-left z-10">
+            <div className="flex items-center justify-between mb-8">
+              <img src={logo} alt="CameMark" className="h-8 w-auto" />
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <nav className="space-y-1 flex-1">
+              {navItems.map((item) => {
+                const isActive = activeNavTab === item.id || (item.id === "dashboard" && window.location.pathname === "/dashboard" && !window.location.search);
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() => {
+                      setActiveNavTab(item.id);
+                      setIsMobileMenuOpen(false);
+                      if (item.id !== "marketplace" && item.id !== "dashboard" && item.href !== "#" && !item.href.startsWith("/dashboard")) {
+                        navigate(item.href);
+                      }
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all text-left ${
+                      isActive 
+                        ? "bg-[#064E3B] text-white font-extrabold shadow-md" 
+                        : item.cocf
+                          ? "bg-amber-50 text-amber-900 font-extrabold border border-amber-200"
+                          : item.academy
+                            ? "bg-amber-500/10 text-amber-900 font-extrabold border border-amber-300/50"
+                            : item.highlight
+                              ? "bg-emerald-50 text-emerald-800 font-extrabold border border-emerald-200"
+                              : "text-gray-600 hover:bg-emerald-50/80 hover:text-emerald-900 font-medium"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <item.icon className={`h-4 w-4 ${isActive ? "text-white" : "text-emerald-700"}`} />
+                      <span className="text-xs sm:text-sm">{item.label}</span>
+                    </div>
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            <div className="pt-6 border-t border-gray-100 mt-auto">
+              <Button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  navigate("/seller-dashboard");
+                }} 
+                className="w-full bg-emerald-800 text-white font-bold text-xs h-10 rounded-xl flex items-center justify-center gap-2"
+              >
+                <Store className="h-4 w-4" /> Switch to Seller View
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-6 lg:px-10 shrink-0">
-          <div className="flex-1 max-w-xl">
-            <div className="relative group">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-6 lg:px-10 shrink-0 gap-3">
+          <div className="flex items-center gap-3 flex-1 max-w-xl">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2.5 rounded-xl bg-gray-50 hover:bg-emerald-50 text-gray-700 hover:text-emerald-800 transition-colors border border-gray-200 shrink-0"
+              title="Open Navigation Menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="relative group w-full">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />
               <Input 
                 placeholder="Search products, farmers, orders, regions..." 
-                className="pl-12 bg-gray-50 border-transparent rounded-xl h-11 focus-visible:ring-emerald-500 focus-visible:bg-white transition-all"
+                className="pl-12 bg-gray-50 border-transparent rounded-xl h-11 focus-visible:ring-emerald-500 focus-visible:bg-white transition-all text-xs"
               />
             </div>
           </div>
