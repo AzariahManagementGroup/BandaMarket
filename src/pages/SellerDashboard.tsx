@@ -549,7 +549,10 @@ const SellerDashboard = () => {
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-50">
                           <span>Stock: {item.quantity} {item.unit}</span>
-                          <span className="text-emerald-600 font-bold">Active</span>
+                          <div className="flex items-center gap-2">
+                            <Button onClick={() => handleEditClick(item)} size="sm" variant="outline" className="h-8 text-xs font-bold border-emerald-600 text-emerald-700 hover:bg-emerald-50">Edit</Button>
+                            <Button onClick={() => handleDeleteListing(item.id)} size="sm" variant="ghost" className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50">Delete</Button>
+                          </div>
                         </div>
                       </div>
                     ))}
