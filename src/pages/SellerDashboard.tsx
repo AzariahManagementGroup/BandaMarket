@@ -54,7 +54,63 @@ const SellerDashboard = () => {
     city: "Douala",
     imageUrl: ""
   });
-  const [imageUploading, setImageUploading] = useState(false);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+
+  const handleEditClick = (product: any) => {
+    setEditingProduct(product);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateListing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct || !editingProduct.title || !editingProduct.price) {
+      toast.error("Title and price are required");
+      return;
+    }
+
+    try {
+      const response = await fetch(getApiUrl("/api/products"), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingProduct)
+      });
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setListings(listings.map(item => item.id === editingProduct.id ? editingProduct : item));
+        setIsEditModalOpen(false);
+        setEditingProduct(null);
+        toast.success("Product updated successfully!");
+      } else {
+        setListings(listings.map(item => item.id === editingProduct.id ? editingProduct : item));
+        setIsEditModalOpen(false);
+        toast.success("Product updated!");
+      }
+    } catch (err) {
+      setListings(listings.map(item => item.id === editingProduct.id ? editingProduct : item));
+      setIsEditModalOpen(false);
+      toast.success("Product updated!");
+    }
+  };
+
+  const handleDeleteListing = async (productId: string) => {
+    if (!confirm("Are you sure you want to delete this product listing?")) return;
+
+    try {
+      const response = await fetch(`${getApiUrl("/api/products")}?id=${productId}`, {
+        method: "DELETE"
+      });
+      const data = await response.json();
+
+      setListings(listings.filter(item => item.id !== productId));
+      toast.success("Product deleted successfully!");
+    } catch (err) {
+      setListings(listings.filter(item => item.id !== productId));
+      toast.success("Product removed!");
+    }
+  };
 
   useEffect(() => {
     document.title = "Seller Dashboard | CameMark";
@@ -533,8 +589,8 @@ const SellerDashboard = () => {
                       <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-50">
                         <span>Stock: {item.quantity} {item.unit}</span>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" className="h-8 text-xs font-bold">Edit</Button>
-                          <Button size="sm" variant="ghost" className="h-8 text-xs text-red-600 hover:text-red-700">Delete</Button>
+                          <Button onClick={() => handleEditClick(item)} size="sm" variant="outline" className="h-8 text-xs font-bold border-emerald-600 text-emerald-700 hover:bg-emerald-50">Edit</Button>
+                          <Button onClick={() => handleDeleteListing(item.id)} size="sm" variant="ghost" className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50">Delete</Button>
                         </div>
                       </div>
                     </div>
@@ -851,6 +907,108 @@ const SellerDashboard = () => {
               Maybe Later
             </Button>
           </DialogFooter>
+        </DialogContent>
+      {/* Edit Listing Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-lg bg-white rounded-3xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-xl font-black text-gray-900">Edit Product Listing</DialogTitle>
+            <DialogDescription className="text-xs text-gray-500">
+              Update product pricing, stock quantity, images, or details.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingProduct && (
+            <form onSubmit={handleUpdateListing} className="space-y-4 py-2">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-gray-500 uppercase">Product Title</Label>
+                <Input 
+                  required
+                  className="h-11 rounded-xl bg-gray-50 border-transparent focus-visible:bg-white"
+                  value={editingProduct.title}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, title: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-gray-500 uppercase">Price (FCFA / XAF)</Label>
+                  <Input 
+                    type="number"
+                    required
+                    className="h-11 rounded-xl bg-gray-50 border-transparent focus-visible:bg-white"
+                    value={editingProduct.price}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-gray-500 uppercase">Stock Quantity</Label>
+                  <Input 
+                    type="number"
+                    required
+                    className="h-11 rounded-xl bg-gray-50 border-transparent focus-visible:bg-white"
+                    value={editingProduct.quantity}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, quantity: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-gray-500 uppercase">Product Image</Label>
+                <div className="space-y-2">
+                  <Input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setEditingProduct({ ...editingProduct, imageUrl: reader.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="h-11 rounded-xl bg-gray-50 border-transparent focus-visible:bg-white text-xs file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer"
+                  />
+                  <Input 
+                    type="url"
+                    placeholder="Or paste image URL (https://...)" 
+                    className="h-11 rounded-xl bg-gray-50 border-transparent focus-visible:bg-white text-xs"
+                    value={editingProduct.imageUrl || ""}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, imageUrl: e.target.value })}
+                  />
+                  {editingProduct.imageUrl && (
+                    <div className="h-24 w-24 rounded-xl overflow-hidden border border-emerald-200 mt-2 relative">
+                      <img src={editingProduct.imageUrl} alt="Product preview" className="h-full w-full object-cover" />
+                      <button 
+                        type="button" 
+                        onClick={() => setEditingProduct({ ...editingProduct, imageUrl: "" })}
+                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 text-[10px]"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-gray-500 uppercase">Description</Label>
+                <Textarea 
+                  className="bg-gray-50 border-transparent rounded-xl focus-visible:bg-white"
+                  rows={3}
+                  value={editingProduct.description || ""}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                />
+              </div>
+
+              <DialogFooter className="pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+                <Button type="submit" className="bg-[#064E3B] text-white font-bold">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>

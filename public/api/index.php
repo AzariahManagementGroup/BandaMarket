@@ -1,6 +1,6 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -10,16 +10,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 $db_host = 'localhost';
-$db_user = 'worlvjwl_camemark_dbuser';
-$db_pass = 'camemark_dbuser$1';
-$db_name = 'worlvjwl_camemark_db';
+$db_user = 'root';
+$db_pass = '';
+$db_name = 'camemark_db';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+$conn = @new mysqli($db_host, $db_user, $db_pass, $db_name);
 
 if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(["error" => "Database connection failed: " . $conn->connect_error]);
-    exit();
+    // Fallback to production credentials
+    $conn = new mysqli('localhost', 'worlvjwl_camemark_dbuser', 'camemark_dbuser$1', 'worlvjwl_camemark_db');
+    if ($conn->connect_error) {
+        http_response_code(500);
+        echo json_encode(["error" => "Database connection failed: " . $conn->connect_error]);
+        exit();
+    }
 }
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -445,6 +449,59 @@ if (strpos($uri, 'products') !== false) {
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Failed to publish product: " . $stmt->error]);
+        }
+        $stmt->close();
+        exit();
+    } else if ($request_method === 'PUT') {
+        $input = file_get_contents("php://input");
+        $data = json_decode($input, true);
+
+        $id = isset($data['id']) ? $data['id'] : '';
+        $title = isset($data['title']) ? trim($data['title']) : '';
+        $price = isset($data['price']) ? floatval($data['price']) : 0;
+        $quantity = isset($data['quantity']) ? intval($data['quantity']) : 1;
+        $description = isset($data['description']) ? trim($data['description']) : '';
+        $imageUrl = isset($data['imageUrl']) ? $data['imageUrl'] : '';
+
+        if (empty($id) || empty($title) || $price <= 0) {
+            http_response_code(400);
+            echo json_encode(["error" => "Product ID, Title, and Price are required."]);
+            exit();
+        }
+
+        $stmt = $conn->prepare("UPDATE products SET title = ?, price = ?, quantity = ?, description = ?, imageUrl = ? WHERE id = ?");
+        $stmt->bind_param("sdisss", $title, $price, $quantity, $description, $imageUrl, $id);
+        if ($stmt->execute()) {
+            http_response_code(200);
+            echo json_encode(["success" => true, "message" => "Product updated successfully!"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to update product."]);
+        }
+        $stmt->close();
+        exit();
+    } else if ($request_method === 'DELETE') {
+        $id = isset($_GET['id']) ? $_GET['id'] : '';
+        if (empty($id)) {
+            $input = file_get_contents("php://input");
+            $data = json_decode($input, true);
+            $id = isset($data['id']) ? $data['id'] : '';
+        }
+
+        if (empty($id)) {
+            http_response_code(400);
+            echo json_encode(["error" => "Product ID is required."]);
+            exit();
+        }
+
+        $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
+        $stmt->bind_param("s", $id);
+        if ($stmt->execute()) {
+            http_response_code(200);
+            echo json_encode(["success" => true, "message" => "Product deleted successfully!"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to delete product."]);
         }
         $stmt->close();
         exit();
