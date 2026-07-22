@@ -216,13 +216,13 @@ const CheckoutPage = () => {
   if (isAddressFilled && isShippingSelected && isPaymentSelected) currentStep = 3; // Step 3: Payment configured
   if (isAddressFilled && isShippingSelected && isPaymentSelected && isContactFilled) currentStep = 4; // Step 4: Ready for Review & Confirmation
 
-  const basePrice = product ? (typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0) : 13200;
-  const shippingFee = shippingMethod === "express" 
+  const basePrice = product ? (typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0) : 0;
+  const shippingFee = !product ? 0 : (shippingMethod === "express" 
     ? deliveryFees.expressFee 
     : shippingMethod === "pickup" 
     ? deliveryFees.pickupFee 
-    : deliveryFees.standardFee;
-  const serviceFee = 300;
+    : deliveryFees.standardFee);
+  const serviceFee = !product ? 0 : 300;
   const tax = Math.round(basePrice * 0.1925);
   const totalAmount = Math.max(0, basePrice - discount + shippingFee + serviceFee + tax);
 
@@ -734,7 +734,7 @@ const CheckoutPage = () => {
 
             <div className="space-y-2.5 text-xs text-gray-600 border-b border-gray-100 pb-4">
               <div className="flex justify-between">
-                <span>Subtotal (1 item)</span>
+                <span>Subtotal ({product ? '1 item' : '0 items'})</span>
                 <span className="font-bold text-gray-900">FCFA {basePrice.toLocaleString()}</span>
               </div>
               {discount > 0 && (
