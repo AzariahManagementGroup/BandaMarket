@@ -77,7 +77,7 @@ const CheckoutPage = () => {
   });
 
   const [promoCode, setPromoCode] = useState("");
-  const [discount, setDiscount] = useState(1400);
+  const [discount, setDiscount] = useState(0);
 
   const [deliveryFees, setDeliveryFees] = useState({ standardFee: 1000, expressFee: 2500, pickupFee: 0 });
 
@@ -669,15 +669,17 @@ const CheckoutPage = () => {
 
             <div className="space-y-2.5 text-xs text-gray-600 border-b border-gray-100 pb-4">
               <div className="flex justify-between">
-                <span>Subtotal (5 items)</span>
+                <span>Subtotal (1 item)</span>
                 <span className="font-bold text-gray-900">FCFA {basePrice.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-emerald-700 font-bold">
-                <span>Bargain Savings</span>
-                <span>- FCFA {discount.toLocaleString()}</span>
-              </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-emerald-700 font-bold">
+                  <span>Bargain Savings</span>
+                  <span>- FCFA {discount.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between">
-                <span>Delivery Fee (Standard)</span>
+                <span>Delivery Fee ({shippingMethod === 'express' ? 'Express' : shippingMethod === 'pickup' ? 'Pickup' : 'Standard'})</span>
                 <span className="font-bold text-gray-900">FCFA {shippingFee.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
@@ -695,25 +697,43 @@ const CheckoutPage = () => {
               <span className="text-xl text-emerald-700">FCFA {totalAmount.toLocaleString()}</span>
             </div>
 
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-center text-xs text-emerald-800 font-bold">
-              🎉 You're saving FCFA {discount.toLocaleString()} with bargains! 🥳
-            </div>
-
-            {/* Promo Code Input */}
-            <div className="space-y-2">
-              <Label className="text-[11px] font-bold text-gray-500 uppercase">Promo Code</Label>
-              <div className="flex gap-2">
-                <Input 
-                  placeholder="Enter promo code" 
-                  className="h-10 rounded-xl bg-gray-50 text-xs border-gray-200"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                />
-                <Button variant="default" className="bg-[#064E3B] text-white font-bold h-10 px-4 rounded-xl text-xs">
-                  Apply
-                </Button>
+            {discount > 0 ? (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-center text-xs text-emerald-800 font-bold flex items-center justify-between">
+                <span>🎉 Coupon Applied! Saved FCFA {discount.toLocaleString()}</span>
+                <button type="button" onClick={() => { setDiscount(0); setPromoCode(""); }} className="text-red-600 underline text-[10px]">Remove</button>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold text-gray-500 uppercase">Promo / Bargain Code</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="e.g. CAMEMARK10 or BARGAIN" 
+                    className="h-10 rounded-xl bg-gray-50 text-xs border-gray-200"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                  />
+                  <Button 
+                    type="button"
+                    onClick={() => {
+                      if (!promoCode) {
+                        toast.error("Please enter a promo code.");
+                        return;
+                      }
+                      if (promoCode.toUpperCase() === "CAMEMARK10" || promoCode.toUpperCase() === "BARGAIN") {
+                        const calculatedDiscount = Math.round(basePrice * 0.1);
+                        setDiscount(calculatedDiscount);
+                        toast.success(`🎉 Promo code applied! You saved FCFA ${calculatedDiscount.toLocaleString()} (10% OFF)!`);
+                      } else {
+                        toast.error("Invalid promo code. Try 'CAMEMARK10' or 'BARGAIN'.");
+                      }
+                    }} 
+                    className="bg-[#064E3B] hover:bg-emerald-950 text-white font-bold h-10 px-4 rounded-xl text-xs"
+                  >
+                    Apply
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Confirm & Pay Main CTA Button */}
             <Button 
