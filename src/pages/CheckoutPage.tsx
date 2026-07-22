@@ -51,6 +51,8 @@ const CheckoutPage = () => {
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(1400);
 
+  const [deliveryFees, setDeliveryFees] = useState({ standardFee: 1000, expressFee: 2500, pickupFee: 0 });
+
   useEffect(() => {
     document.title = "Checkout | CameMark Secure Checkout";
     
@@ -69,7 +71,21 @@ const CheckoutPage = () => {
       } catch (e) {}
     }
 
-    // Load active product details
+    // Fetch dynamic logistics delivery fees set by Admin / Logistics Officer
+    fetch(getApiUrl("/api/delivery-fees"))
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.deliveryFees) {
+          setDeliveryFees({
+            standardFee: parseFloat(data.deliveryFees.standardFee) || 1000,
+            expressFee: parseFloat(data.deliveryFees.expressFee) || 2500,
+            pickupFee: parseFloat(data.deliveryFees.pickupFee) || 0
+          });
+        }
+      })
+      .catch(err => console.error("Error fetching delivery fees:", err));
+
+    // Load active product details dynamically by productId
     const localProducts = localStorage.getItem("camemark_products");
     if (localProducts) {
       try {
@@ -96,7 +112,11 @@ const CheckoutPage = () => {
   }, [productId]);
 
   const basePrice = product ? (typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0) : 13200;
-  const shippingFee = shippingMethod === "express" ? 2500 : shippingMethod === "pickup" ? 0 : 1000;
+  const shippingFee = shippingMethod === "express" 
+    ? deliveryFees.expressFee 
+    : shippingMethod === "pickup" 
+    ? deliveryFees.pickupFee 
+    : deliveryFees.standardFee;
   const serviceFee = 300;
   const tax = Math.round(basePrice * 0.1925);
   const totalAmount = Math.max(0, basePrice - discount + shippingFee + serviceFee + tax);
@@ -171,70 +191,78 @@ const CheckoutPage = () => {
             <Globe className="h-3.5 w-3.5" /> EN
           </div>
           
-          <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
-            <div className="text-right hidden sm:block">
-              <p className="text-xs font-black text-gray-900">{profile?.fullName || profile?.full_name || "Marie Claire Nguefack"}</p>
-              <p className="text-[10px] font-bold text-emerald-600 flex items-center justify-end gap-0.5">
-                <CheckCircle2 className="h-3 w-3" /> Verified Buyer
-              </p>
+          {profile ? (
+            <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-black text-gray-900">{profile?.fullName || profile?.full_name || "Verified Buyer"}</p>
+                <p className="text-[10px] font-bold text-emerald-600 flex items-center justify-end gap-0.5">
+                  <CheckCircle2 className="h-3 w-3" /> Verified Buyer
+                </p>
+              </div>
+              <div className="h-9 w-9 rounded-full bg-emerald-100 overflow-hidden border-2 border-emerald-500 shadow-sm shrink-0">
+                <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.fullName || "Buyer"}`} alt="User Avatar" />
+              </div>
             </div>
-            <div className="h-9 w-9 rounded-full bg-emerald-100 overflow-hidden border-2 border-emerald-500 shadow-sm shrink-0">
-              <img src={profile?.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=Marie"} alt="User Avatar" />
-            </div>
-          </div>
+          ) : (
+            <Link to="/signin" className="text-xs font-extrabold text-emerald-700 hover:text-emerald-950 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+              Sign In
+            </Link>
+          )}
         </div>
       </header>
 
       {/* Main Checkout Container */}
       <div className="flex-1 flex flex-col lg:flex-row">
-        {/* Left Side Drawer Navigation */}
-        <aside className="w-full lg:w-64 bg-white border-r border-gray-200 p-4 space-y-1 shrink-0 hidden lg:block">
-          <div className="space-y-1 text-xs font-medium text-gray-600">
-            <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
-              <LayoutDashboard className="h-4 w-4" /> Buyer Dashboard
-            </Link>
-            <Link to="/market-zone" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
-              <ShoppingBag className="h-4 w-4" /> Marketplace
-            </Link>
-            <Link to="/market-zone" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
-              <Package className="h-4 w-4" /> Categories
-            </Link>
-            <Link to="/market-zone" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
-              <MessageCircle className="h-4 w-4" /> Bargains
-            </Link>
-            <Link to="/market-zone" className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
-              <div className="flex items-center gap-3">
-                <ShoppingCart className="h-4 w-4" /> Cart
-              </div>
-              <span className="h-5 w-5 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center">1</span>
-            </Link>
-            <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
-              <Package className="h-4 w-4" /> Orders
-            </Link>
-            <Link to="/cards-wallet" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
-              <Wallet className="h-4 w-4" /> Wallet
-            </Link>
-            <Link to="/checkout" className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-emerald-50 text-emerald-800 font-extrabold border border-emerald-200">
-              <div className="flex items-center gap-3">
-                <ShoppingCart className="h-4 w-4 text-emerald-700" /> Checkout
-              </div>
-              <ChevronDown className="h-4 w-4 -rotate-90" />
-            </Link>
-          </div>
-
-          <div className="pt-6">
-            <div className="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-4 space-y-2 text-center">
-              <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
-                <Gift className="h-5 w-5" />
-              </div>
-              <h4 className="font-extrabold text-xs text-gray-900">Refer & Earn</h4>
-              <p className="text-[11px] text-gray-500 leading-snug">Invite friends and earn CaMark points on every purchase.</p>
-              <Button size="sm" className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-bold text-xs h-8 rounded-xl mt-1">
-                Invite Now →
-              </Button>
+        {/* Left Side Drawer Navigation - Only shown for Logged In Users */}
+        {profile && (
+          <aside className="w-full lg:w-64 bg-white border-r border-gray-200 p-4 space-y-1 shrink-0 hidden lg:block">
+            <div className="space-y-1 text-xs font-medium text-gray-600">
+              <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
+                <LayoutDashboard className="h-4 w-4" /> Buyer Dashboard
+              </Link>
+              <Link to="/market-zone" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
+                <ShoppingBag className="h-4 w-4" /> Marketplace
+              </Link>
+              <Link to="/market-zone" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
+                <Package className="h-4 w-4" /> Categories
+              </Link>
+              <Link to="/market-zone" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
+                <MessageCircle className="h-4 w-4" /> Bargains
+              </Link>
+              <Link to="/market-zone" className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
+                <div className="flex items-center gap-3">
+                  <ShoppingCart className="h-4 w-4" /> Cart
+                </div>
+                <span className="h-5 w-5 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center">1</span>
+              </Link>
+              <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
+                <Package className="h-4 w-4" /> Orders
+              </Link>
+              <Link to="/cards-wallet" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
+                <Wallet className="h-4 w-4" /> Wallet
+              </Link>
+              <Link to="/checkout" className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-emerald-50 text-emerald-800 font-extrabold border border-emerald-200">
+                <div className="flex items-center gap-3">
+                  <ShoppingCart className="h-4 w-4 text-emerald-700" /> Checkout
+                </div>
+                <ChevronDown className="h-4 w-4 -rotate-90" />
+              </Link>
             </div>
-          </div>
-        </aside>
+
+            <div className="pt-6">
+              <div className="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-4 space-y-2 text-center">
+                <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                  <Gift className="h-5 w-5" />
+                </div>
+                <h4 className="font-extrabold text-xs text-gray-900">Refer & Earn</h4>
+                <p className="text-[11px] text-gray-500 leading-snug">Invite friends and earn CaMark points on every purchase.</p>
+                <Button size="sm" className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-bold text-xs h-8 rounded-xl mt-1">
+                  Invite Now →
+                </Button>
+              </div>
+            </div>
+          </aside>
+        )}
 
         {/* Center Checkout Content */}
         <main className="flex-1 p-4 lg:p-8 space-y-6 max-w-5xl">
@@ -462,32 +490,34 @@ const CheckoutPage = () => {
                   </h3>
 
                   <div className="space-y-3">
-                    {[
-                      { name: product?.title || "Red Palm Oil (1L)", seller: "Green Harvest Farms", qty: 1, price: basePrice, save: 300 },
-                      { name: "Plantains (1 Bunch)", seller: "Green Harvest Farms", qty: 2, price: 800, save: 200 },
-                      { name: "Organic Cocoa Beans (1kg)", seller: "Organic Cooperative", qty: 1, price: 3500, save: 300 }
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 border border-gray-100 text-xs">
+                    {product ? (
+                      <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-gray-100 text-xs">
                         <div className="flex items-center gap-3">
-                          <div className="h-12 w-12 rounded-xl bg-emerald-100 overflow-hidden border border-emerald-200 shrink-0">
-                            {product?.imageUrl && idx === 0 ? (
-                              <img src={product.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                          <div className="h-14 w-14 rounded-xl bg-emerald-100 overflow-hidden border border-emerald-200 shrink-0 flex items-center justify-center">
+                            {product.imageUrl ? (
+                              <img src={product.imageUrl} alt={product.title} className="h-full w-full object-cover" />
                             ) : (
-                              <Package className="h-6 w-6 text-emerald-700 m-auto mt-3" />
+                              <Package className="h-6 w-6 text-emerald-700" />
                             )}
                           </div>
                           <div>
-                            <h4 className="font-extrabold text-gray-900 line-clamp-1">{item.name}</h4>
-                            <p className="text-[10px] text-gray-400">Seller: {item.seller}</p>
+                            <h4 className="font-extrabold text-gray-900 text-sm line-clamp-1">{product.title}</h4>
+                            <p className="text-[10px] text-gray-400">Seller: {product.sellerName || product.profiles?.full_name || "Verified Merchant"}</p>
+                            <span className="text-[10px] text-emerald-700 font-bold">Qty: 1</span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-black text-emerald-700">FCFA {item.price.toLocaleString()}</p>
-                          <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">Save FCFA {item.save}</span>
+                          <p className="font-black text-emerald-700 text-sm">FCFA {basePrice.toLocaleString()}</p>
+                          <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">Bargain Verified</span>
                         </div>
                       </div>
-                    ))}
+                    ) : (
+                      <div className="p-4 text-center text-xs text-gray-400">Loading order items...</div>
+                    )}
                   </div>
+                </div>
+              </div>
+            </div>
                 </div>
               </div>
             </div>

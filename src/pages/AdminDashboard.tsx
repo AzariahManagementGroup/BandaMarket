@@ -35,6 +35,7 @@ const AdminDashboard = () => {
   const navItems = [
     { label: "Overview", icon: LayoutDashboard, path: "" },
     { label: "Marketplace Orders", icon: ShoppingBag, path: "/orders" },
+    { label: "Logistics Delivery Fees", icon: Truck, path: "/delivery-fees" },
     { label: "SMTP Email Settings", icon: Mail, path: "/smtp" },
     { label: "User Management", icon: Users, path: "/users" },
     { label: "Roles & Permissions", icon: Shield, path: "/roles" },
@@ -119,6 +120,7 @@ const AdminDashboard = () => {
           <Routes>
             <Route path="/" element={<AdminOverview />} />
             <Route path="/orders" element={<AdminOrders />} />
+            <Route path="/delivery-fees" element={<AdminDeliveryFees />} />
             <Route path="/smtp" element={<AdminSmtpSettings />} />
             <Route path="/users" element={<UserManager />} />
             <Route path="/roles" element={<RoleManager />} />
@@ -392,6 +394,101 @@ const AdminSmtpSettings = () => {
 
           <Button type="submit" disabled={saving} className="bg-primary hover:bg-primary-glow text-primary-foreground font-bold h-11 px-6 rounded-xl mt-4">
             {saving ? "Saving SMTP Credentials..." : "Save SMTP Credentials"}
+          </Button>
+        </form>
+      </div>
+// Component: Admin & Logistics Officer Delivery Fees Manager
+const AdminDeliveryFees = () => {
+  const [fees, setFees] = useState({
+    standardFee: 1000,
+    expressFee: 2500,
+    pickupFee: 0
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch(getApiUrl("/api/delivery-fees"))
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.deliveryFees) {
+          setFees({
+            standardFee: parseFloat(data.deliveryFees.standardFee) || 1000,
+            expressFee: parseFloat(data.deliveryFees.expressFee) || 2500,
+            pickupFee: parseFloat(data.deliveryFees.pickupFee) || 0
+          });
+        }
+      })
+      .catch(err => console.error("Error fetching delivery fees:", err));
+  }, []);
+
+  const handleSaveFees = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const res = await fetch(getApiUrl("/api/delivery-fees"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fees)
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        toast.success("Logistics delivery fees updated successfully!");
+      } else {
+        toast.error("Failed to update delivery fees.");
+      }
+    } catch (err) {
+      toast.error("Error connecting to delivery fees API.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <div>
+        <h3 className="text-2xl font-extrabold text-foreground tracking-tight">Logistics & Shipping Fees Configurator</h3>
+        <p className="text-xs text-muted-foreground mt-1">Super Admins and Logistics Officers can adjust regional delivery fees applied during buyer checkout.</p>
+      </div>
+
+      <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+        <form onSubmit={handleSaveFees} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Standard Delivery Fee (FCFA)</Label>
+            <Input 
+              type="number"
+              required
+              className="h-11 rounded-xl bg-background border-border"
+              value={fees.standardFee}
+              onChange={(e) => setFees({ ...fees, standardFee: parseFloat(e.target.value) || 0 })}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Express Delivery Fee (FCFA)</Label>
+            <Input 
+              type="number"
+              required
+              className="h-11 rounded-xl bg-background border-border"
+              value={fees.expressFee}
+              onChange={(e) => setFees({ ...fees, expressFee: parseFloat(e.target.value) || 0 })}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Pickup Point Handling Fee (FCFA)</Label>
+            <Input 
+              type="number"
+              required
+              className="h-11 rounded-xl bg-background border-border"
+              value={fees.pickupFee}
+              onChange={(e) => setFees({ ...fees, pickupFee: parseFloat(e.target.value) || 0 })}
+            />
+          </div>
+
+          <Button type="submit" disabled={saving} className="bg-primary hover:bg-primary-glow text-primary-foreground font-bold h-11 px-6 rounded-xl mt-4">
+            {saving ? "Saving Logistics Fees..." : "Save Delivery Fees"}
           </Button>
         </form>
       </div>

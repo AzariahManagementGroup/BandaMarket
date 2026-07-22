@@ -742,6 +742,45 @@ if (strpos($uri, 'smtp') !== false) {
     }
 }
 
+// 8. Delivery Fees API Endpoint (Admin & Logistics Officer)
+if (strpos($uri, 'delivery-fees') !== false) {
+    if ($request_method === 'POST') {
+        $input = file_get_contents("php://input");
+        $data = json_decode($input, true);
+
+        $standardFee = isset($data['standardFee']) ? floatval($data['standardFee']) : 1000;
+        $expressFee = isset($data['expressFee']) ? floatval($data['expressFee']) : 2500;
+        $pickupFee = isset($data['pickupFee']) ? floatval($data['pickupFee']) : 0;
+        $now = date('Y-m-d H:i:s');
+
+        $stmt = $conn->prepare("INSERT INTO delivery_fees (standardFee, expressFee, pickupFee, updatedAt) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ddds", $standardFee, $expressFee, $pickupFee, $now);
+        if ($stmt->execute()) {
+            http_response_code(200);
+            echo json_encode(["success" => true, "message" => "Delivery fees updated successfully!"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to update delivery fees."]);
+        }
+        $stmt->close();
+        exit();
+    } else {
+        $result = $conn->query("SELECT standardFee, expressFee, pickupFee, updatedAt FROM delivery_fees ORDER BY id DESC LIMIT 1");
+        $fees = null;
+        if ($result && $row = $result->fetch_assoc()) {
+            $fees = $row;
+        }
+        http_response_code(200);
+        echo json_encode(["deliveryFees" => $fees || [
+            "standardFee" => 1000,
+            "expressFee" => 2500,
+            "pickupFee" => 0,
+            "updatedAt" => date('Y-m-d H:i:s')
+        ]]);
+        exit();
+    }
+}
+
 http_response_code(404);
 echo json_encode(["error" => "Endpoint not found."]);
 ?>
