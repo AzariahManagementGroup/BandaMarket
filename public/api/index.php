@@ -583,6 +583,20 @@ if (strpos($uri, 'orders') !== false) {
         $deliveryAddress = isset($data['deliveryAddress']) ? trim($data['deliveryAddress']) : '';
         $now = date('Y-m-d H:i:s');
 
+        // Lookup seller email and seller name from DB if not passed in payload
+        if (!empty($productId) && (empty($sellerEmail) || empty($sellerId))) {
+            $pStmt = $conn->prepare("SELECT p.sellerId, u.fullName, u.email FROM products p LEFT JOIN users u ON p.sellerId = u.id WHERE p.id = ?");
+            $pStmt->bind_param("s", $productId);
+            $pStmt->execute();
+            $pRes = $pStmt->get_result();
+            if ($pRes && $pRow = $pRes->fetch_assoc()) {
+                if (empty($sellerId)) $sellerId = $pRow['sellerId'];
+                if (empty($sellerName) || $sellerName === 'Merchant') $sellerName = $pRow['fullName'];
+                if (empty($sellerEmail)) $sellerEmail = $pRow['email'];
+            }
+            $pStmt->close();
+        }
+
         if (empty($productTitle) || empty($buyerName) || empty($buyerPhone)) {
             http_response_code(400);
             echo json_encode(["error" => "Product, Buyer Name, and Phone are required."]);
