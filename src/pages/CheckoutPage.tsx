@@ -121,7 +121,7 @@ const CheckoutPage = () => {
     // Fetch dynamic logistics delivery fees set by Admin / Logistics Officer
     fetch(getApiUrl("/api/delivery-fees"))
       .then(async res => {
-        if (!res.ok) return null;
+        if (!res || !res.ok) return null;
         const text = await res.text();
         try { return JSON.parse(text); } catch (e) { return null; }
       })
@@ -134,7 +134,7 @@ const CheckoutPage = () => {
           });
         }
       })
-      .catch(err => console.error("Error fetching delivery fees:", err));
+      .catch(() => {});
 
     // Load active product details dynamically by productId
     const localProducts = localStorage.getItem("camemark_products");
@@ -152,7 +152,7 @@ const CheckoutPage = () => {
 
     fetch(getApiUrl("/api/products"))
       .then(async res => {
-        if (!res.ok) return null;
+        if (!res || !res.ok) return null;
         const text = await res.text();
         try { return JSON.parse(text); } catch (e) { return null; }
       })
@@ -162,7 +162,7 @@ const CheckoutPage = () => {
           setProduct(found || data.products[0]);
         }
       })
-      .catch(err => console.error(err))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [productId]);
 
