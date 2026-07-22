@@ -37,34 +37,30 @@ function generate_uuid() {
     );
 }
 
-// Function to send welcome email on first login
-function send_first_login_welcome_email($toEmail, $fullName) {
-    $subject = "Welcome to CameMark — Your Account is Ready!";
-    
+// Helper function to send email
+function send_html_email($toEmail, $subject, $bodyContent) {
     $message = "
     <html>
     <head>
-      <title>Welcome to CameMark</title>
+      <title>" . htmlspecialchars($subject) . "</title>
       <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; }
         .card { max-width: 550px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .header { background: #064e3b; padding: 30px; text-align: center; color: #ffffff; }
-        .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
+        .header { background: #064e3b; padding: 25px; text-align: center; color: #ffffff; }
+        .header h1 { margin: 0; font-size: 22px; font-weight: 700; }
         .content { padding: 30px; color: #334155; line-height: 1.6; }
         .btn { display: inline-block; background: #059669; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; margin-top: 20px; }
+        .otp-box { font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #064e3b; background: #f0fdf4; border: 2px dashed #059669; padding: 15px; text-align: center; border-radius: 10px; margin: 20px 0; }
         .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; }
       </style>
     </head>
     <body>
       <div class='card'>
         <div class='header'>
-          <h1>Welcome to CameMark! 🇨🇲</h1>
+          <h1>CameMark Security 🇨🇲</h1>
         </div>
         <div class='content'>
-          <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
-          <p>Congratulations on logging into your CameMark account for the first time!</p>
-          <p>You now have access to Cameroon's premier digital marketplace. Trade, explore products across all 10 regions, and access your CamRency Wallet securely.</p>
-          <a href='https://camemark.com/dashboard' class='btn'>Go to Dashboard</a>
+          " . $bodyContent . "
         </div>
         <div class='footer'>
           &copy; " . date('Y') . " CameMark. All rights reserved.
@@ -76,7 +72,7 @@ function send_first_login_welcome_email($toEmail, $fullName) {
 
     $headers = "MIME-Version: 1.0" . "\r\n";
     $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-    $headers .= "From: CameMark Support <support@camemark.com>" . "\r\n";
+    $headers .= "From: CameMark Security <security@camemark.com>" . "\r\n";
 
     @mail($toEmail, $subject, $message, $headers);
 }
@@ -159,13 +155,60 @@ if (strpos($uri, 'signup') !== false || (strpos($uri, 'api') !== false && $reque
     }
 }
 
-// 2. Sign In Endpoint
+// 2. Verify OTP Endpoint
+if (strpos($uri, 'verify-otp') !== false && $request_method === 'POST') {
+    $input = file_get_contents("php://input");
+    $data = json_decode($input, true);
+
+    $email = isset($data['email']) ? strtolower(trim($data['email'])) : '';
+    $otpCode = isset($data['otpCode']) ? trim($data['otpCode']) : '';
+
+    if (empty($email) || empty($otpCode)) {
+        http_response_code(400);
+        echo json_encode(["error" => "Email and OTP code are required."]);
+        exit();
+    }
+
+    $stmt = $conn->prepare("SELECT id, email, fullName, phone, country, region, city, role, language, preferredCurrency, otpCode, otpExpiresAt FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        $now = date('Y-m-d H:i:s');
+        if ($row['otpCode'] === $otpCode && strtotime($row['otpExpiresAt']) > strtotime($now)) {
+            // Clear OTP after successful verification
+            $cstmt = $conn->prepare("UPDATE users SET otpCode = NULL, otpExpiresAt = NULL, lastLoginAt = ? WHERE id = ?");
+            $cstmt->bind_param("ss", $now, $row['id']);
+            $cstmt->execute();
+            $cstmt->close();
+
+            unset($row['otpCode']);
+            unset($row['otpExpiresAt']);
+
+            http_response_code(200);
+            echo json_encode(["user" => $row, "token" => "token-" . $row['id']]);
+        } else {
+            http_response_code(400);
+            echo json_encode(["error" => "Invalid or expired OTP code."]);
+        }
+    } else {
+        http_response_code(400);
+        echo json_encode(["error" => "User not found."]);
+    }
+    $stmt->close();
+    exit();
+}
+
+// 3. Sign In Endpoint (Includes New Device Alert & Weekly 7-Day Security OTP Check)
 if (strpos($uri, 'signin') !== false || (strpos($uri, 'api') !== false && $request_method === 'POST')) {
     $input = file_get_contents("php://input");
     $data = json_decode($input, true);
 
     $email = isset($data['email']) ? strtolower(trim($data['email'])) : '';
     $password = isset($data['password']) ? $data['password'] : '';
+    $deviceInfo = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'Unknown Device';
+    $currentDeviceHash = md5($deviceInfo);
 
     if (empty($email) || empty($password)) {
         http_response_code(400);
@@ -173,7 +216,7 @@ if (strpos($uri, 'signin') !== false || (strpos($uri, 'api') !== false && $reque
         exit();
     }
 
-    $stmt = $conn->prepare("SELECT id, email, passwordHash, fullName, phone, country, region, city, role, language, preferredCurrency, lastLoginAt FROM users WHERE email = ?");
+    $stmt = $conn->prepare("SELECT id, email, passwordHash, fullName, phone, country, region, city, role, language, preferredCurrency, lastLoginAt, lastDeviceHash FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -181,20 +224,71 @@ if (strpos($uri, 'signin') !== false || (strpos($uri, 'api') !== false && $reque
     if ($row = $result->fetch_assoc()) {
         if (password_verify($password, $row['passwordHash'])) {
             $isFirstLogin = empty($row['lastLoginAt']);
-
-            // Update lastLoginAt timestamp
             $now = date('Y-m-d H:i:s');
-            $ustmt = $conn->prepare("UPDATE users SET lastLoginAt = ? WHERE id = ?");
-            $ustmt->bind_param("ss", $now, $row['id']);
+            
+            // Check 1: New Device Detection
+            $isNewDevice = !empty($row['lastDeviceHash']) && ($row['lastDeviceHash'] !== $currentDeviceHash);
+            if ($isNewDevice) {
+                $alertContent = "
+                <p>Hello <strong>" . htmlspecialchars($row['fullName']) . "</strong>,</p>
+                <p>⚠️ <strong>Security Alert:</strong> A login to your CameMark account was detected from a new device.</p>
+                <p><strong>Device Info:</strong> " . htmlspecialchars($deviceInfo) . "</p>
+                <p><strong>Time:</strong> " . $now . "</p>
+                <p>If this was you, no action is needed. If you didn't authorize this login, please reset your password immediately.</p>";
+                
+                send_html_email($row['email'], "Security Alert: New Device Login Detected", $alertContent);
+            }
+
+            // Check 2: Weekly OTP Verification (Required once every 7 days after first login)
+            $lastLoginTime = !empty($row['lastLoginAt']) ? strtotime($row['lastLoginAt']) : 0;
+            $sevenDaysAgo = strtotime('-7 days');
+            $requiresWeeklyOtp = !$isFirstLogin && ($lastLoginTime < $sevenDaysAgo);
+
+            if ($requiresWeeklyOtp) {
+                $otp = sprintf("%06d", mt_rand(100000, 999999));
+                $otpExpiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+
+                $ostmt = $conn->prepare("UPDATE users SET otpCode = ?, otpExpiresAt = ?, lastDeviceHash = ? WHERE id = ?");
+                $ostmt->bind_param("ssss", $otp, $otpExpiresAt, $currentDeviceHash, $row['id']);
+                $ostmt->execute();
+                $ostmt->close();
+
+                $otpContent = "
+                <p>Hello <strong>" . htmlspecialchars($row['fullName']) . "</strong>,</p>
+                <p>To keep your account secure, a weekly security check is required. Here is your One-Time Password (OTP):</p>
+                <div class='otp-box'>" . $otp . "</div>
+                <p>This code will expire in 15 minutes. Do not share this code with anyone.</p>";
+
+                send_html_email($row['email'], "CameMark Security: Your Weekly Login OTP", $otpContent);
+
+                http_response_code(200);
+                echo json_encode([
+                    "requiresOtp" => true,
+                    "email" => $row['email'],
+                    "message" => "A 6-digit OTP code has been sent to your email for weekly security verification."
+                ]);
+                exit();
+            }
+
+            // Update user last login and device hash
+            $ustmt = $conn->prepare("UPDATE users SET lastLoginAt = ?, lastDeviceHash = ? WHERE id = ?");
+            $ustmt->bind_param("sss", $now, $currentDeviceHash, $row['id']);
             $ustmt->execute();
             $ustmt->close();
 
-            // Send first login welcome email if applicable
+            // Send first login welcome email if first login
             if ($isFirstLogin) {
-                send_first_login_welcome_email($row['email'], $row['fullName']);
+                $welcomeContent = "
+                <p>Hello <strong>" . htmlspecialchars($row['fullName']) . "</strong>,</p>
+                <p>Congratulations on logging into your CameMark account for the first time!</p>
+                <p>You now have full access to Cameroon's premier digital marketplace across all 10 regions.</p>
+                <a href='https://camemark.com/dashboard' class='btn'>Go to Dashboard</a>";
+
+                send_html_email($row['email'], "Welcome to CameMark — Your Account is Ready!", $welcomeContent);
             }
 
             unset($row['passwordHash']);
+            unset($row['lastDeviceHash']);
             http_response_code(200);
             echo json_encode(["user" => $row, "token" => "token-" . $row['id'], "firstLogin" => $isFirstLogin]);
         } else {

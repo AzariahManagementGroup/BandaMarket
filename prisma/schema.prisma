@@ -63,6 +63,9 @@ model User {
   avatarUrl         String?
   kycStatus         KycStatus     @default(not_submitted)
   lastLoginAt       DateTime?
+  lastDeviceHash    String?
+  otpCode           String?
+  otpExpiresAt      DateTime?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
