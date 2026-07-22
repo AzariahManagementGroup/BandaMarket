@@ -49,8 +49,10 @@ const SellerDashboard = () => {
     unit: "pcs",
     category: "Agriculture & Produce",
     region: "Littoral",
-    city: "Douala"
+    city: "Douala",
+    imageUrl: ""
   });
+  const [imageUploading, setImageUploading] = useState(false);
 
   useEffect(() => {
     document.title = "Seller Dashboard | CameMark";
@@ -110,6 +112,7 @@ const SellerDashboard = () => {
       unit: newListing.unit,
       region: newListing.region,
       city: newListing.city,
+      imageUrl: newListing.imageUrl,
       status: "active",
       createdAt: new Date().toISOString()
     };
@@ -124,7 +127,8 @@ const SellerDashboard = () => {
       unit: "pcs",
       category: "Agriculture & Produce",
       region: "Littoral",
-      city: "Douala"
+      city: "Douala",
+      imageUrl: ""
     });
     toast.success("New product listing published successfully!");
   };
@@ -353,19 +357,26 @@ const SellerDashboard = () => {
                 {listings.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {listings.map((item) => (
-                      <div key={item.id} className="border border-gray-100 rounded-2xl p-5 hover:shadow-md transition-all">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md">
-                              {item.region}
-                            </span>
-                            <h4 className="font-extrabold text-gray-900 mt-2">{item.title}</h4>
+                      <div key={item.id} className="border border-gray-100 rounded-2xl p-5 hover:shadow-md transition-all flex flex-col justify-between">
+                        {item.imageUrl && (
+                          <div className="h-40 w-full rounded-xl overflow-hidden mb-3 border border-gray-100">
+                            <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
                           </div>
-                          <span className="font-black text-emerald-700 text-lg">
-                            {item.price.toLocaleString()} {item.currency}
-                          </span>
+                        )}
+                        <div>
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md">
+                                {item.region}
+                              </span>
+                              <h4 className="font-extrabold text-gray-900 mt-2">{item.title}</h4>
+                            </div>
+                            <span className="font-black text-emerald-700 text-lg">
+                              {item.price.toLocaleString()} {item.currency}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 line-clamp-2 mb-4">{item.description || "No description provided."}</p>
                         </div>
-                        <p className="text-xs text-gray-500 line-clamp-2 mb-4">{item.description || "No description provided."}</p>
                         <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-50">
                           <span>Stock: {item.quantity} {item.unit}</span>
                           <span className="text-emerald-600 font-bold">Active</span>
@@ -403,19 +414,26 @@ const SellerDashboard = () => {
               {listings.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {listings.map((item) => (
-                    <div key={item.id} className="border border-gray-100 rounded-2xl p-5 hover:shadow-md transition-all">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md">
-                            {item.region}
-                          </span>
-                          <h4 className="font-extrabold text-gray-900 mt-2">{item.title}</h4>
+                    <div key={item.id} className="border border-gray-100 rounded-2xl p-5 hover:shadow-md transition-all flex flex-col justify-between">
+                      {item.imageUrl && (
+                        <div className="h-40 w-full rounded-xl overflow-hidden mb-3 border border-gray-100">
+                          <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
                         </div>
-                        <span className="font-black text-emerald-700 text-lg">
-                          {item.price.toLocaleString()} {item.currency}
-                        </span>
+                      )}
+                      <div>
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md">
+                              {item.region}
+                            </span>
+                            <h4 className="font-extrabold text-gray-900 mt-2">{item.title}</h4>
+                          </div>
+                          <span className="font-black text-emerald-700 text-lg">
+                            {item.price.toLocaleString()} {item.currency}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 line-clamp-2 mb-4">{item.description || "No description provided."}</p>
                       </div>
-                      <p className="text-xs text-gray-500 line-clamp-2 mb-4">{item.description || "No description provided."}</p>
                       <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-50">
                         <span>Stock: {item.quantity} {item.unit}</span>
                         <div className="flex items-center gap-2">
@@ -631,6 +649,46 @@ const SellerDashboard = () => {
                   value={newListing.city}
                   onChange={(e) => setNewListing({ ...newListing, city: e.target.value })}
                 />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-gray-500 uppercase">Product Image</Label>
+              <div className="space-y-2">
+                <Input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setNewListing({ ...newListing, imageUrl: reader.result as string });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="h-11 rounded-xl bg-gray-50 border-transparent focus-visible:bg-white text-xs file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer"
+                />
+                <Input 
+                  type="url"
+                  placeholder="Or paste image URL (https://...)" 
+                  className="h-11 rounded-xl bg-gray-50 border-transparent focus-visible:bg-white text-xs"
+                  value={newListing.imageUrl}
+                  onChange={(e) => setNewListing({ ...newListing, imageUrl: e.target.value })}
+                />
+                {newListing.imageUrl && (
+                  <div className="h-24 w-24 rounded-xl overflow-hidden border border-emerald-200 mt-2 relative">
+                    <img src={newListing.imageUrl} alt="Product preview" className="h-full w-full object-cover" />
+                    <button 
+                      type="button" 
+                      onClick={() => setNewListing({ ...newListing, imageUrl: "" })}
+                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 text-[10px]"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
