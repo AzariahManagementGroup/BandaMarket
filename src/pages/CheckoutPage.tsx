@@ -301,7 +301,7 @@ const CheckoutPage = () => {
               <Link to="/market-zone" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
                 <MessageCircle className="h-4 w-4" /> Bargains
               </Link>
-              <Link to="/market-zone" className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
+              <Link to={`/checkout?productId=${product?.id || productId || ''}`} className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
                 <div className="flex items-center gap-3">
                   <ShoppingCart className="h-4 w-4" /> Cart
                 </div>
@@ -348,10 +348,10 @@ const CheckoutPage = () => {
 
             {/* Stepper Steps */}
             <div className="flex items-center gap-2 text-xs font-bold">
-              <div className="flex items-center gap-1.5 text-emerald-700">
+              <Link to={`/checkout?productId=${product?.id || productId || ''}`} className="flex items-center gap-1.5 text-emerald-700 hover:text-emerald-900 transition-colors">
                 <span className="h-6 w-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px]">✓</span>
                 <span>Cart</span>
-              </div>
+              </Link>
               <div className={`h-0.5 w-6 ${currentStep >= 2 ? "bg-emerald-500" : "bg-gray-200"}`} />
               <div className={`flex items-center gap-1.5 ${currentStep >= 2 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
                 <span className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] ${currentStep >= 2 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
