@@ -118,19 +118,21 @@ const SellerDashboard = () => {
     toast.success("New product listing published successfully!");
   };
 
+  const [activeTab, setActiveTab] = useState("dashboard");
+
   const navItems = [
-    { icon: Store, label: "Seller Dashboard", active: true, href: "/seller-dashboard" },
-    { icon: LayoutDashboard, label: "Switch to Buyer View", href: "/dashboard", highlight: true },
+    { id: "dashboard", icon: Store, label: "Seller Dashboard", active: activeTab === "dashboard", href: "/seller-dashboard" },
+    { id: "switch", icon: LayoutDashboard, label: "Switch to Buyer View", href: "/dashboard", highlight: true },
     ...(profile?.role === "admin" || profile?.signup_role === "admin" ? [
-      { icon: Shield, label: "Admin Panel", href: "/admin", special: true }
+      { id: "admin", icon: Shield, label: "Admin Panel", href: "/admin", special: true }
     ] : []),
-    { icon: Package, label: "My Listings", href: "#" },
-    { icon: ShoppingBag, label: "Sales Orders", href: "#" },
-    { icon: MessageCircle, label: "Buyer Inquiries", href: "#" },
-    { icon: Wallet, label: "Earnings & Payouts", href: "#" },
-    { icon: BarChart3, label: "Sales Analytics", href: "#" },
-    { icon: Truck, label: "Shipments", href: "#" },
-    { icon: Settings, label: "Store Settings", href: "#" },
+    { id: "listings", icon: Package, label: "My Listings", active: activeTab === "listings" },
+    { id: "orders", icon: ShoppingBag, label: "Sales Orders", active: activeTab === "orders" },
+    { id: "inquiries", icon: MessageCircle, label: "Buyer Inquiries", active: activeTab === "inquiries" },
+    { id: "earnings", icon: Wallet, label: "Earnings & Payouts", active: activeTab === "earnings" },
+    { id: "analytics", icon: BarChart3, label: "Sales Analytics", active: activeTab === "analytics" },
+    { id: "shipments", icon: Truck, label: "Shipments", active: activeTab === "shipments" },
+    { id: "settings", icon: Settings, label: "Store Settings", active: activeTab === "settings" },
   ];
 
   if (loading && !session) {
@@ -154,7 +156,13 @@ const SellerDashboard = () => {
           {navItems.map((item, i) => (
             <button
               key={item.label}
-              onClick={() => item.href !== "#" && navigate(item.href)}
+              onClick={() => {
+                if (item.href) {
+                  navigate(item.href);
+                } else if (item.id) {
+                  setActiveTab(item.id);
+                }
+              }}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${
                 item.active 
                   ? "bg-emerald-900 text-white shadow-lg shadow-emerald-900/20" 
@@ -212,9 +220,9 @@ const SellerDashboard = () => {
               <DropdownMenuTrigger className="flex items-center gap-3 pl-4 border-l border-gray-100 focus:outline-none">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-bold text-gray-900">{profile?.full_name || "Merchant"}</p>
-                  <p className="text-[10px] font-bold text-emerald-600 flex items-center justify-end gap-1">
-                    <CheckCircle2 className="h-3 w-3" />
-                    <span>Verified Merchant</span>
+                  <p className={`text-[10px] font-bold flex items-center justify-end gap-1 ${profile?.kycStatus === 'approved' || profile?.is_verified ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    {profile?.kycStatus === 'approved' || profile?.is_verified ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                    <span>{profile?.kycStatus === 'approved' || profile?.is_verified ? "Verified Merchant" : "Verification Pending"}</span>
                   </p>
                 </div>
                 <div className="h-10 w-10 rounded-xl bg-emerald-100 overflow-hidden border-2 border-white shadow-sm">
@@ -243,126 +251,303 @@ const SellerDashboard = () => {
 
         {/* Dashboard Body */}
         <main className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-8 custom-scrollbar">
-          {/* Welcome Banner */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#064E3B] to-emerald-800 rounded-3xl p-8 text-white shadow-xl shadow-emerald-900/10">
-            <div>
-              <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-wider mb-3">
-                Merchant Portal 🏪
-              </span>
-              <h2 className="text-3xl font-extrabold">Welcome back, {profile?.full_name?.split(" ")[0] || "Seller"}!</h2>
-              <p className="text-emerald-100 text-sm mt-1 max-w-xl">
-                Manage your store listings, review buyer inquiries, and track sales revenue across all 10 regions.
-              </p>
-            </div>
-            <Button 
-              onClick={() => setIsNewListingModalOpen(true)}
-              className="bg-white text-emerald-900 hover:bg-emerald-50 font-bold h-12 px-6 rounded-xl shrink-0 shadow-md"
-            >
-              <Plus className="h-5 w-5 mr-2" /> Add New Listing
-            </Button>
-          </div>
-
-          {/* Merchant Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="rounded-2xl border-gray-100 shadow-sm p-6">
-              <div className="flex items-center justify-between">
+          {activeTab === "dashboard" && (
+            <>
+              {/* Welcome Banner */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#064E3B] to-emerald-800 rounded-3xl p-8 text-white shadow-xl shadow-emerald-900/10">
                 <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Sales Revenue</p>
-                  <h3 className="text-2xl font-black text-gray-900 mt-2">FCFA 0</h3>
-                  <p className="text-xs text-emerald-600 font-bold mt-1">Ready for payout</p>
+                  <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-wider mb-3">
+                    Merchant Portal 🏪
+                  </span>
+                  <h2 className="text-3xl font-extrabold">Welcome back, {profile?.full_name?.split(" ")[0] || "Seller"}!</h2>
+                  <p className="text-emerald-100 text-sm mt-1 max-w-xl">
+                    Manage your store listings, review buyer inquiries, and track sales revenue across all 10 regions.
+                  </p>
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold">
-                  <DollarSign className="h-6 w-6" />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="rounded-2xl border-gray-100 shadow-sm p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Listings</p>
-                  <h3 className="text-2xl font-black text-gray-900 mt-2">{listings.length}</h3>
-                  <p className="text-xs text-gray-400 mt-1">Live in Market Zone</p>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold">
-                  <Package className="h-6 w-6" />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="rounded-2xl border-gray-100 shadow-sm p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending Orders</p>
-                  <h3 className="text-2xl font-black text-gray-900 mt-2">0</h3>
-                  <p className="text-xs text-amber-600 font-bold mt-1">Awaiting dispatch</p>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 font-bold">
-                  <ShoppingBag className="h-6 w-6" />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="rounded-2xl border-gray-100 shadow-sm p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Store Rating</p>
-                  <h3 className="text-2xl font-black text-gray-900 mt-2">5.0 ★</h3>
-                  <p className="text-xs text-emerald-600 font-bold mt-1">100% positive feedback</p>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 font-bold">
-                  <TrendingUp className="h-6 w-6" />
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Active Listings Section */}
-          <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-extrabold text-gray-900">Your Product Listings</h3>
-                <p className="text-xs text-gray-400 mt-1">Manage and publish items available to buyers across Cameroon</p>
-              </div>
-              <Button onClick={() => setIsNewListingModalOpen(true)} variant="outline" size="sm" className="font-bold border-emerald-600 text-emerald-700">
-                <Plus className="h-4 w-4 mr-2" /> Add Listing
-              </Button>
-            </div>
-
-            {listings.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {listings.map((item) => (
-                  <div key={item.id} className="border border-gray-100 rounded-2xl p-5 hover:shadow-md transition-all">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md">
-                          {item.region}
-                        </span>
-                        <h4 className="font-extrabold text-gray-900 mt-2">{item.title}</h4>
-                      </div>
-                      <span className="font-black text-emerald-700 text-lg">
-                        {item.price.toLocaleString()} {item.currency}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 line-clamp-2 mb-4">{item.description || "No description provided."}</p>
-                    <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-50">
-                      <span>Stock: {item.quantity} {item.unit}</span>
-                      <span className="text-emerald-600 font-bold">Active</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
-                <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <h4 className="font-bold text-gray-700">No Listings Yet</h4>
-                <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">Start selling on CameMark by adding your first product listing.</p>
-                <Button onClick={() => setIsNewListingModalOpen(true)} className="mt-4 bg-[#064E3B] text-white font-bold text-xs h-10 px-5 rounded-xl">
-                  <Plus className="h-4 w-4 mr-2" /> Post Your First Product
+                <Button 
+                  onClick={() => setIsNewListingModalOpen(true)}
+                  className="bg-white text-emerald-900 hover:bg-emerald-50 font-bold h-12 px-6 rounded-xl shrink-0 shadow-md"
+                >
+                  <Plus className="h-5 w-5 mr-2" /> Add New Listing
                 </Button>
               </div>
-            )}
-          </div>
+
+              {/* Merchant Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="rounded-2xl border-gray-100 shadow-sm p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Sales Revenue</p>
+                      <h3 className="text-2xl font-black text-gray-900 mt-2">FCFA 0</h3>
+                      <p className="text-xs text-emerald-600 font-bold mt-1">Ready for payout</p>
+                    </div>
+                    <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold">
+                      <DollarSign className="h-6 w-6" />
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="rounded-2xl border-gray-100 shadow-sm p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Listings</p>
+                      <h3 className="text-2xl font-black text-gray-900 mt-2">{listings.length}</h3>
+                      <p className="text-xs text-gray-400 mt-1">Live in Market Zone</p>
+                    </div>
+                    <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold">
+                      <Package className="h-6 w-6" />
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="rounded-2xl border-gray-100 shadow-sm p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending Orders</p>
+                      <h3 className="text-2xl font-black text-gray-900 mt-2">0</h3>
+                      <p className="text-xs text-amber-600 font-bold mt-1">Awaiting dispatch</p>
+                    </div>
+                    <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 font-bold">
+                      <ShoppingBag className="h-6 w-6" />
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="rounded-2xl border-gray-100 shadow-sm p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Store Rating</p>
+                      <h3 className="text-2xl font-black text-gray-900 mt-2">5.0 ★</h3>
+                      <p className="text-xs text-emerald-600 font-bold mt-1">100% positive feedback</p>
+                    </div>
+                    <div className="h-12 w-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 font-bold">
+                      <TrendingUp className="h-6 w-6" />
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Active Listings Preview */}
+              <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-extrabold text-gray-900">Your Product Listings</h3>
+                    <p className="text-xs text-gray-400 mt-1">Manage and publish items available to buyers across Cameroon</p>
+                  </div>
+                  <Button onClick={() => setIsNewListingModalOpen(true)} variant="outline" size="sm" className="font-bold border-emerald-600 text-emerald-700">
+                    <Plus className="h-4 w-4 mr-2" /> Add Listing
+                  </Button>
+                </div>
+
+                {listings.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {listings.map((item) => (
+                      <div key={item.id} className="border border-gray-100 rounded-2xl p-5 hover:shadow-md transition-all">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md">
+                              {item.region}
+                            </span>
+                            <h4 className="font-extrabold text-gray-900 mt-2">{item.title}</h4>
+                          </div>
+                          <span className="font-black text-emerald-700 text-lg">
+                            {item.price.toLocaleString()} {item.currency}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 line-clamp-2 mb-4">{item.description || "No description provided."}</p>
+                        <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-50">
+                          <span>Stock: {item.quantity} {item.unit}</span>
+                          <span className="text-emerald-600 font-bold">Active</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                    <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                    <h4 className="font-bold text-gray-700">No Listings Yet</h4>
+                    <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">Start selling on CameMark by adding your first product listing.</p>
+                    <Button onClick={() => setIsNewListingModalOpen(true)} className="mt-4 bg-[#064E3B] text-white font-bold text-xs h-10 px-5 rounded-xl">
+                      <Plus className="h-4 w-4 mr-2" /> Post Your First Product
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* My Listings Tab */}
+          {activeTab === "listings" && (
+            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-extrabold text-gray-900">My Product Catalog</h3>
+                  <p className="text-sm text-gray-500 mt-1">Manage, update, and publish items available for sale.</p>
+                </div>
+                <Button onClick={() => setIsNewListingModalOpen(true)} className="bg-[#064E3B] text-white font-bold h-11 px-5 rounded-xl">
+                  <Plus className="h-4 w-4 mr-2" /> Create New Listing
+                </Button>
+              </div>
+
+              {listings.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {listings.map((item) => (
+                    <div key={item.id} className="border border-gray-100 rounded-2xl p-5 hover:shadow-md transition-all">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md">
+                            {item.region}
+                          </span>
+                          <h4 className="font-extrabold text-gray-900 mt-2">{item.title}</h4>
+                        </div>
+                        <span className="font-black text-emerald-700 text-lg">
+                          {item.price.toLocaleString()} {item.currency}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 line-clamp-2 mb-4">{item.description || "No description provided."}</p>
+                      <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-50">
+                        <span>Stock: {item.quantity} {item.unit}</span>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" className="h-8 text-xs font-bold">Edit</Button>
+                          <Button size="sm" variant="ghost" className="h-8 text-xs text-red-600 hover:text-red-700">Delete</Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                  <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h4 className="text-lg font-bold text-gray-700">No Listings Created</h4>
+                  <p className="text-sm text-gray-400 mt-1 max-w-md mx-auto">Create product listings to showcase your goods across all 10 regions of Cameroon.</p>
+                  <Button onClick={() => setIsNewListingModalOpen(true)} className="mt-6 bg-[#064E3B] text-white font-bold h-11 px-6 rounded-xl">
+                    <Plus className="h-4 w-4 mr-2" /> Add First Listing
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sales Orders Tab */}
+          {activeTab === "orders" && (
+            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
+              <div>
+                <h3 className="text-2xl font-extrabold text-gray-900">Sales Orders</h3>
+                <p className="text-sm text-gray-500 mt-1">Track incoming customer purchases and fulfillment status.</p>
+              </div>
+              <div className="text-center py-16 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h4 className="text-lg font-bold text-gray-700">No Sales Orders Received Yet</h4>
+                <p className="text-sm text-gray-400 mt-1 max-w-md mx-auto">When buyers purchase your products, orders will appear here for processing and dispatch.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Buyer Inquiries Tab */}
+          {activeTab === "inquiries" && (
+            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
+              <div>
+                <h3 className="text-2xl font-extrabold text-gray-900">Buyer Inquiries & Messages</h3>
+                <p className="text-sm text-gray-500 mt-1">Communicate directly with interested buyers and bargain offers.</p>
+              </div>
+              <div className="text-center py-16 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                <MessageCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h4 className="text-lg font-bold text-gray-700">No Inquiries Found</h4>
+                <p className="text-sm text-gray-400 mt-1 max-w-md mx-auto">Direct messages and price bargain requests from buyers will show up here.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Earnings & Payouts Tab */}
+          {activeTab === "earnings" && (
+            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-extrabold text-gray-900">Earnings & Wallet Payouts</h3>
+                  <p className="text-sm text-gray-500 mt-1">Withdraw revenue directly to Mobile Money (MTN / Orange) or Bank Account.</p>
+                </div>
+                <Button className="bg-[#064E3B] text-white font-bold h-11 px-5 rounded-xl">
+                  Withdraw Funds
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6">
+                  <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Available Balance</p>
+                  <h4 className="text-3xl font-black text-emerald-950 mt-2">FCFA 0</h4>
+                  <p className="text-xs text-emerald-700 mt-2 font-medium">Ready for instant payout</p>
+                </div>
+                <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pending Clearance</p>
+                  <h4 className="text-3xl font-black text-gray-900 mt-2">FCFA 0</h4>
+                  <p className="text-xs text-gray-500 mt-2 font-medium">Held in escrow until delivery</p>
+                </div>
+                <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Withdrawn</p>
+                  <h4 className="text-3xl font-black text-gray-900 mt-2">FCFA 0</h4>
+                  <p className="text-xs text-gray-500 mt-2 font-medium">Lifetime payout total</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sales Analytics Tab */}
+          {activeTab === "analytics" && (
+            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
+              <div>
+                <h3 className="text-2xl font-extrabold text-gray-900">Sales & Store Performance</h3>
+                <p className="text-sm text-gray-500 mt-1">Real-time stats on product views, sales trends, and top regions.</p>
+              </div>
+              <div className="text-center py-16 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                <BarChart3 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h4 className="text-lg font-bold text-gray-700">Analytics Data Accumulating</h4>
+                <p className="text-sm text-gray-400 mt-1 max-w-md mx-auto">Analytics breakdown will update automatically as buyers view and purchase your listings.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Shipments Tab */}
+          {activeTab === "shipments" && (
+            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
+              <div>
+                <h3 className="text-2xl font-extrabold text-gray-900">Logistics & Shipments</h3>
+                <p className="text-sm text-gray-500 mt-1">Manage shipping partner pickups across Cameroon's 10 regions.</p>
+              </div>
+              <div className="text-center py-16 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                <Truck className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h4 className="text-lg font-bold text-gray-700">No Active Shipments</h4>
+                <p className="text-sm text-gray-400 mt-1 max-w-md mx-auto">Once orders are confirmed, generate waybills and assign logistics partners here.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Store Settings Tab */}
+          {activeTab === "settings" && (
+            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
+              <div>
+                <h3 className="text-2xl font-extrabold text-gray-900">Store Profile & Settings</h3>
+                <p className="text-sm text-gray-500 mt-1">Configure merchant business details, contact information, and operating regions.</p>
+              </div>
+
+              <div className="space-y-4 max-w-xl">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-gray-500 uppercase">Merchant Store Name</Label>
+                  <Input defaultValue={profile?.full_name || ""} className="h-11 rounded-xl bg-gray-50 border-transparent" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-gray-500 uppercase">Primary Region</Label>
+                  <Input defaultValue={profile?.region || "Littoral"} className="h-11 rounded-xl bg-gray-50 border-transparent" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-gray-500 uppercase">Contact Phone / WhatsApp</Label>
+                  <Input defaultValue={profile?.phone || ""} className="h-11 rounded-xl bg-gray-50 border-transparent" />
+                </div>
+                <Button className="bg-[#064E3B] text-white font-bold h-11 px-6 rounded-xl mt-4">
+                  Save Store Settings
+                </Button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
