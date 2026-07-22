@@ -162,6 +162,16 @@ const SellerDashboard = () => {
       .catch(err => console.error("Error fetching listings:", err))
       .finally(() => setLoading(false));
 
+    // Fetch real-time sales orders for tracking
+    fetch(getApiUrl("/api/orders"))
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data.orders)) {
+          setSalesOrders(data.orders);
+        }
+      })
+      .catch(err => console.error("Error fetching sales orders:", err));
+
     // Fetch notifications
     const uId = profile?.id || JSON.parse(userStr || '{}').id;
     if (uId) {
@@ -715,16 +725,90 @@ const SellerDashboard = () => {
 
           {/* Sales Orders Tab */}
           {activeTab === "orders" && (
-            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
-              <div>
-                <h3 className="text-2xl font-extrabold text-gray-900">Sales Orders</h3>
-                <p className="text-sm text-gray-500 mt-1">Track incoming customer purchases and fulfillment status.</p>
+            <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-sm space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
+                    Sales Orders & Tracking <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">{salesOrders.length} Total</span>
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">Real-time order tracking, buyer contact details, and dispatch status across Cameroon.</p>
+                </div>
+                <Button onClick={() => {
+                  fetch(getApiUrl("/api/orders")).then(res => res.json()).then(data => { if (data && data.orders) setSalesOrders(data.orders); });
+                  toast.success("Sales orders refreshed!");
+                }} variant="outline" size="sm" className="font-bold text-xs border-emerald-600 text-emerald-700 hover:bg-emerald-50 shrink-0">
+                  <Clock className="h-4 w-4 mr-1.5" /> Refresh Live Feed
+                </Button>
               </div>
-              <div className="text-center py-16 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
-                <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h4 className="text-lg font-bold text-gray-700">No Sales Orders Received Yet</h4>
-                <p className="text-sm text-gray-400 mt-1 max-w-md mx-auto">When buyers purchase your products, orders will appear here for processing and dispatch.</p>
-              </div>
+
+              {salesOrders.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Order Cards Grid */}
+                  <div className="grid grid-cols-1 gap-4">
+                    {salesOrders.map((ord) => (
+                      <div key={ord.id} className="border border-gray-200/80 rounded-2xl p-5 hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-white via-gray-50/50 to-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono text-xs font-black bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                              {ord.id}
+                            </span>
+                            <span className="text-xs font-extrabold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> Status: {ord.status || 'Pending Dispatch'}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-bold ml-auto md:ml-0">
+                              {new Date(ord.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+
+                          <div>
+                            <h4 className="text-base font-extrabold text-gray-900">{ord.productTitle}</h4>
+                            <p className="text-sm font-black text-emerald-700 mt-0.5">
+                              {ord.amount?.toLocaleString ? ord.amount.toLocaleString() : ord.amount} {ord.currency || 'XAF'}
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs text-gray-600">
+                            <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-100">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                              <div>
+                                <p className="font-bold text-gray-900">{ord.buyerName || 'Guest Buyer'}</p>
+                                <p className="text-[11px] text-gray-500 font-mono">{ord.buyerPhone} {ord.buyerEmail ? `• ${ord.buyerEmail}` : ''}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-100">
+                              <MapPin className="h-4 w-4 text-emerald-600 shrink-0" />
+                              <div>
+                                <p className="font-bold text-gray-900">Delivery Address</p>
+                                <p className="text-[11px] text-gray-500 line-clamp-1">{ord.deliveryAddress || 'Standard Delivery Address'}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex md:flex-col items-center justify-end gap-2 shrink-0 border-t md:border-t-0 md:border-l border-gray-100 pt-3 md:pt-0 md:pl-4">
+                          <a 
+                            href={`https://wa.me/${ord.buyerPhone?.replace(/[^0-9]/g, '')}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs h-9 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
+                          >
+                            <MessageCircle className="h-4 w-4" /> WhatsApp Buyer
+                          </a>
+                          <Button variant="outline" size="sm" className="w-full md:w-auto text-xs font-bold h-9 rounded-xl border-gray-300">
+                            <Truck className="h-3.5 w-3.5 mr-1" /> Dispatch Logistics
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-16 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                  <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h4 className="text-lg font-bold text-gray-700">No Sales Orders Received Yet</h4>
+                  <p className="text-sm text-gray-400 mt-1 max-w-md mx-auto">When buyers purchase your products, orders will appear here for processing, WhatsApp contact, and dispatch tracking.</p>
+                </div>
+              )}
             </div>
           )}
 
