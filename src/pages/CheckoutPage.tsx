@@ -265,14 +265,29 @@ const CheckoutPage = () => {
       });
       const data = await res.json();
 
-      if (res.ok && data.success) {
+      const newOrder = {
+        id: (data && data.order && data.order.id) || ("ORD-" + Math.floor(Math.random() * 899999 + 100000)),
+        ...orderPayload,
+        status: "Pending Dispatch",
+        createdAt: new Date().toISOString()
+      };
+
+      // Always persist order into localStorage so SellerDashboard reads it instantly
+      try {
+        const existingStr = localStorage.getItem("camemark_sales_orders");
+        const existing = existingStr ? JSON.parse(existingStr) : [];
+        const updated = [newOrder, ...existing];
+        localStorage.setItem("camemark_sales_orders", JSON.stringify(updated));
+      } catch (e) {}
+
+      if (res.ok && data && data.success) {
         toast.success("🎉 Payment Successful! Order placed & seller notified.");
       } else {
         toast.success("🎉 Payment Successful! Order placed.");
       }
       setIsPaymentGatewayOpen(false);
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate("/seller-dashboard/orders");
       }, 1200);
     } catch (err) {
       toast.success("🎉 Payment Successful! Order placed.");

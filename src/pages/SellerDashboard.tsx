@@ -162,11 +162,21 @@ const SellerDashboard = () => {
       .catch(err => console.error("Error fetching listings:", err))
       .finally(() => setLoading(false));
 
-    // Fetch real-time sales orders for tracking
+    // Fetch real-time sales orders for tracking (MySQL + LocalStorage backup)
+    const localOrders = localStorage.getItem("camemark_sales_orders");
+    if (localOrders) {
+      try {
+        const parsed = JSON.parse(localOrders);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSalesOrders(parsed);
+        }
+      } catch (e) {}
+    }
+
     fetch(getApiUrl("/api/orders"))
       .then(res => res.json())
       .then(data => {
-        if (data && Array.isArray(data.orders)) {
+        if (data && Array.isArray(data.orders) && data.orders.length > 0) {
           setSalesOrders(data.orders);
         }
       })
@@ -734,7 +744,11 @@ const SellerDashboard = () => {
                   <p className="text-xs text-gray-500 mt-1">Real-time order tracking, buyer contact details, and dispatch status across Cameroon.</p>
                 </div>
                 <Button onClick={() => {
-                  fetch(getApiUrl("/api/orders")).then(res => res.json()).then(data => { if (data && data.orders) setSalesOrders(data.orders); });
+                  const local = localStorage.getItem("camemark_sales_orders");
+                  if (local) {
+                    try { setSalesOrders(JSON.parse(local)); } catch (e) {}
+                  }
+                  fetch(getApiUrl("/api/orders")).then(res => res.json()).then(data => { if (data && data.orders && data.orders.length > 0) setSalesOrders(data.orders); });
                   toast.success("Sales orders refreshed!");
                 }} variant="outline" size="sm" className="font-bold text-xs border-emerald-600 text-emerald-700 hover:bg-emerald-50 shrink-0">
                   <Clock className="h-4 w-4 mr-1.5" /> Refresh Live Feed
