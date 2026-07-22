@@ -521,6 +521,33 @@ if (strpos($uri, 'products') !== false) {
     }
 }
 
+// 5. Notifications API Endpoint
+if (strpos($uri, 'notifications') !== false) {
+    $userId = isset($_GET['userId']) ? $_GET['userId'] : '';
+    if (empty($userId)) {
+        http_response_code(400);
+        echo json_encode(["error" => "userId parameter is required."]);
+        exit();
+    }
+
+    $stmt = $conn->prepare("SELECT id, title, message, isRead, createdAt FROM notifications WHERE userId = ? ORDER BY createdAt DESC");
+    $stmt->bind_param("s", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $notifications = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $notifications[] = $row;
+        }
+    }
+    $stmt->close();
+
+    http_response_code(200);
+    echo json_encode(["notifications" => $notifications]);
+    exit();
+}
+
 http_response_code(404);
 echo json_encode(["error" => "Endpoint not found."]);
 ?>

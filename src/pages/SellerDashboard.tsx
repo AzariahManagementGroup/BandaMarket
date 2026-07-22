@@ -41,6 +41,7 @@ const SellerDashboard = () => {
   const [wallet, setWallet] = useState<any>(null);
   const [listings, setListings] = useState<any[]>([]);
   const [salesOrders, setSalesOrders] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNewListingModalOpen, setIsNewListingModalOpen] = useState(false);
   const [newListing, setNewListing] = useState({
@@ -156,11 +157,24 @@ const SellerDashboard = () => {
             price: typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0
           }));
           setListings(parsed);
-          localStorage.setItem("camemark_products", JSON.stringify(parsed));
         }
       })
       .catch(err => console.error("Error fetching listings:", err))
       .finally(() => setLoading(false));
+
+    // Fetch notifications
+    const uId = profile?.id || JSON.parse(userStr || '{}').id;
+    if (uId) {
+      fetch(getApiUrl(`/api/notifications?userId=${uId}`))
+        .then(res => res.json())
+        .then(data => {
+          if (data && Array.isArray(data.notifications)) {
+            setNotifications(data.notifications);
+            setUnreadCount(data.notifications.filter((n: any) => n.isRead == 0).length);
+          }
+        })
+        .catch(err => console.error("Notifications fetch error:", err));
+    }
   }, [navigate]);
 
   const [isKycRequiredModalOpen, setIsKycRequiredModalOpen] = useState(false);
@@ -231,6 +245,15 @@ const SellerDashboard = () => {
         setIsNewListingModalOpen(false);
         toast.success("New product listing published!");
       }
+      const newNotif = {
+        id: "notif-" + Date.now(),
+        title: "Product Listing Live! 📦",
+        message: `Your product '${newListing.title}' is now live on Market Zone. Complete KYC verification to unlock unlimited listings!`,
+        isRead: 0,
+        createdAt: new Date().toISOString()
+      };
+      setNotifications([newNotif, ...notifications]);
+      setUnreadCount(prev => prev + 1);
     } catch (err) {
       const created = { id: "lst-" + Date.now(), ...payload, status: "active", createdAt: new Date().toISOString() };
       const updated = [created, ...listings];
@@ -238,6 +261,16 @@ const SellerDashboard = () => {
       localStorage.setItem("camemark_products", JSON.stringify(updated));
       setIsNewListingModalOpen(false);
       toast.success("New product listing published!");
+
+      const newNotif = {
+        id: "notif-" + Date.now(),
+        title: "Product Listing Live! 📦",
+        message: `Your product '${newListing.title}' is now live on Market Zone. Complete KYC verification to unlock unlimited listings!`,
+        isRead: 0,
+        createdAt: new Date().toISOString()
+      };
+      setNotifications([newNotif, ...notifications]);
+      setUnreadCount(prev => prev + 1);
     }
   };
 
@@ -400,6 +433,42 @@ const SellerDashboard = () => {
             >
               <ArrowLeftRight className="h-4 w-4" /> Switch to Buyer
             </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative rounded-xl hover:bg-gray-100 h-10 w-10 shrink-0">
+                  <Bell className="h-5 w-5 text-gray-600" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 h-4 w-4 bg-red-600 rounded-full text-[10px] font-extrabold text-white flex items-center justify-center animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 bg-white p-2 rounded-2xl shadow-xl border border-gray-100">
+                <div className="flex items-center justify-between p-2 border-b border-gray-100">
+                  <h4 className="font-extrabold text-sm text-gray-900">Notifications</h4>
+                  {unreadCount > 0 && (
+                    <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">
+                      {unreadCount} new
+                    </span>
+                  )}
+                </div>
+                <div className="max-h-64 overflow-y-auto py-1 space-y-1">
+                  {notifications.length > 0 ? (
+                    notifications.map((n) => (
+                      <div key={n.id} className="p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+                        <p className="text-xs font-bold text-gray-900">{n.title}</p>
+                        <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">{n.message}</p>
+                        <span className="text-[9px] text-gray-400 mt-1 block">{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-400 text-center py-6">No notifications yet</p>
+                  )}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-gray-100 focus:outline-none">
