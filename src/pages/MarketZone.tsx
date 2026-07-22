@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { Store, MapPin, Package, AlertCircle, ShoppingCart, MessageCircle, Lock, Eye, EyeOff } from "lucide-react";
+import { Store, MapPin, Package, AlertCircle, ShoppingCart, MessageCircle, Lock, Eye, EyeOff, Share2, Copy } from "lucide-react";
 import Navbar from "@/components/camemark/Navbar";
 import Footer from "@/components/camemark/Footer";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +20,23 @@ const MarketZone = () => {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
   const [userCurrency, setUserCurrency] = useState("XAF");
+
+  const handleShareProduct = (product: any, platform: string = "whatsapp") => {
+    const productUrl = `${window.location.origin}/checkout?productId=${product.id}`;
+    const productImg = product.imageUrl || `${window.location.origin}/og-image.png`;
+    const shareText = `🛒 *${product.title}*\n💰 Price: ${product.currency} ${product.price.toLocaleString()}\n📍 Seller: ${product.sellerName || 'Verified Merchant'} (${product.city || 'Cameroon'}, ${product.region || ''})\n🖼️ View Image: ${productImg}\n\n👉 Buy now on CameMark: ${productUrl}`;
+
+    if (platform === "whatsapp") {
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, "_blank");
+    } else if (platform === "facebook") {
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}`, "_blank");
+    } else if (platform === "twitter") {
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out ${product.title} on CameMark 🇨🇲`)}&url=${encodeURIComponent(productUrl)}`, "_blank");
+    } else {
+      navigator.clipboard.writeText(`${shareText}`);
+      toast.success("📋 Product details & image link copied to clipboard!");
+    }
+  };
 
   // Approximate conversion rates from XAF
   const XAF_RATES: Record<string, number> = {
@@ -231,10 +246,33 @@ const MarketZone = () => {
                       <Package className="h-10 w-10 text-muted-foreground/30" />
                     )}
                     <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors" />
+
+                    {/* Quick WhatsApp & Social Share Overlay Badge */}
+                    <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShareProduct(product, "whatsapp");
+                        }}
+                        title="Share Product with Cover Image on WhatsApp"
+                        className="h-8 px-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black shadow-lg flex items-center gap-1 backdrop-blur-md transition-transform hover:scale-105"
+                      >
+                        <Share2 className="h-3.5 w-3.5" /> Share
+                      </button>
+                    </div>
                   </div>
                   <div className="p-4 flex-1 flex flex-col">
-                    <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-                      <Store className="h-3 w-3" /> {product.sellerName || product.profiles?.full_name || "Verified Merchant"}
+                    <div className="text-xs text-muted-foreground flex items-center justify-between mb-1">
+                      <span className="flex items-center gap-1">
+                        <Store className="h-3 w-3" /> {product.sellerName || product.profiles?.full_name || "Verified Merchant"}
+                      </span>
+                      <button 
+                        onClick={() => handleShareProduct(product, "copy")} 
+                        className="text-[10px] text-emerald-700 hover:underline flex items-center gap-0.5 font-bold"
+                        title="Copy direct product link & image URL"
+                      >
+                        <Copy className="h-2.5 w-2.5" /> Copy Link
+                      </button>
                     </div>
                     <h3 className="font-bold text-foreground text-sm line-clamp-1">{product.title}</h3>
                     <div className="mt-2 flex flex-col">
