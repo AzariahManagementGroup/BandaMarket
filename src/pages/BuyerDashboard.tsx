@@ -427,8 +427,8 @@ const BuyerDashboard = () => {
           />
 
           {/* Drawer container */}
-          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col p-6 overflow-y-auto animate-slide-in-left z-10">
-            <div className="flex items-center justify-between mb-8">
+          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col p-5 overflow-y-auto custom-scrollbar animate-slide-in-left z-10">
+            <div className="flex items-center justify-between mb-6 shrink-0">
               <img src={logo} alt="CameMark" className="h-8 w-auto" />
               <button 
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -438,7 +438,7 @@ const BuyerDashboard = () => {
               </button>
             </div>
 
-            <nav className="space-y-1 flex-1">
+            <nav className="space-y-1 flex-1 overflow-y-auto custom-scrollbar pr-1">
               {navItems.map((item) => {
                 const isActive = activeNavTab === item.id || (item.id === "dashboard" && window.location.pathname === "/dashboard" && !window.location.search);
                 return (
@@ -477,7 +477,7 @@ const BuyerDashboard = () => {
               })}
             </nav>
 
-            <div className="pt-6 border-t border-gray-100 mt-auto">
+            <div className="pt-4 border-t border-gray-100 mt-4 shrink-0">
               <Button 
                 onClick={() => {
                   setIsMobileMenuOpen(false);
@@ -495,28 +495,28 @@ const BuyerDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-6 lg:px-10 shrink-0 gap-3">
-          <div className="flex items-center gap-3 flex-1 max-w-xl">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-3 sm:px-6 lg:px-10 shrink-0 gap-2 sm:gap-4">
+          <div className="flex items-center gap-2.5 flex-1 max-w-xl">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2.5 rounded-xl bg-gray-50 hover:bg-emerald-50 text-gray-700 hover:text-emerald-800 transition-colors border border-gray-200 shrink-0"
+              className="lg:hidden p-2 rounded-xl bg-gray-50 hover:bg-emerald-50 text-gray-700 hover:text-emerald-800 transition-colors border border-gray-200 shrink-0"
               title="Open Navigation Menu"
             >
               <Menu className="h-5 w-5" />
             </button>
             <div className="relative group w-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />
               <Input 
                 placeholder="Search products, farmers, orders, regions..." 
-                className="pl-12 bg-gray-50 border-transparent rounded-xl h-11 focus-visible:ring-emerald-500 focus-visible:bg-white transition-all text-xs"
+                className="pl-10 sm:pl-12 bg-gray-50 border-transparent rounded-xl h-10 sm:h-11 focus-visible:ring-emerald-500 focus-visible:bg-white transition-all text-xs"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-6 ml-4">
+          <div className="flex items-center gap-2 sm:gap-4 ml-2 shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger className="relative p-2 text-gray-400 hover:text-emerald-600 transition-colors">
-                <Bell className="h-6 w-6" />
+                <Bell className="h-5 sm:h-6 w-5 sm:w-6" />
                 {unreadCount > 0 && <span className="absolute top-2 right-2 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80 bg-white p-2">
@@ -541,7 +541,7 @@ const BuyerDashboard = () => {
             </div>
 
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-3 pl-4 border-l border-gray-100 focus:outline-none">
+              <DropdownMenuTrigger className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-gray-100 focus:outline-none shrink-0">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-bold text-gray-900">{profile?.full_name || "Account"}</p>
                   <p className={`text-[10px] font-bold flex items-center justify-end gap-1 ${profile?.is_verified ? 'text-emerald-600' : 'text-gray-400'}`}>
@@ -549,8 +549,8 @@ const BuyerDashboard = () => {
                     <span className="capitalize">{profile?.signup_role?.replace('_', ' ') || 'User'}</span> • {profile?.is_verified ? "Verified" : "Pending"}
                   </p>
                 </div>
-                <div className="h-10 w-10 rounded-xl bg-emerald-100 overflow-hidden border-2 border-white shadow-sm">
-                  <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.full_name || "Felix"}`} alt="User avatar" />
+                <div className="h-9 sm:h-10 w-9 sm:w-10 rounded-xl bg-emerald-100 overflow-hidden border-2 border-white shadow-sm shrink-0 flex items-center justify-center">
+                  <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.full_name || "Felix"}`} alt="User avatar" className="h-full w-full object-cover" />
                 </div>
                 <ChevronDown className="h-4 w-4 text-gray-400 hidden sm:block" />
               </DropdownMenuTrigger>
@@ -573,9 +573,6 @@ const BuyerDashboard = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <button className="lg:hidden p-2 text-gray-600" onClick={() => setIsMobileMenuOpen(true)}>
-              <Menu className="h-6 w-6" />
-            </button>
           </div>
         </header>
 
