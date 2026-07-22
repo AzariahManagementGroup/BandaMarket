@@ -70,20 +70,29 @@ const SellerDashboard = () => {
           setLoading(false);
         }
       });
-    } else if (userStr) {
+    if (userStr) {
       const user = JSON.parse(userStr);
       setSession({ user });
-      setProfile({
+      const currentProfile = {
         ...user,
         full_name: user.fullName || user.full_name || user.email?.split('@')[0],
         signup_role: user.role || user.signup_role || 'seller',
         avatar_url: user.avatarUrl || user.avatar_url
-      });
+      };
+      setProfile(currentProfile);
       if (user.wallet) setWallet(user.wallet);
-      setLoading(false);
-    } else {
-      setLoading(false);
     }
+
+    // Fetch existing products from MySQL API
+    fetch(getApiUrl("/api/products"))
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data.products)) {
+          setListings(data.products);
+        }
+      })
+      .catch(err => console.error("Error fetching listings:", err))
+      .finally(() => setLoading(false));
   }, [navigate]);
 
   const [isKycRequiredModalOpen, setIsKycRequiredModalOpen] = useState(false);
