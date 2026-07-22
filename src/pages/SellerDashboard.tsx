@@ -82,8 +82,19 @@ const SellerDashboard = () => {
     }
   }, [navigate]);
 
+  const [isKycRequiredModalOpen, setIsKycRequiredModalOpen] = useState(false);
+
   const handleCreateListing = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const isVerified = profile?.kycStatus === 'approved' || profile?.is_verified;
+    if (!isVerified && listings.length >= 1) {
+      setIsNewListingModalOpen(false);
+      setIsKycRequiredModalOpen(true);
+      toast.warning("Unverified merchants are limited to 1 product listing. Complete KYC verification to publish unlimited items!");
+      return;
+    }
+
     if (!newListing.title || !newListing.price) {
       toast.error("Please provide title and price");
       return;
@@ -639,6 +650,51 @@ const SellerDashboard = () => {
               <Button type="submit" className="bg-[#064E3B] text-white font-bold">Publish Listing</Button>
             </DialogFooter>
           </form>
+      {/* KYC Required Limit Modal */}
+      <Dialog open={isKycRequiredModalOpen} onOpenChange={setIsKycRequiredModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 text-center">
+          <div className="mx-auto h-14 w-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 border border-amber-100">
+            <Shield className="h-7 w-7" />
+          </div>
+
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-xl font-black text-gray-900 text-center">Identity Verification Required</DialogTitle>
+            <DialogDescription className="text-xs text-gray-500 leading-relaxed text-center">
+              Unverified merchants are allowed <strong>1 product listing</strong>. Complete your merchant KYC verification to unlock unlimited listings and verified trust badges!
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-amber-50/60 rounded-2xl p-4 border border-amber-100 my-4 text-left space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+              <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" /> Unlock Unlimited Product Listings
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+              <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" /> Verified Merchant Badge on Market Zone
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+              <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" /> Direct Customer Trust & Instant Payouts
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col gap-2 sm:flex-col pt-2">
+            <Button 
+              onClick={() => {
+                setIsKycRequiredModalOpen(false);
+                navigate("/dashboard");
+              }}
+              className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-bold h-11 rounded-xl"
+            >
+              Complete KYC Verification Now
+            </Button>
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setIsKycRequiredModalOpen(false)}
+              className="w-full text-xs font-bold text-gray-400 hover:text-gray-600"
+            >
+              Maybe Later
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

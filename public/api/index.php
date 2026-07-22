@@ -57,7 +57,7 @@ function send_html_email($toEmail, $subject, $bodyContent) {
     <body>
       <div class='card'>
         <div class='header'>
-          <h1>CameMark Security 🇨🇲</h1>
+          <h1>CameMark 🇨🇲</h1>
         </div>
         <div class='content'>
           " . $bodyContent . "
@@ -70,11 +70,26 @@ function send_html_email($toEmail, $subject, $bodyContent) {
     </html>
     ";
 
+    $domain = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'camemark.com';
+    $fromHeader = "noreply@" . $domain;
+
     $headers = "MIME-Version: 1.0" . "\r\n";
     $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-    $headers .= "From: CameMark Security <security@camemark.com>" . "\r\n";
+    $headers .= "From: CameMark <" . $fromHeader . ">" . "\r\n";
+    $headers .= "Reply-To: support@" . $domain . "\r\n";
+    $headers .= "X-Mailer: PHP/" . phpversion();
 
     @mail($toEmail, $subject, $message, $headers);
+}
+
+// Helper function to create in-app notification
+function create_inapp_notification($conn, $userId, $title, $message) {
+    $notifId = generate_uuid();
+    $now = date('Y-m-d H:i:s');
+    $stmt = $conn->prepare("INSERT INTO notifications (id, userId, title, message, isRead, createdAt) VALUES (?, ?, ?, ?, 0, ?)");
+    $stmt->bind_param("sssss", $notifId, $userId, $title, $message, $now);
+    $stmt->execute();
+    $stmt->close();
 }
 
 // 1. Sign Up Endpoint
@@ -237,6 +252,7 @@ if (strpos($uri, 'signin') !== false || (strpos($uri, 'api') !== false && $reque
                 <p>If this was you, no action is needed. If you didn't authorize this login, please reset your password immediately.</p>";
                 
                 send_html_email($row['email'], "Security Alert: New Device Login Detected", $alertContent);
+                create_inapp_notification($conn, $row['id'], "New Device Login Detected ⚠️", "A login from a new device/browser was detected on your account.");
             }
 
             // Check 2: Weekly OTP Verification (Required once every 7 days after first login)
@@ -260,6 +276,7 @@ if (strpos($uri, 'signin') !== false || (strpos($uri, 'api') !== false && $reque
                 <p>This code will expire in 15 minutes. Do not share this code with anyone.</p>";
 
                 send_html_email($row['email'], "CameMark Security: Your Weekly Login OTP", $otpContent);
+                create_inapp_notification($conn, $row['id'], "Weekly Security Check Required", "A 6-digit OTP code has been emailed to you for verification.");
 
                 http_response_code(200);
                 echo json_encode([
@@ -285,6 +302,7 @@ if (strpos($uri, 'signin') !== false || (strpos($uri, 'api') !== false && $reque
                 <a href='https://camemark.com/dashboard' class='btn'>Go to Dashboard</a>";
 
                 send_html_email($row['email'], "Welcome to CameMark — Your Account is Ready!", $welcomeContent);
+                create_inapp_notification($conn, $row['id'], "Welcome to CameMark! 🇨🇲", "Your account has been set up. Start trading across all 10 regions.");
             }
 
             unset($row['passwordHash']);
