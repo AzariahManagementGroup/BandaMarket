@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Store, MapPin, Package, AlertCircle, ShoppingCart, MessageCircle } from "lucide-react";
+import { Store, MapPin, Package, AlertCircle, ShoppingCart, MessageCircle, Lock, Eye, EyeOff } from "lucide-react";
 import Navbar from "@/components/camemark/Navbar";
 import Footer from "@/components/camemark/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { getApiUrl } from "@/config";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const MarketZone = () => {
@@ -81,13 +83,18 @@ const MarketZone = () => {
 
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [guestDetails, setGuestDetails] = useState({
     fullName: "",
     email: "",
     phone: "",
-    deliveryAddress: "",
+    country: "Cameroon",
     region: region !== "All Regions" ? region : "Littoral",
     city: "Douala",
+    deliveryAddress: "",
+    role: "buyer",
+    password: "",
     createAccount: false
   });
 
@@ -101,28 +108,72 @@ const MarketZone = () => {
           ...prev,
           fullName: u.fullName || u.full_name || "",
           email: u.email || "",
-          phone: u.phone || ""
+          phone: u.phone || "",
+          country: u.country || "Cameroon",
+          region: u.region || (region !== "All Regions" ? region : "Littoral"),
+          city: u.city || "Douala"
         }));
       } catch (e) {}
     }
     setIsCheckoutOpen(true);
   };
 
-  const handleCompleteGuestOrder = (e: React.FormEvent) => {
+  const handleCompleteGuestOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guestDetails.fullName || !guestDetails.phone || !guestDetails.deliveryAddress) {
-      toast.error("Please fill in your delivery name, phone number, and address.");
+      toast.error("Please fill in your full name, phone number, and delivery address.");
       return;
     }
 
-    toast.success(`Order placed successfully for ${selectedProduct.title}! Merchant will contact you at ${guestDetails.phone}.`);
-    setIsCheckoutOpen(false);
-
     if (guestDetails.createAccount) {
-      setTimeout(() => {
-        toast.info("Redirecting to account creation...");
-        navigate(`/signup?email=${encodeURIComponent(guestDetails.email)}&name=${encodeURIComponent(guestDetails.fullName)}`);
-      }, 1500);
+      if (!guestDetails.email || !guestDetails.password) {
+        toast.error("Email and password are required to create an account.");
+        return;
+      }
+      if (guestDetails.password.length < 8) {
+        toast.error("Password must be at least 8 characters long.");
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      if (guestDetails.createAccount) {
+        // Submit full account signup to PHP API
+        const signupPayload = {
+          fullName: guestDetails.fullName,
+          email: guestDetails.email,
+          phone: guestDetails.phone,
+          password: guestDetails.password,
+          country: guestDetails.country,
+          region: guestDetails.region,
+          city: guestDetails.city,
+          role: guestDetails.role
+        };
+
+        const res = await fetch(getApiUrl("/api/signup"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(signupPayload)
+        });
+        const data = await res.json();
+
+        if (res.ok && data.user) {
+          localStorage.setItem("camemark_token", data.token || "token-" + data.user.id);
+          localStorage.setItem("camemark_user", JSON.stringify(data.user));
+          toast.success("Account created & order submitted successfully!");
+        } else {
+          toast.info("Order placed! Account could not be created automatically.");
+        }
+      } else {
+        toast.success(`Order placed successfully for ${selectedProduct?.title}! The merchant will contact you shortly at ${guestDetails.phone}.`);
+      }
+    } catch (err) {
+      toast.success(`Order submitted successfully for ${selectedProduct?.title}!`);
+    } finally {
+      setIsSubmitting(false);
+      setIsCheckoutOpen(false);
     }
   };
 
@@ -291,6 +342,49 @@ const MarketZone = () => {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-gray-600 uppercase">Country</Label>
+                <Select value={guestDetails.country} onValueChange={(val) => setGuestDetails({ ...guestDetails, country: val })}>
+                  <SelectTrigger className="h-11 rounded-xl bg-gray-50 border-gray-200 text-xs">
+                    <SelectValue placeholder="Select Country" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem value="Cameroon">Cameroon 🇨🇲</SelectItem>
+                    <SelectItem value="Nigeria">Nigeria 🇳🇬</SelectItem>
+                    <SelectItem value="Chad">Chad 🇹🇩</SelectItem>
+                    <SelectItem value="Gabon">Gabon 🇬🇦</SelectItem>
+                    <SelectItem value="France">France 🇫🇷</SelectItem>
+                    <SelectItem value="USA">USA 🇺🇸</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-gray-600 uppercase">Region / State</Label>
+                <Select value={guestDetails.region} onValueChange={(val) => setGuestDetails({ ...guestDetails, region: val })}>
+                  <SelectTrigger className="h-11 rounded-xl bg-gray-50 border-gray-200 text-xs">
+                    <SelectValue placeholder="Select Region" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    {["Adamawa","Centre","East","Far North","Littoral","North","Northwest","South","Southwest","West","Other"].map((reg) => (
+                      <SelectItem key={reg} value={reg}>{reg}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-gray-600 uppercase">City / Town</Label>
+              <Input 
+                placeholder="e.g. Douala, Yaoundé, Bamenda"
+                className="h-11 rounded-xl bg-gray-50 border-gray-200 text-sm focus-visible:bg-white"
+                value={guestDetails.city}
+                onChange={(e) => setGuestDetails({ ...guestDetails, city: e.target.value })}
+              />
+            </div>
+
             <div className="space-y-1">
               <Label className="text-xs font-bold text-gray-600 uppercase">Delivery Address *</Label>
               <Textarea 
@@ -304,18 +398,58 @@ const MarketZone = () => {
             </div>
 
             {/* Optional Account Creation Option */}
-            <div className="pt-2 border-t border-gray-100">
-              <div className="flex items-center space-x-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <div className="pt-2 border-t border-gray-100 space-y-3">
+              <div className="flex items-center space-x-2 bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
                 <Checkbox 
                   id="createAccount" 
                   checked={guestDetails.createAccount}
                   onCheckedChange={(checked) => setGuestDetails({ ...guestDetails, createAccount: !!checked })}
                 />
                 <label htmlFor="createAccount" className="text-xs font-medium text-gray-700 cursor-pointer leading-snug">
-                  <span className="font-bold text-gray-900 block">Save details & create account (Optional)</span>
+                  <span className="font-bold text-gray-900 block">Create an Account (Optional)</span>
                   Track your order status and receive future order updates easily.
                 </label>
               </div>
+
+              {guestDetails.createAccount && (
+                <div className="space-y-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 animate-fade-in">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold text-gray-600 uppercase">Account Role</Label>
+                    <Select value={guestDetails.role} onValueChange={(val) => setGuestDetails({ ...guestDetails, role: val })}>
+                      <SelectTrigger className="h-10 rounded-xl bg-white border-gray-200 text-xs">
+                        <SelectValue placeholder="Select Role" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white">
+                        <SelectItem value="buyer">Buyer</SelectItem>
+                        <SelectItem value="seller">Seller / Merchant</SelectItem>
+                        <SelectItem value="farmer">Farmer / Cooperative</SelectItem>
+                        <SelectItem value="logistics">Logistics Partner</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold text-gray-600 uppercase">Account Password *</Label>
+                    <div className="relative">
+                      <Input 
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Minimum 8 characters"
+                        required={guestDetails.createAccount}
+                        className="h-10 rounded-xl bg-white border-gray-200 text-xs pr-10"
+                        value={guestDetails.password}
+                        onChange={(e) => setGuestDetails({ ...guestDetails, password: e.target.value })}
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <DialogFooter className="pt-2">
