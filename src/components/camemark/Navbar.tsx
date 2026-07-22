@@ -39,15 +39,25 @@ const Navbar = () => {
   const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      if (data.session) fetchRole(data.session.user.id);
-    });
-    
+    const token = localStorage.getItem("camemark_token");
+    const userStr = localStorage.getItem("camemark_user");
+
+    if (token && userStr) {
+      const user = JSON.parse(userStr);
+      setSession({ user });
+      setRole(user.role || "buyer");
+    } else {
+      supabase.auth.getSession().then(({ data }) => {
+        setSession(data.session);
+        if (data.session) fetchRole(data.session.user.id);
+      });
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) fetchRole(session.user.id);
-      else setRole(null);
+      if (session) {
+        setSession(session);
+        fetchRole(session.user.id);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
