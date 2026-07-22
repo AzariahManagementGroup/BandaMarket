@@ -124,7 +124,13 @@ const AcademyPage = () => {
 
   useEffect(() => {
     fetch(getApiUrl("/api/courses"))
-      .then(res => res.json())
+      .then(res => {
+        const contentType = res.headers.get("content-type");
+        if (res.ok && contentType && contentType.includes("application/json")) {
+          return res.json();
+        }
+        return null;
+      })
       .then(data => {
         if (data && Array.isArray(data.courses) && data.courses.length > 0) {
           setCourses([...data.courses, ...defaultCourses]);
