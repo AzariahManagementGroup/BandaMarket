@@ -16,6 +16,7 @@ import CheckoutPage from "./pages/CheckoutPage.tsx";
 import AcademyPage from "./pages/AcademyPage.tsx";
 import ChatAssistant from "./components/camemark/ChatAssistant.tsx";
 import { Navigate } from "react-router-dom";
+import OfflineCommercePage from "./pages/OfflineCommercePage";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/dashboard" element={<BuyerDashboard />} />
           <Route path="/seller-dashboard/*" element={<SellerDashboard />} />
           <Route path="/cards-wallet" element={<CardsWallet />} />
+          <Route path="/offline-commerce" element={<OfflineCommercePage />} />
           <Route path="/admin/*" element={<AdminDashboard />} />
           <Route path="/marketplace" element={<Navigate to="/market-zone" replace />} />
           <Route path="*" element={<NotFound />} />

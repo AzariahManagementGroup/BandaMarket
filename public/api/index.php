@@ -3,6 +3,11 @@
 require_once __DIR__ . '/config.php';
 
 // Route matching based on request URL
+if (strpos($uri, 'offline-sync') !== false) {
+    require_once __DIR__ . '/offline-sync.php';
+    exit();
+}
+
 if (strpos($uri, 'bargains') !== false) {
     require_once __DIR__ . '/bargains.php';
     exit();

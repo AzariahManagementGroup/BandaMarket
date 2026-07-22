@@ -73,6 +73,35 @@ $conn->query("CREATE TABLE IF NOT EXISTS bargains (
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+$conn->query("CREATE TABLE IF NOT EXISTS offline_wallets (
+    id VARCHAR(100) PRIMARY KEY,
+    userId VARCHAR(100) NOT NULL,
+    onlineBalance DECIMAL(12,2) DEFAULT '250000.00',
+    offlineReservedBalance DECIMAL(12,2) DEFAULT '25000.00',
+    tierLevel VARCHAR(50) DEFAULT 'Tier 1 Merchant',
+    maxOfflineLimit DECIMAL(12,2) DEFAULT '50000.00',
+    spendingScore INT DEFAULT 85,
+    deviceCertificate VARCHAR(255) DEFAULT 'CERT-CAMEMARK-OFFLINE-DEVICETRUST-8823',
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+$conn->query("CREATE TABLE IF NOT EXISTS offline_transactions (
+    id VARCHAR(100) PRIMARY KEY,
+    transactionHash VARCHAR(255) NOT NULL,
+    merchantId VARCHAR(100) NOT NULL,
+    merchantName VARCHAR(255) NOT NULL,
+    buyerId VARCHAR(100) NOT NULL,
+    buyerName VARCHAR(255) NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    currency VARCHAR(10) DEFAULT 'XAF',
+    offlineModeLevel VARCHAR(50) DEFAULT 'Level 2: Dual Offline',
+    gpsCoordinates VARCHAR(100) DEFAULT '4.0511° N, 9.7679° E (Douala)',
+    nonce VARCHAR(100) NOT NULL,
+    syncStatus VARCHAR(50) DEFAULT 'Pending Sync',
+    settlementStatus VARCHAR(50) DEFAULT 'Pending Settlement',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
 $conn->query("CREATE TABLE IF NOT EXISTS smtp_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     smtpHost VARCHAR(255) NOT NULL,

@@ -70,6 +70,7 @@ const Navbar = () => {
 
   const links = [
     { key: "home", label: t("nav.home"), href: "/" },
+    { key: "offline", label: "COCF Offline 📶", href: "/offline-commerce", highlight: true },
     { key: "academy", label: "Academy 🎓", href: "/academy", academy: true },
     { key: "marketplace", label: t("nav.marketplace"), href: "/market-zone" },
     { key: "forum", label: "Forum 2026 🇨🇲", href: "/#forum-2026", highlight: true },
