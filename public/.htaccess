@@ -2,10 +2,11 @@
   RewriteEngine On
   RewriteBase /
 
-  # Route /api/ auth calls directly to api/index.php
-  RewriteRule ^api/(.*)$ public/api/index.php [QSA,L]
+  # Direct routing for API calls to PHP endpoint
+  RewriteRule ^api/index\.php$ api/index.php [L]
+  RewriteRule ^api/(.*)$ api/index.php [QSA,L]
 
-  # Route all other static requests to index.html (SPA Fallback)
+  # SPA Routing Fallback to index.html for all non-file pages
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule ^ index.html [L]

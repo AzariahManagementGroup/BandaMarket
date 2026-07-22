@@ -139,7 +139,7 @@ const Signup = () => {
       });
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Backend server API is not connected or returning HTML. Please ensure Node.js server.ts is running on production.");
+        throw new Error("Unable to connect to PHP API on Namecheap. Please ensure public/.htaccess and public/api/index.php are uploaded.");
       }
 
       const data = await res.json();
