@@ -69,7 +69,13 @@ const BuyerDashboard = () => {
     } else if (userStr) {
       const user = JSON.parse(userStr);
       setSession({ user });
-      setProfile(user);
+      setProfile({
+        ...user,
+        full_name: user.fullName || user.full_name || user.email?.split('@')[0],
+        signup_role: user.role || user.signup_role || 'buyer',
+        avatar_url: user.avatarUrl || user.avatar_url
+      });
+      if (user.wallet) setWallet(user.wallet);
       setLoading(false);
     } else {
       setLoading(false);
@@ -444,7 +450,11 @@ const BuyerDashboard = () => {
                 <DropdownMenuItem onClick={() => navigate("/cards-wallet")} className="flex items-center gap-2 cursor-pointer">
                   <CreditCard className="h-4 w-4" /> Cards & Wallet
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => supabase.auth.signOut().then(() => navigate("/"))} className="flex items-center gap-2 cursor-pointer text-red-600">
+                <DropdownMenuItem onClick={() => {
+                  localStorage.removeItem("camemark_token");
+                  localStorage.removeItem("camemark_user");
+                  supabase.auth.signOut().then(() => navigate("/signin"));
+                }} className="flex items-center gap-2 cursor-pointer text-red-600">
                   <X className="h-4 w-4" /> Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
