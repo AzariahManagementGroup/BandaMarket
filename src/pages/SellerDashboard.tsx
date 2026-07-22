@@ -508,22 +508,32 @@ const SellerDashboard = () => {
           {activeTab === "dashboard" && (
             <>
               {/* Welcome Banner */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#064E3B] via-emerald-800 to-emerald-950 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white shadow-xl shadow-emerald-900/15 animate-fade-in hover:shadow-2xl hover:shadow-emerald-900/20 transition-all duration-500 relative overflow-hidden group">
-                <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all duration-700 pointer-events-none" />
-                <div className="relative z-10">
-                  <span className="inline-block px-3 py-1 bg-white/15 backdrop-blur-md border border-white/20 rounded-full text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 shadow-sm animate-pulse">
-                    Merchant Portal 🏪
-                  </span>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Welcome back, {profile?.full_name?.split(" ")[0] || "Seller"}!</h2>
-                  <p className="text-emerald-100 text-xs sm:text-sm mt-1 max-w-xl leading-relaxed">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#04382A] via-[#064E3B] to-emerald-900 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white shadow-2xl shadow-emerald-950/25 animate-fade-in hover:shadow-emerald-900/30 transition-all duration-700 relative overflow-hidden group border border-emerald-700/30">
+                {/* Glowing background animated orbs */}
+                <div className="absolute -right-12 -top-12 w-56 h-56 bg-emerald-400/20 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000 pointer-events-none animate-pulse-glow" />
+                <div className="absolute left-1/3 -bottom-20 w-64 h-64 bg-teal-300/15 rounded-full blur-3xl pointer-events-none animate-float" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+
+                <div className="relative z-10 space-y-1">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-white/10 backdrop-blur-xl border border-white/25 rounded-full text-xs font-black uppercase tracking-wider shadow-inner animate-float">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span>Merchant Portal 🏪</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white drop-shadow-sm mt-2">
+                    Welcome back, <span className="text-emerald-300 underline decoration-emerald-400/40 underline-offset-4">{profile?.full_name?.split(" ")[0] || "Seller"}</span>!
+                  </h2>
+                  <p className="text-emerald-100/90 text-xs sm:text-sm max-w-xl leading-relaxed pt-1 font-medium">
                     Manage your store listings, review buyer inquiries, and track sales revenue across all 10 regions.
                   </p>
                 </div>
                 <Button 
                   onClick={() => setIsNewListingModalOpen(true)}
-                  className="bg-white text-emerald-950 hover:bg-emerald-50 font-black h-11 sm:h-12 px-5 sm:px-6 rounded-xl shrink-0 shadow-lg text-xs sm:text-sm transition-all duration-300 hover:scale-105 hover:shadow-white/20 relative z-10"
+                  className="bg-white text-emerald-950 hover:bg-emerald-50 font-black h-12 px-6 rounded-2xl shrink-0 shadow-xl text-xs sm:text-sm transition-all duration-300 hover:scale-105 hover:shadow-emerald-400/30 relative z-10 group/btn overflow-hidden"
                 >
-                  <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" /> Add New Listing
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Plus className="h-4 w-4 sm:h-5 sm:w-5 group-hover/btn:rotate-90 transition-transform duration-300 text-emerald-700" /> 
+                    Add New Listing
+                  </span>
                 </Button>
               </div>
 
