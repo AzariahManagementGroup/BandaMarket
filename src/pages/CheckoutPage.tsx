@@ -97,6 +97,23 @@ const CheckoutPage = () => {
           phone: u.phone || ""
         }));
       } catch (e) {}
+    // Load saved custom user addresses from localStorage
+    const savedAddressesStr = localStorage.getItem("camemark_saved_addresses");
+    if (savedAddressesStr) {
+      try {
+        const parsed = JSON.parse(savedAddressesStr);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setUserAddresses(parsed);
+          setDeliveryAddressType(parsed[0].id);
+          setBillingDetails(prev => ({
+            ...prev,
+            address: parsed[0].address,
+            city: parsed[0].city,
+            region: parsed[0].region,
+            country: parsed[0].country
+          }));
+        }
+      } catch (e) {}
     }
 
     // Fetch dynamic logistics delivery fees set by Admin / Logistics Officer
@@ -158,7 +175,13 @@ const CheckoutPage = () => {
       isDefault: false
     };
 
-    setUserAddresses(prev => [...prev, created]);
+    setUserAddresses(prev => {
+      const updated = [...prev, created];
+      try {
+        localStorage.setItem("camemark_saved_addresses", JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
     setDeliveryAddressType(newId);
     setBillingDetails(prev => ({
       ...prev,
@@ -169,7 +192,7 @@ const CheckoutPage = () => {
     }));
     setIsAddAddressModalOpen(false);
     setNewAddressForm({ title: "", address: "", city: "Douala", region: "Littoral", country: "Cameroon", phone: "" });
-    toast.success("New delivery address added & selected!");
+    toast.success("New delivery address added & saved!");
   };
 
   // Real-time Stepper Progress Calculation
