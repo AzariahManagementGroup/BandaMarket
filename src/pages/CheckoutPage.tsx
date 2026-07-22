@@ -97,6 +97,8 @@ const CheckoutPage = () => {
           phone: u.phone || ""
         }));
       } catch (e) {}
+    }
+
     // Load saved custom user addresses from localStorage
     const savedAddressesStr = localStorage.getItem("camemark_saved_addresses");
     if (savedAddressesStr) {
