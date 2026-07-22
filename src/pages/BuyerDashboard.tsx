@@ -312,6 +312,7 @@ const BuyerDashboard = () => {
 
   const navItems = [
     { icon: LayoutDashboard, label: "Buyer Dashboard", active: true, href: "/dashboard" },
+    { icon: Store, label: "Switch to Seller View", href: "/seller-dashboard", highlight: true },
     ...(profile?.role === "admin" || 
         profile?.role === "super_admin" || 
         profile?.signup_role === "admin" ||
@@ -355,9 +356,11 @@ const BuyerDashboard = () => {
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${
                 item.active 
                   ? "bg-[#064E3B] text-white shadow-lg shadow-emerald-900/20" 
-                  : item.special
-                    ? "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200/50"
-                    : "text-gray-500 hover:bg-emerald-50 hover:text-emerald-700"
+                  : item.highlight
+                    ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold border border-emerald-200/60"
+                    : item.special
+                      ? "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200/50"
+                      : "text-gray-500 hover:bg-emerald-50 hover:text-emerald-700"
               } animate-fade-in-right`}
               style={{ animationDelay: `${i * 0.05}s` }}
             >
@@ -444,6 +447,9 @@ const BuyerDashboard = () => {
                 <ChevronDown className="h-4 w-4 text-gray-400 hidden sm:block" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-white">
+                <DropdownMenuItem onClick={() => navigate("/seller-dashboard")} className="flex items-center gap-2 cursor-pointer font-bold text-emerald-700">
+                  <Store className="h-4 w-4" /> Switch to Seller View
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setIsProfileModalOpen(true)} className="flex items-center gap-2 cursor-pointer">
                   <Settings className="h-4 w-4" /> Profile Settings
                 </DropdownMenuItem>
