@@ -57,6 +57,22 @@ $conn->query("CREATE TABLE IF NOT EXISTS course_enrollments (
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+$conn->query("CREATE TABLE IF NOT EXISTS bargains (
+    id VARCHAR(100) PRIMARY KEY,
+    productId VARCHAR(100) NOT NULL,
+    productTitle VARCHAR(255) NOT NULL,
+    sellerId VARCHAR(100) NOT NULL,
+    sellerEmail VARCHAR(255) DEFAULT NULL,
+    buyerName VARCHAR(255) NOT NULL,
+    buyerEmail VARCHAR(255) NOT NULL,
+    buyerPhone VARCHAR(100) NOT NULL,
+    offerPrice DECIMAL(12,2) NOT NULL,
+    offerQty INT DEFAULT 1,
+    currency VARCHAR(10) DEFAULT 'XAF',
+    status VARCHAR(50) DEFAULT 'pending',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
 $conn->query("CREATE TABLE IF NOT EXISTS smtp_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     smtpHost VARCHAR(255) NOT NULL,
