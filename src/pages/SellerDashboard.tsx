@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -210,29 +211,80 @@ const SellerDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-6 lg:px-10 shrink-0">
-          <div className="flex-1 max-w-xl">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-10 shrink-0 gap-3">
+          <div className="flex items-center gap-3 flex-1 max-w-xl">
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <button className="lg:hidden p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700">
+                  <Menu className="h-5 w-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 p-6 bg-white flex flex-col">
+                <div className="flex items-center gap-2 mb-8">
+                  <img src={logo} alt="CameMark" className="h-10 w-auto" />
+                </div>
+                <nav className="space-y-1 flex-1 overflow-y-auto">
+                  {navItems.map((item) => (
+                    <button
+                      key={item.label}
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        if (item.href) {
+                          navigate(item.href);
+                        } else if (item.id) {
+                          setActiveTab(item.id);
+                        }
+                      }}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 text-left ${
+                        item.active 
+                          ? "bg-emerald-900 text-white shadow-md" 
+                          : item.highlight
+                            ? "bg-emerald-50 text-emerald-700 font-bold border border-emerald-200/60"
+                            : "text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <item.icon className="h-5 w-5" />
+                        <span className="text-sm font-semibold">{item.label}</span>
+                      </div>
+                    </button>
+                  ))}
+                </nav>
+                <div className="pt-4 mt-auto border-t border-gray-100">
+                  <Button 
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsNewListingModalOpen(true);
+                    }}
+                    className="w-full bg-[#064E3B] text-white font-bold h-11 rounded-xl"
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Add Product
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            <div className="relative group flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />
               <Input 
-                placeholder="Search products, orders, inventory..." 
-                className="pl-12 bg-gray-50 border-transparent rounded-xl h-11 focus-visible:ring-emerald-500 focus-visible:bg-white transition-all"
+                placeholder="Search products, orders..." 
+                className="pl-10 bg-gray-50 border-transparent rounded-xl h-10 text-xs sm:text-sm focus-visible:ring-emerald-500 focus-visible:bg-white transition-all"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-4 ml-4">
+          <div className="flex items-center gap-2 sm:gap-4 ml-2">
             <Button
               onClick={() => navigate("/dashboard")}
               variant="outline"
               size="sm"
-              className="hidden md:flex items-center gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-bold rounded-xl h-10 px-4"
+              className="hidden sm:flex items-center gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-bold rounded-xl h-10 px-3 text-xs"
             >
               <ArrowLeftRight className="h-4 w-4" /> Switch to Buyer
             </Button>
 
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-3 pl-4 border-l border-gray-100 focus:outline-none">
+              <DropdownMenuTrigger className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-gray-100 focus:outline-none">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-bold text-gray-900">{profile?.full_name || "Merchant"}</p>
                   <p className={`text-[10px] font-bold flex items-center justify-end gap-1 ${profile?.kycStatus === 'approved' || profile?.is_verified ? 'text-emerald-600' : 'text-amber-600'}`}>
@@ -240,13 +292,13 @@ const SellerDashboard = () => {
                     <span>{profile?.kycStatus === 'approved' || profile?.is_verified ? "Verified Merchant" : "Verification Pending"}</span>
                   </p>
                 </div>
-                <div className="h-10 w-10 rounded-xl bg-emerald-100 overflow-hidden border-2 border-white shadow-sm">
+                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-emerald-100 overflow-hidden border-2 border-white shadow-sm shrink-0">
                   <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.full_name || "Merchant"}`} alt="User avatar" />
                 </div>
                 <ChevronDown className="h-4 w-4 text-gray-400 hidden sm:block" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-white">
-                <DropdownMenuItem onClick={() => navigate("/dashboard")} className="flex items-center gap-2 cursor-pointer font-bold text-emerald-700">
+                <DropdownMenuItem onClick={() => navigate("/dashboard")} className="flex items-center gap-2 cursor-pointer font-bold text-emerald-700 sm:hidden">
                   <ArrowLeftRight className="h-4 w-4" /> Switch to Buyer View
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setIsNewListingModalOpen(true)} className="flex items-center gap-2 cursor-pointer">
@@ -265,25 +317,25 @@ const SellerDashboard = () => {
         </header>
 
         {/* Dashboard Body */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-8 custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 custom-scrollbar">
           {activeTab === "dashboard" && (
             <>
               {/* Welcome Banner */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#064E3B] to-emerald-800 rounded-3xl p-8 text-white shadow-xl shadow-emerald-900/10">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#064E3B] to-emerald-800 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white shadow-xl shadow-emerald-900/10">
                 <div>
-                  <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-wider mb-3">
+                  <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3">
                     Merchant Portal 🏪
                   </span>
-                  <h2 className="text-3xl font-extrabold">Welcome back, {profile?.full_name?.split(" ")[0] || "Seller"}!</h2>
-                  <p className="text-emerald-100 text-sm mt-1 max-w-xl">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold">Welcome back, {profile?.full_name?.split(" ")[0] || "Seller"}!</h2>
+                  <p className="text-emerald-100 text-xs sm:text-sm mt-1 max-w-xl">
                     Manage your store listings, review buyer inquiries, and track sales revenue across all 10 regions.
                   </p>
                 </div>
                 <Button 
                   onClick={() => setIsNewListingModalOpen(true)}
-                  className="bg-white text-emerald-900 hover:bg-emerald-50 font-bold h-12 px-6 rounded-xl shrink-0 shadow-md"
+                  className="bg-white text-emerald-900 hover:bg-emerald-50 font-bold h-11 sm:h-12 px-5 sm:px-6 rounded-xl shrink-0 shadow-md text-xs sm:text-sm"
                 >
-                  <Plus className="h-5 w-5 mr-2" /> Add New Listing
+                  <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" /> Add New Listing
                 </Button>
               </div>
 
