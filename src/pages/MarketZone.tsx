@@ -5,8 +5,12 @@ import Navbar from "@/components/camemark/Navbar";
 import Footer from "@/components/camemark/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { getApiUrl } from "@/config";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const MarketZone = () => {
   const [searchParams] = useSearchParams();
@@ -75,12 +79,58 @@ const MarketZone = () => {
     fetchProducts();
   }, [region]);
 
-  const handleAction = (actionName: string) => {
-    if (!session) {
-      toast.error(`Please sign in to ${actionName.toLowerCase()}`);
-      navigate("/signup");
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [guestDetails, setGuestDetails] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    deliveryAddress: "",
+    region: region !== "All Regions" ? region : "Littoral",
+    city: "Douala",
+    createAccount: false
+  });
+
+  const handleOrderClick = (product: any) => {
+    setSelectedProduct(product);
+    const userStr = localStorage.getItem("camemark_user");
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        setGuestDetails(prev => ({
+          ...prev,
+          fullName: u.fullName || u.full_name || "",
+          email: u.email || "",
+          phone: u.phone || ""
+        }));
+      } catch (e) {}
+    }
+    setIsCheckoutOpen(true);
+  };
+
+  const handleCompleteGuestOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!guestDetails.fullName || !guestDetails.phone || !guestDetails.deliveryAddress) {
+      toast.error("Please fill in your delivery name, phone number, and address.");
+      return;
+    }
+
+    toast.success(`Order placed successfully for ${selectedProduct.title}! Merchant will contact you at ${guestDetails.phone}.`);
+    setIsCheckoutOpen(false);
+
+    if (guestDetails.createAccount) {
+      setTimeout(() => {
+        toast.info("Redirecting to account creation...");
+        navigate(`/signup?email=${encodeURIComponent(guestDetails.email)}&name=${encodeURIComponent(guestDetails.fullName)}`);
+      }, 1500);
+    }
+  };
+
+  const handleAction = (actionName: string, product?: any) => {
+    if (actionName === "Order" && product) {
+      handleOrderClick(product);
     } else {
-      toast.success(`${actionName} feature coming soon!`);
+      toast.info(`${actionName} feature coming soon!`);
     }
   };
 
@@ -151,8 +201,8 @@ const MarketZone = () => {
                       </Button>
                       <Button 
                         size="sm" 
-                        className="w-full text-xs h-8 bg-primary hover:bg-primary-glow text-primary-foreground"
-                        onClick={() => handleAction("Order")}
+                        className="w-full text-xs h-8 bg-primary hover:bg-primary-glow text-primary-foreground font-bold"
+                        onClick={() => handleAction("Order", product)}
                       >
                         <ShoppingCart className="h-3.5 w-3.5 mr-1" /> Order
                       </Button>
@@ -176,6 +226,109 @@ const MarketZone = () => {
       </main>
 
       <Footer />
+
+      {/* Guest Purchase Checkout Modal */}
+      <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+        <DialogContent className="sm:max-w-lg bg-white rounded-3xl p-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-gray-900">Direct Order & Delivery Details</DialogTitle>
+            <DialogDescription className="text-xs text-gray-500">
+              No account required! Provide your shipping information so the seller can process and deliver your order.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedProduct && (
+            <div className="bg-emerald-50/60 rounded-2xl p-4 border border-emerald-100 flex items-center gap-3 my-2">
+              {selectedProduct.imageUrl ? (
+                <img src={selectedProduct.imageUrl} alt={selectedProduct.title} className="h-14 w-14 rounded-xl object-cover border border-emerald-200" />
+              ) : (
+                <div className="h-14 w-14 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700">
+                  <Package className="h-6 w-6" />
+                </div>
+              )}
+              <div>
+                <h4 className="font-extrabold text-sm text-gray-900 line-clamp-1">{selectedProduct.title}</h4>
+                <p className="text-xs text-emerald-700 font-bold mt-0.5">
+                  {selectedProduct.currency} {selectedProduct.price.toLocaleString()}
+                </p>
+                <span className="text-[10px] text-gray-500">Seller: {selectedProduct.sellerName || "Verified Merchant"}</span>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleCompleteGuestOrder} className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-gray-600 uppercase">Full Name *</Label>
+              <Input 
+                placeholder="e.g. Jean-Paul Mbida"
+                required
+                className="h-11 rounded-xl bg-gray-50 border-gray-200 text-sm focus-visible:bg-white"
+                value={guestDetails.fullName}
+                onChange={(e) => setGuestDetails({ ...guestDetails, fullName: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-gray-600 uppercase">Phone / WhatsApp *</Label>
+                <Input 
+                  placeholder="+237 6XX XXX XXX"
+                  required
+                  className="h-11 rounded-xl bg-gray-50 border-gray-200 text-sm focus-visible:bg-white"
+                  value={guestDetails.phone}
+                  onChange={(e) => setGuestDetails({ ...guestDetails, phone: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-gray-600 uppercase">Email (Optional)</Label>
+                <Input 
+                  type="email"
+                  placeholder="name@domain.com"
+                  className="h-11 rounded-xl bg-gray-50 border-gray-200 text-sm focus-visible:bg-white"
+                  value={guestDetails.email}
+                  onChange={(e) => setGuestDetails({ ...guestDetails, email: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-gray-600 uppercase">Delivery Address *</Label>
+              <Textarea 
+                placeholder="Street address, neighborhood landmark, or delivery spot..."
+                required
+                rows={2}
+                className="bg-gray-50 border-gray-200 rounded-xl text-sm focus-visible:bg-white"
+                value={guestDetails.deliveryAddress}
+                onChange={(e) => setGuestDetails({ ...guestDetails, deliveryAddress: e.target.value })}
+              />
+            </div>
+
+            {/* Optional Account Creation Option */}
+            <div className="pt-2 border-t border-gray-100">
+              <div className="flex items-center space-x-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <Checkbox 
+                  id="createAccount" 
+                  checked={guestDetails.createAccount}
+                  onCheckedChange={(checked) => setGuestDetails({ ...guestDetails, createAccount: !!checked })}
+                />
+                <label htmlFor="createAccount" className="text-xs font-medium text-gray-700 cursor-pointer leading-snug">
+                  <span className="font-bold text-gray-900 block">Save details & create account (Optional)</span>
+                  Track your order status and receive future order updates easily.
+                </label>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => setIsCheckoutOpen(false)} className="rounded-xl font-bold">
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-[#064E3B] hover:bg-emerald-950 text-white font-bold rounded-xl h-11 px-6">
+                Confirm Order
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
