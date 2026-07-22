@@ -400,3 +400,5 @@ const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen
     </Dialog>
   );
 };
+
+export default ProductDetailModal;
