@@ -44,21 +44,29 @@ const MarketZone = () => {
     // In a fully populated database, this would filter by the seller's region.
     const fetchProducts = async () => {
       setLoading(true);
+      
+      const localListings = localStorage.getItem("camemark_products");
+      if (localListings) {
+        try {
+          const parsed = JSON.parse(localListings);
+          const filtered = region === "All Regions" ? parsed : parsed.filter((p: any) => p.region === region);
+          setProducts(filtered);
+        } catch (e) {}
+      }
+
       try {
         const response = await fetch(getApiUrl("/api/products"));
         const data = await response.json();
 
-        if (response.ok && Array.isArray(data.products)) {
+        if (response.ok && Array.isArray(data.products) && data.products.length > 0) {
           const filtered = region === "All Regions" 
             ? data.products 
             : data.products.filter((p: any) => p.region === region);
           setProducts(filtered);
-        } else {
-          setProducts([]);
+          localStorage.setItem("camemark_products", JSON.stringify(data.products));
         }
       } catch (err) {
         console.error("Error fetching products:", err);
-        setProducts([]);
       } finally {
         setLoading(false);
       }

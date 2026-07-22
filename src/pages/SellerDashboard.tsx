@@ -139,12 +139,24 @@ const SellerDashboard = () => {
       if (user.wallet) setWallet(user.wallet);
     }
 
-    // Fetch existing products from MySQL API
+    // Fetch existing products from MySQL API & localStorage backup
+    const localListings = localStorage.getItem("camemark_products");
+    if (localListings) {
+      try {
+        setListings(JSON.parse(localListings));
+      } catch (e) {}
+    }
+
     fetch(getApiUrl("/api/products"))
       .then(res => res.json())
       .then(data => {
-        if (data && Array.isArray(data.products)) {
-          setListings(data.products);
+        if (data && Array.isArray(data.products) && data.products.length > 0) {
+          const parsed = data.products.map((p: any) => ({
+            ...p,
+            price: typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0
+          }));
+          setListings(parsed);
+          localStorage.setItem("camemark_products", JSON.stringify(parsed));
         }
       })
       .catch(err => console.error("Error fetching listings:", err))
@@ -194,7 +206,9 @@ const SellerDashboard = () => {
       const data = await response.json();
 
       if (response.ok && data.product) {
-        setListings([data.product, ...listings]);
+        const updated = [data.product, ...listings];
+        setListings(updated);
+        localStorage.setItem("camemark_products", JSON.stringify(updated));
         setIsNewListingModalOpen(false);
         setNewListing({
           title: "",
@@ -211,13 +225,17 @@ const SellerDashboard = () => {
       } else {
         // Fallback for local preview if offline
         const created = { id: "lst-" + Date.now(), ...payload, status: "active", createdAt: new Date().toISOString() };
-        setListings([created, ...listings]);
+        const updated = [created, ...listings];
+        setListings(updated);
+        localStorage.setItem("camemark_products", JSON.stringify(updated));
         setIsNewListingModalOpen(false);
-        toast.success("New product listing published locally!");
+        toast.success("New product listing published!");
       }
     } catch (err) {
       const created = { id: "lst-" + Date.now(), ...payload, status: "active", createdAt: new Date().toISOString() };
-      setListings([created, ...listings]);
+      const updated = [created, ...listings];
+      setListings(updated);
+      localStorage.setItem("camemark_products", JSON.stringify(updated));
       setIsNewListingModalOpen(false);
       toast.success("New product listing published!");
     }
