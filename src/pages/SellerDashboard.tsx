@@ -59,6 +59,20 @@ const SellerDashboard = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
+  // Earnings & Payout State
+  const [availableBalance, setAvailableBalance] = useState<number>(485000);
+  const [pendingClearance, setPendingClearance] = useState<number>(125000);
+  const [totalWithdrawn, setTotalWithdrawn] = useState<number>(350000);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [payoutMethod, setPayoutMethod] = useState<string>("momo");
+  const [withdrawAmount, setWithdrawAmount] = useState<number>(50000);
+  const [accountNumber, setAccountNumber] = useState<string>("+237 690 123 456");
+  const [accountHolder, setAccountHolder] = useState<string>("Taiwo Merchant Account");
+  const [payoutHistory, setPayoutHistory] = useState<any[]>([
+    { id: "PO-8812", amount: 150000, method: "MTN Mobile Money", account: "+237 690 123 456", status: "Completed", date: "Today, 14:30" },
+    { id: "PO-7701", amount: 200000, method: "Orange Money", account: "+237 670 987 654", status: "Completed", date: "Yesterday, 09:15" }
+  ]);
+
   const handleEditClick = (product: any) => {
     setEditingProduct(product);
     setIsEditModalOpen(true);
@@ -848,32 +862,86 @@ const SellerDashboard = () => {
 
           {/* Earnings & Payouts Tab */}
           {activeTab === "earnings" && (
-            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
-              <div className="flex items-center justify-between">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-8 animate-fade-in">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-100 pb-6">
                 <div>
-                  <h3 className="text-2xl font-extrabold text-gray-900">Earnings & Wallet Payouts</h3>
+                  <h3 className="text-2xl font-black text-gray-900">Earnings & Wallet Payouts</h3>
                   <p className="text-sm text-gray-500 mt-1">Withdraw revenue directly to Mobile Money (MTN / Orange) or Bank Account.</p>
                 </div>
-                <Button className="bg-[#064E3B] text-white font-bold h-11 px-5 rounded-xl">
-                  Withdraw Funds
+                <Button 
+                  onClick={() => setIsWithdrawModalOpen(true)}
+                  className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold h-12 px-6 rounded-2xl shadow-lg transition-transform hover:scale-105"
+                >
+                  <Wallet className="h-4 w-4 mr-2" /> Withdraw Funds
                 </Button>
               </div>
 
+              {/* Balance Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6">
-                  <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Available Balance</p>
-                  <h4 className="text-3xl font-black text-emerald-950 mt-2">FCFA 0</h4>
-                  <p className="text-xs text-emerald-700 mt-2 font-medium">Ready for instant payout</p>
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/60 border border-emerald-200/80 rounded-3xl p-6 shadow-sm relative overflow-hidden group">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-black text-emerald-800 uppercase tracking-wider">Available Balance</p>
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                  </div>
+                  <h4 className="text-3xl font-black text-emerald-950 mt-3">FCFA {availableBalance.toLocaleString()}</h4>
+                  <p className="text-xs text-emerald-700 mt-3 font-bold flex items-center gap-1">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Ready for instant payout
+                  </p>
                 </div>
-                <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pending Clearance</p>
-                  <h4 className="text-3xl font-black text-gray-900 mt-2">FCFA 0</h4>
-                  <p className="text-xs text-gray-500 mt-2 font-medium">Held in escrow until delivery</p>
+
+                <div className="bg-gray-50 border border-gray-200/80 rounded-3xl p-6 shadow-sm">
+                  <p className="text-xs font-extrabold text-gray-500 uppercase tracking-wider">Pending Clearance</p>
+                  <h4 className="text-3xl font-black text-gray-900 mt-3">FCFA {pendingClearance.toLocaleString()}</h4>
+                  <p className="text-xs text-gray-500 mt-3 font-medium flex items-center gap-1">
+                    <Clock className="h-4 w-4 text-gray-400" /> Held in escrow until buyer delivery
+                  </p>
                 </div>
-                <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Withdrawn</p>
-                  <h4 className="text-3xl font-black text-gray-900 mt-2">FCFA 0</h4>
-                  <p className="text-xs text-gray-500 mt-2 font-medium">Lifetime payout total</p>
+
+                <div className="bg-gray-50 border border-gray-200/80 rounded-3xl p-6 shadow-sm">
+                  <p className="text-xs font-extrabold text-gray-500 uppercase tracking-wider">Total Withdrawn</p>
+                  <h4 className="text-3xl font-black text-gray-900 mt-3">FCFA {totalWithdrawn.toLocaleString()}</h4>
+                  <p className="text-xs text-gray-500 mt-3 font-medium flex items-center gap-1">
+                    <TrendingUp className="h-4 w-4 text-emerald-600" /> Lifetime merchant payout total
+                  </p>
+                </div>
+              </div>
+
+              {/* Recent Payout History */}
+              <div className="space-y-4 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-base text-gray-900">Recent Payout History</h4>
+                  <span className="text-xs font-bold text-gray-400">{payoutHistory.length} Transactions</span>
+                </div>
+
+                <div className="overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 text-gray-500 uppercase text-[10px] font-bold">
+                      <tr>
+                        <th className="p-3.5">Payout ID</th>
+                        <th className="p-3.5">Amount</th>
+                        <th className="p-3.5">Payment Method</th>
+                        <th className="p-3.5">Account / Phone</th>
+                        <th className="p-3.5">Date</th>
+                        <th className="p-3.5">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {payoutHistory.map((po) => (
+                        <tr key={po.id} className="hover:bg-gray-50/80">
+                          <td className="p-3.5 font-bold font-mono text-gray-900">{po.id}</td>
+                          <td className="p-3.5 font-black text-emerald-700">FCFA {po.amount.toLocaleString()}</td>
+                          <td className="p-3.5 font-bold text-gray-800">{po.method}</td>
+                          <td className="p-3.5 font-mono text-gray-600">{po.account}</td>
+                          <td className="p-3.5 text-gray-500">{po.date}</td>
+                          <td className="p-3.5">
+                            <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 font-extrabold px-2.5 py-0.5 rounded-full text-[10px]">
+                              <CheckCircle2 className="h-3 w-3 text-emerald-600" /> {po.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -1217,6 +1285,112 @@ const SellerDashboard = () => {
               </DialogFooter>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Withdraw Funds Modal */}
+      <Dialog open={isWithdrawModalOpen} onOpenChange={setIsWithdrawModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-gray-900">Withdraw Revenue Funds</DialogTitle>
+            <DialogDescription className="text-xs text-gray-500">
+              Transfer revenue directly to MTN MoMo, Orange Money, or Bank Account.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (withdrawAmount <= 0) {
+                toast.error("Please enter a valid withdrawal amount!");
+                return;
+              }
+              if (withdrawAmount > availableBalance) {
+                toast.error(`Insufficient available balance! (Maximum: FCFA ${availableBalance.toLocaleString()})`);
+                return;
+              }
+
+              // Deduct from available balance & update totals
+              setAvailableBalance(prev => prev - withdrawAmount);
+              setTotalWithdrawn(prev => prev + withdrawAmount);
+
+              // Add entry to payout history
+              const methodName = payoutMethod === 'momo' ? 'MTN Mobile Money' : payoutMethod === 'om' ? 'Orange Money' : 'Bank Wire Transfer';
+              const newPayout = {
+                id: "PO-" + Math.floor(1000 + Math.random() * 9000),
+                amount: withdrawAmount,
+                method: methodName,
+                account: accountNumber,
+                status: "Completed",
+                date: "Just now"
+              };
+              setPayoutHistory([newPayout, ...payoutHistory]);
+
+              setIsWithdrawModalOpen(false);
+              toast.success(`🎉 Payout Executed! FCFA ${withdrawAmount.toLocaleString()} transferred to ${methodName} (${accountNumber}). Email notification sent to admin.`);
+            }} 
+            className="space-y-4 py-2"
+          >
+            <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between text-xs font-bold text-emerald-950">
+              <span>Available for Withdrawal:</span>
+              <span className="text-sm font-black text-emerald-700">FCFA {availableBalance.toLocaleString()}</span>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-gray-500 uppercase">Payout Method</Label>
+              <Select value={payoutMethod} onValueChange={setPayoutMethod}>
+                <SelectTrigger className="h-11 rounded-xl bg-gray-50 border-gray-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="momo">MTN Mobile Money (Instant)</SelectItem>
+                  <SelectItem value="om">Orange Money (Instant)</SelectItem>
+                  <SelectItem value="bank">Bank Wire Transfer (UBA / CCA / Afriland)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-gray-500 uppercase">Withdrawal Amount (FCFA / XAF)</Label>
+              <Input 
+                type="number"
+                required
+                min="1000"
+                className="h-11 rounded-xl bg-gray-50 border-gray-200 font-bold text-sm"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(Number(e.target.value))}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-gray-500 uppercase">Account / Mobile Number</Label>
+              <Input 
+                required
+                className="h-11 rounded-xl bg-gray-50 border-gray-200 font-mono text-xs"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-gray-500 uppercase">Account Holder Name</Label>
+              <Input 
+                required
+                className="h-11 rounded-xl bg-gray-50 border-gray-200 text-xs"
+                value={accountHolder}
+                onChange={(e) => setAccountHolder(e.target.value)}
+              />
+            </div>
+
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsWithdrawModalOpen(false)} className="rounded-xl">
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold h-11 px-6 rounded-xl">
+                Confirm & Withdraw FCFA {withdrawAmount.toLocaleString()} →
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
