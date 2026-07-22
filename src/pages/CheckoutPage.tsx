@@ -205,16 +205,13 @@ const CheckoutPage = () => {
     toast.success("New delivery address added & saved!");
   };
 
+  const [activeStep, setActiveStep] = useState<number>(1);
+
   // Real-time Stepper Progress Calculation
   const isAddressFilled = Boolean(deliveryAddressType && (billingDetails.address || userAddresses.length > 0));
   const isShippingSelected = Boolean(shippingMethod);
   const isPaymentSelected = Boolean(paymentMethod);
   const isContactFilled = Boolean(billingDetails.fullName && billingDetails.phone);
-
-  let currentStep = 1; // Step 1: Cart (Done)
-  if (isAddressFilled && isShippingSelected) currentStep = 2; // Step 2: Checkout in progress / address set
-  if (isAddressFilled && isShippingSelected && isPaymentSelected) currentStep = 3; // Step 3: Payment configured
-  if (isAddressFilled && isShippingSelected && isPaymentSelected && isContactFilled) currentStep = 4; // Step 4: Ready for Review & Confirmation
 
   const basePrice = product ? (typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0) : 0;
   const shippingFee = !product ? 0 : (shippingMethod === "express" 
@@ -420,43 +417,53 @@ const CheckoutPage = () => {
               )}
             </div>
 
-            {/* Stepper Steps - Horizontal Scrollable on Mobile */}
+            {/* Stepper Steps (1 to 5 Multi-Step Wizard) */}
             <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold overflow-x-auto pb-1 custom-scrollbar">
-              <Link to={`/checkout?productId=${product?.id || productId || ''}`} className="flex items-center gap-1 sm:gap-1.5 text-emerald-700 hover:text-emerald-900 transition-colors shrink-0">
-                <span className="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] sm:text-[11px]">✓</span>
-                <span>Cart</span>
-              </Link>
-              <div className={`h-0.5 w-3 sm:w-6 shrink-0 ${currentStep >= 2 ? "bg-emerald-500" : "bg-gray-200"}`} />
-              <div className={`flex items-center gap-1 sm:gap-1.5 shrink-0 ${currentStep >= 2 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
-                <span className={`h-5 w-5 sm:h-6 sm:w-6 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] ${currentStep >= 2 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
-                  {currentStep > 2 ? "✓" : "2"}
-                </span>
-                <span className={currentStep >= 2 ? "text-gray-900" : ""}>Checkout</span>
-              </div>
-              <div className={`h-0.5 w-3 sm:w-6 shrink-0 ${currentStep >= 3 ? "bg-emerald-500" : "bg-gray-200"}`} />
-              <div className={`flex items-center gap-1 sm:gap-1.5 shrink-0 ${currentStep >= 3 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
-                <span className={`h-5 w-5 sm:h-6 sm:w-6 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] ${currentStep >= 3 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
-                  {currentStep > 3 ? "✓" : "3"}
-                </span>
-                <span className={currentStep >= 3 ? "text-gray-900" : ""}>Payment</span>
-              </div>
-              <div className={`h-0.5 w-3 sm:w-6 shrink-0 ${currentStep >= 4 ? "bg-emerald-500" : "bg-gray-200"}`} />
-              <div className={`flex items-center gap-1 sm:gap-1.5 shrink-0 ${currentStep >= 4 ? "text-emerald-800 font-extrabold" : "text-gray-400"}`}>
-                <span className={`h-5 w-5 sm:h-6 sm:w-6 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] ${currentStep >= 4 ? "bg-[#064E3B] text-white" : "bg-gray-100 text-gray-600"}`}>
-                  4
-                </span>
-                <span className={currentStep >= 4 ? "text-gray-900" : ""}>Review</span>
-              </div>
+              {[
+                { step: 1, title: "Delivery Address" },
+                { step: 2, title: "Shipping Method" },
+                { step: 3, title: "Payment Method" },
+                { step: 4, title: "Contact Details" },
+                { step: 5, title: "Order Review" }
+              ].map((item, idx, arr) => (
+                <div key={item.step} className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep(item.step)}
+                    className={`flex items-center gap-1.5 transition-colors ${
+                      activeStep === item.step
+                        ? "text-emerald-950 font-black"
+                        : activeStep > item.step
+                        ? "text-emerald-700 font-bold"
+                        : "text-gray-400 font-medium"
+                    }`}
+                  >
+                    <span className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                      activeStep === item.step
+                        ? "bg-[#064E3B] text-white ring-2 ring-emerald-600/30"
+                        : activeStep > item.step
+                        ? "bg-emerald-600 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                      {activeStep > item.step ? "✓" : item.step}
+                    </span>
+                    <span>{item.title}</span>
+                  </button>
+                  {idx < arr.length - 1 && (
+                    <div className={`h-0.5 w-3 sm:w-6 shrink-0 ${activeStep > item.step ? "bg-emerald-500" : "bg-gray-200"}`} />
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 
           <form onSubmit={handleConfirmOrder} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 1. Delivery Address Card */}
-              <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4">
+            {/* Step 1: Delivery Address */}
+            {activeStep === 1 && (
+              <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4 animate-fade-in">
                 <div className="flex items-center justify-between">
                   <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
-                    <span className="h-6 w-6 rounded-full bg-gray-100 text-gray-800 text-xs flex items-center justify-center">1</span> Delivery Address
+                    <span className="h-6 w-6 rounded-full bg-[#064E3B] text-white text-xs flex items-center justify-center">1</span> Delivery Address
                   </h3>
                 </div>
 
@@ -499,12 +506,24 @@ const CheckoutPage = () => {
                 >
                   + Add New Address
                 </Button>
-              </div>
 
-              {/* 2. Delivery / Shipping Method Card */}
-              <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4">
+                <div className="pt-4 flex justify-end">
+                  <Button 
+                    type="button" 
+                    onClick={() => setActiveStep(2)}
+                    className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold text-xs h-11 px-8 rounded-xl"
+                  >
+                    Next: Shipping Method →
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Shipping Method */}
+            {activeStep === 2 && (
+              <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4 animate-fade-in">
                 <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
-                  <span className="h-6 w-6 rounded-full bg-gray-100 text-gray-800 text-xs flex items-center justify-center">2</span> Delivery / Shipping Method
+                  <span className="h-6 w-6 rounded-full bg-[#064E3B] text-white text-xs flex items-center justify-center">2</span> Delivery / Shipping Method
                 </h3>
 
                 <div className="space-y-2.5">
@@ -560,14 +579,32 @@ const CheckoutPage = () => {
                 <p className="text-[11px] text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" /> Orders are insured and tracked to your doorstep.
                 </p>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 3. Payment Method Card */}
-              <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4">
+                <div className="pt-4 flex justify-between">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => setActiveStep(1)}
+                    className="font-bold text-xs h-11 px-6 rounded-xl"
+                  >
+                    ← Back: Address
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={() => setActiveStep(3)}
+                    className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold text-xs h-11 px-8 rounded-xl"
+                  >
+                    Next: Payment Method →
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Payment Method */}
+            {activeStep === 3 && (
+              <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4 animate-fade-in">
                 <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
-                  <span className="h-6 w-6 rounded-full bg-gray-100 text-gray-800 text-xs flex items-center justify-center">3</span> Payment Method
+                  <span className="h-6 w-6 rounded-full bg-[#064E3B] text-white text-xs flex items-center justify-center">3</span> Payment Method
                 </h3>
 
                 <div className="space-y-2">
@@ -596,107 +633,163 @@ const CheckoutPage = () => {
                     </div>
                   ))}
                 </div>
+
+                <div className="pt-4 flex justify-between">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => setActiveStep(2)}
+                    className="font-bold text-xs h-11 px-6 rounded-xl"
+                  >
+                    ← Back: Shipping
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={() => setActiveStep(4)}
+                    className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold text-xs h-11 px-8 rounded-xl"
+                  >
+                    Next: Contact Details →
+                  </Button>
+                </div>
               </div>
+            )}
 
-              {/* 4. Billing Details / Contact & Order Review */}
-              <div className="space-y-6">
-                <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4">
-                  <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
-                    <span className="h-6 w-6 rounded-full bg-gray-100 text-gray-800 text-xs flex items-center justify-center">4</span> Billing Details / Contact
-                  </h3>
+            {/* Step 4: Contact Details */}
+            {activeStep === 4 && (
+              <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4 animate-fade-in">
+                <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
+                  <span className="h-6 w-6 rounded-full bg-[#064E3B] text-white text-xs flex items-center justify-center">4</span> Billing Details / Contact
+                </h3>
 
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-bold text-gray-500 uppercase">Full Name</Label>
-                        <Input 
-                          className="h-10 rounded-xl bg-gray-50 text-xs"
-                          value={billingDetails.fullName}
-                          onChange={(e) => setBillingDetails({ ...billingDetails, fullName: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-bold text-gray-500 uppercase">Phone Number</Label>
-                        <Input 
-                          className="h-10 rounded-xl bg-gray-50 text-xs"
-                          value={billingDetails.phone}
-                          onChange={(e) => setBillingDetails({ ...billingDetails, phone: e.target.value })}
-                        />
-                      </div>
-                    </div>
-
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-[11px] font-bold text-gray-500 uppercase">Email Address</Label>
+                      <Label className="text-[11px] font-bold text-gray-500 uppercase">Full Name *</Label>
                       <Input 
                         className="h-10 rounded-xl bg-gray-50 text-xs"
-                        value={billingDetails.email}
-                        onChange={(e) => setBillingDetails({ ...billingDetails, email: e.target.value })}
+                        value={billingDetails.fullName}
+                        onChange={(e) => setBillingDetails({ ...billingDetails, fullName: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-bold text-gray-500 uppercase">Phone Number *</Label>
+                      <Input 
+                        className="h-10 rounded-xl bg-gray-50 text-xs"
+                        value={billingDetails.phone}
+                        onChange={(e) => setBillingDetails({ ...billingDetails, phone: e.target.value })}
                       />
                     </div>
                   </div>
-                </div>
 
-                {/* 5. Order Review Card */}
-                <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4">
-                  <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
-                    <span className="h-6 w-6 rounded-full bg-gray-100 text-gray-800 text-xs flex items-center justify-center">5</span> Order Review
-                  </h3>
-
-                  <div className="space-y-3">
-                    {product ? (
-                      <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-gray-100 text-xs">
-                        <div className="flex items-center gap-3">
-                          <div className="h-14 w-14 rounded-xl bg-emerald-100 overflow-hidden border border-emerald-200 shrink-0 flex items-center justify-center">
-                            {product.imageUrl ? (
-                              <img src={product.imageUrl} alt={product.title} className="h-full w-full object-cover" />
-                            ) : (
-                              <Package className="h-6 w-6 text-emerald-700" />
-                            )}
-                          </div>
-                          <div>
-                            <h4 className="font-extrabold text-gray-900 text-sm line-clamp-1">{product.title}</h4>
-                            <p className="text-[10px] text-gray-400">Seller: {product.sellerName || product.profiles?.full_name || "Verified Merchant"}</p>
-                            <span className="text-[10px] text-emerald-700 font-bold">Qty: 1</span>
-                          </div>
-                        </div>
-                        <div className="text-right space-y-1">
-                          <p className="font-black text-emerald-700 text-sm">FCFA {basePrice.toLocaleString()}</p>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const productUrl = window.location.href;
-                              const productImg = product?.imageUrl || `${window.location.origin}/og-image.png`;
-                              const shareText = `🛒 *${product?.title}*\n💰 Price: FCFA ${basePrice.toLocaleString()}\n📍 Seller: ${product?.sellerName || 'Verified Merchant'}\n🖼️ View Image: ${productImg}\n\n👉 Order directly on CameMark: ${productUrl}`;
-                              window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, "_blank");
-                            }}
-                            className="inline-flex items-center gap-1 text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded-full shadow-sm"
-                          >
-                            <Share2 className="h-2.5 w-2.5" /> Share Item
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 space-y-3">
-                        <div className="h-12 w-12 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
-                          <ShoppingCart className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <h4 className="font-extrabold text-gray-900 text-sm">Your Cart is Empty</h4>
-                          <p className="text-xs text-gray-500 max-w-xs mx-auto mt-1">You currently have no products in your cart.</p>
-                        </div>
-                        <Button 
-                          type="button"
-                          onClick={() => navigate("/market-zone")}
-                          className="bg-[#064E3B] hover:bg-emerald-950 text-white font-bold rounded-xl text-xs h-9 px-4"
-                        >
-                          Browse MarketZone Products
-                        </Button>
-                      </div>
-                    )}
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-bold text-gray-500 uppercase">Email Address (Optional)</Label>
+                    <Input 
+                      className="h-10 rounded-xl bg-gray-50 text-xs"
+                      value={billingDetails.email}
+                      onChange={(e) => setBillingDetails({ ...billingDetails, email: e.target.value })}
+                    />
                   </div>
                 </div>
+
+                <div className="pt-4 flex justify-between">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => setActiveStep(3)}
+                    className="font-bold text-xs h-11 px-6 rounded-xl"
+                  >
+                    ← Back: Payment
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={() => setActiveStep(5)}
+                    className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold text-xs h-11 px-8 rounded-xl"
+                  >
+                    Next: Order Review →
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Step 5: Order Review */}
+            {activeStep === 5 && (
+              <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4 animate-fade-in">
+                <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
+                  <span className="h-6 w-6 rounded-full bg-[#064E3B] text-white text-xs flex items-center justify-center">5</span> Order Review & Confirmation
+                </h3>
+
+                <div className="space-y-3">
+                  {product ? (
+                    <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-gray-100 text-xs">
+                      <div className="flex items-center gap-3">
+                        <div className="h-14 w-14 rounded-xl bg-emerald-100 overflow-hidden border border-emerald-200 shrink-0 flex items-center justify-center">
+                          {product.imageUrl ? (
+                            <img src={product.imageUrl} alt={product.title} className="h-full w-full object-cover" />
+                          ) : (
+                            <Package className="h-6 w-6 text-emerald-700" />
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-gray-900 text-sm line-clamp-1">{product.title}</h4>
+                          <p className="text-[10px] text-gray-400">Seller: {product.sellerName || product.profiles?.full_name || "Verified Merchant"}</p>
+                          <span className="text-[10px] text-emerald-700 font-bold">Qty: 1</span>
+                        </div>
+                      </div>
+                      <div className="text-right space-y-1">
+                        <p className="font-black text-emerald-700 text-sm">FCFA {basePrice.toLocaleString()}</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const productUrl = window.location.href;
+                            const productImg = product?.imageUrl || `${window.location.origin}/og-image.png`;
+                            const shareText = `🛒 *${product?.title}*\n💰 Price: FCFA ${basePrice.toLocaleString()}\n📍 Seller: ${product?.sellerName || 'Verified Merchant'}\n🖼️ View Image: ${productImg}\n\n👉 Order directly on CameMark: ${productUrl}`;
+                            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, "_blank");
+                          }}
+                          className="inline-flex items-center gap-1 text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded-full shadow-sm"
+                        >
+                          <Share2 className="h-2.5 w-2.5" /> Share Item
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 space-y-3">
+                      <div className="h-12 w-12 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
+                        <ShoppingCart className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-gray-900 text-sm">Your Cart is Empty</h4>
+                        <p className="text-xs text-gray-500 max-w-xs mx-auto mt-1">You currently have no products in your cart.</p>
+                      </div>
+                      <Button 
+                        type="button"
+                        onClick={() => navigate("/market-zone")}
+                        className="bg-[#064E3B] hover:bg-emerald-950 text-white font-bold rounded-xl text-xs h-9 px-4"
+                      >
+                        Browse MarketZone Products
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 flex justify-between items-center">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => setActiveStep(4)}
+                    className="font-bold text-xs h-11 px-6 rounded-xl"
+                  >
+                    ← Back: Contact
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={!product}
+                    className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold text-xs h-11 px-8 rounded-xl shadow-lg"
+                  >
+                    🔒 Confirm & Pay →
+                  </Button>
+                </div>
+              </div>
+            )}
           </form>
 
           {/* Bottom Guarantees Banner */}
