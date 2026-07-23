@@ -28,6 +28,8 @@ import {
 import { getApiUrl } from "@/config";
 import { toast } from "sonner";
 import logo from "@/assets/camemark-logo.png";
+import { getCartItems, saveCartItems, CartItem } from "@/utils/cart";
+import ReferralModal from "@/components/camemark/ReferralModal";
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -36,12 +38,59 @@ const CheckoutPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [product, setProduct] = useState<any>(null);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [profile, setProfile] = useState<any>(null);
 
   const [deliveryAddressType, setDeliveryAddressType] = useState("custom_0");
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [paymentMethod, setPaymentMethod] = useState("wallet");
+
+  const toggleItemSelection = (id: string | number) => {
+    setCartItems(prev => {
+      const updated = prev.map(item => item.id === id ? { ...item, selected: !item.selected } : item);
+      saveCartItems(updated);
+      return updated;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const allSelected = cartItems.length > 0 && cartItems.every(item => item.selected);
+    setCartItems(prev => {
+      const updated = prev.map(item => ({ ...item, selected: !allSelected }));
+      saveCartItems(updated);
+      return updated;
+    });
+  };
+
+  const updateQuantity = (id: string | number, delta: number) => {
+    setCartItems(prev => {
+      const updated = prev.map(item => {
+        if (item.id === id) {
+          const newQty = Math.max(1, (item.quantity || 1) + delta);
+          return { ...item, quantity: newQty };
+        }
+        return item;
+      });
+      saveCartItems(updated);
+      return updated;
+    });
+  };
+
+  const removeItem = (id: string | number) => {
+    setCartItems(prev => {
+      const updated = prev.filter(item => item.id !== id);
+      saveCartItems(updated);
+      toast.success("Item removed from cart");
+      return updated;
+    });
+  };
+
+  const emptyCart = () => {
+    setCartItems([]);
+    saveCartItems([]);
+    toast.success("🛒 Your cart has been emptied!");
+  };
   
   const [userAddresses, setUserAddresses] = useState<any[]>([
     {
@@ -136,34 +185,57 @@ const CheckoutPage = () => {
       })
       .catch(() => {});
 
-    // Load active product details dynamically by productId
-    const localProducts = localStorage.getItem("camemark_products");
-    if (localProducts) {
-      try {
-        const parsed = JSON.parse(localProducts);
-        const found = parsed.find((p: any) => p.id === productId);
-        if (found) {
-          setProduct(found);
-        } else if (parsed.length > 0) {
-          setProduct(parsed[0]);
-        }
-      } catch (e) {}
-    }
+    // Load cart items from localStorage or initialize with selected product
+    const existingCart = getCartItems();
+    if (existingCart.length > 0) {
+      setCartItems(existingCart);
+      setLoading(false);
+    } else {
+      const localProductsStr = localStorage.getItem("camemark_products");
+      let availableProducts: any[] = [];
+      if (localProductsStr) {
+        try { availableProducts = JSON.parse(localProductsStr); } catch (e) {}
+      }
 
-    fetch(getApiUrl("/api/products"))
-      .then(async res => {
-        if (!res || !res.ok) return null;
-        const text = await res.text();
-        try { return JSON.parse(text); } catch (e) { return null; }
-      })
-      .then(data => {
-        if (data && Array.isArray(data.products) && data.products.length > 0) {
-          const found = data.products.find((p: any) => p.id === productId);
-          setProduct(found || data.products[0]);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      fetch(getApiUrl("/api/products"))
+        .then(async res => {
+          if (!res || !res.ok) return null;
+          const text = await res.text();
+          try { return JSON.parse(text); } catch (e) { return null; }
+        })
+        .then(data => {
+          if (data && Array.isArray(data.products) && data.products.length > 0) {
+            availableProducts = data.products;
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          const found = availableProducts.find((p: any) => p.id === Number(productId) || p.id === productId);
+          const initialP = found || availableProducts[0] || {
+            id: 1,
+            title: "Red Palm Oil (1L)",
+            price: 2100,
+            imageUrl: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=400&q=80",
+            sellerName: "Best Palm Cooperative",
+            region: "South West"
+          };
+          const initialItem: CartItem = {
+            id: initialP.id,
+            title: initialP.title,
+            price: typeof initialP.price === 'number' ? initialP.price : parseFloat(initialP.price) || 0,
+            quantity: 1,
+            selected: true,
+            imageUrl: initialP.imageUrl || initialP.img || "",
+            img: initialP.img || initialP.imageUrl || "",
+            sellerName: initialP.sellerName || initialP.seller || "Verified Merchant",
+            seller: initialP.seller || initialP.sellerName || "Verified Merchant",
+            region: initialP.region || "Littoral"
+          };
+          setCartItems([initialItem]);
+          saveCartItems([initialItem]);
+          setLoading(false);
+        });
+    }
   }, [productId]);
 
   const handleAddNewAddress = (e: React.FormEvent) => {
@@ -213,13 +285,16 @@ const CheckoutPage = () => {
   const isPaymentSelected = Boolean(paymentMethod);
   const isContactFilled = Boolean(billingDetails.fullName && billingDetails.phone);
 
-  const basePrice = product ? (typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0) : 0;
-  const shippingFee = !product ? 0 : (shippingMethod === "express" 
+  const selectedItems = cartItems.filter(item => item.selected);
+  const basePrice = selectedItems.reduce((acc, item) => acc + ((typeof item.price === 'number' ? item.price : parseFloat(item.price as any) || 0) * (item.quantity || 1)), 0);
+  const totalSelectedCount = selectedItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
+
+  const shippingFee = selectedItems.length === 0 ? 0 : (shippingMethod === "express" 
     ? deliveryFees.expressFee 
     : shippingMethod === "pickup" 
     ? deliveryFees.pickupFee 
     : deliveryFees.standardFee);
-  const serviceFee = !product ? 0 : 300;
+  const serviceFee = selectedItems.length === 0 ? 0 : 300;
   const tax = Math.round(basePrice * 0.1925);
   const totalAmount = Math.max(0, basePrice - discount + shippingFee + serviceFee + tax);
 
@@ -240,14 +315,17 @@ const CheckoutPage = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const firstSelected = selectedItems[0] || cartItems[0];
+    const itemsSummary = selectedItems.map(i => `${i.title} (x${i.quantity || 1})`).join(", ") || "Marketplace Products";
+
     const orderPayload = {
-      productId: product?.id || "lst-default",
-      productTitle: product?.title || "Marketplace Product",
+      productId: firstSelected?.id || "lst-default",
+      productTitle: itemsSummary,
       amount: totalAmount,
       currency: "XAF",
-      sellerId: product?.sellerId || "",
-      sellerName: product?.sellerName || "Green Harvest Farms",
-      sellerEmail: product?.sellerEmail || "",
+      sellerId: firstSelected?.sellerId || "",
+      sellerName: firstSelected?.sellerName || firstSelected?.seller || "Green Harvest Farms",
+      sellerEmail: firstSelected?.sellerEmail || "",
       buyerName: billingDetails.fullName,
       buyerEmail: billingDetails.email,
       buyerPhone: billingDetails.phone,
@@ -276,6 +354,11 @@ const CheckoutPage = () => {
         const updated = [newOrder, ...existing];
         localStorage.setItem("camemark_sales_orders", JSON.stringify(updated));
       } catch (e) {}
+
+      // Clear purchased selected items from cart
+      const remainingCart = cartItems.filter(item => !item.selected);
+      saveCartItems(remainingCart);
+      setCartItems(remainingCart);
 
       if (res.ok && data && data.success) {
         toast.success("🎉 Payment Successful! Order placed & seller notified.");
@@ -356,12 +439,12 @@ const CheckoutPage = () => {
               <Link to="/market-zone" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
                 <MessageCircle className="h-4 w-4" /> Bargains
               </Link>
-              <Link to={`/checkout?productId=${product?.id || productId || ''}`} className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
+              <Link to="/checkout" className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
                 <div className="flex items-center gap-3">
                   <ShoppingCart className="h-4 w-4" /> Cart
                 </div>
-                <span className={`h-5 w-5 rounded-full font-bold text-[10px] flex items-center justify-center ${product ? "bg-emerald-600 text-white" : "bg-gray-200 text-gray-500"}`}>
-                  {product ? 1 : 0}
+                <span className={`h-5 w-5 rounded-full font-bold text-[10px] flex items-center justify-center ${cartItems.length > 0 ? "bg-emerald-600 text-white" : "bg-gray-200 text-gray-500"}`}>
+                  {totalSelectedCount}
                 </span>
               </Link>
               <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 hover:text-emerald-700">
@@ -385,7 +468,11 @@ const CheckoutPage = () => {
                 </div>
                 <h4 className="font-extrabold text-xs text-gray-900">Refer & Earn</h4>
                 <p className="text-[11px] text-gray-500 leading-snug">Invite friends and earn CaMark points on every purchase.</p>
-                <Button size="sm" className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-bold text-xs h-8 rounded-xl mt-1">
+                <Button 
+                  size="sm" 
+                  onClick={() => setIsReferralModalOpen(true)}
+                  className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-bold text-xs h-8 rounded-xl mt-1 cursor-pointer"
+                >
                   Invite Now →
                 </Button>
               </div>
@@ -401,15 +488,12 @@ const CheckoutPage = () => {
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 flex items-center gap-2">
                 Checkout <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full"><Lock className="h-3 w-3" /> Secure</span>
               </h1>
-              {product && (
+              {cartItems.length > 0 && (
                 <Button 
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setProduct(null);
-                    toast.success("🛒 Your cart has been emptied!");
-                  }}
+                  onClick={emptyCart}
                   className="h-8 px-3 text-xs font-bold border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl flex items-center gap-1.5"
                 >
                   <Trash2 className="h-3.5 w-3.5" /> Empty Cart
@@ -711,46 +795,83 @@ const CheckoutPage = () => {
               </div>
             )}
 
-            {/* Step 5: Order Review */}
+            {/* Step 5: Order Review & Item Selection */}
             {activeStep === 5 && (
               <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4 animate-fade-in">
-                <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
-                  <span className="h-6 w-6 rounded-full bg-[#064E3B] text-white text-xs flex items-center justify-center">5</span> Order Review & Confirmation
-                </h3>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+                  <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
+                    <span className="h-6 w-6 rounded-full bg-[#064E3B] text-white text-xs flex items-center justify-center">5</span> Order Review & Item Selection
+                  </h3>
+                  {cartItems.length > 0 && (
+                    <div className="flex items-center gap-3 text-xs">
+                      <button 
+                        type="button" 
+                        onClick={toggleSelectAll} 
+                        className="flex items-center gap-1.5 font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200"
+                      >
+                        <Checkbox checked={cartItems.length > 0 && cartItems.every(i => i.selected)} />
+                        <span>Select All ({selectedItems.length}/{cartItems.length})</span>
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={emptyCart} 
+                        className="flex items-center gap-1 font-bold text-red-600 hover:text-red-700 hover:underline"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Clear Cart
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 <div className="space-y-3">
-                  {product ? (
-                    <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-gray-100 text-xs">
-                      <div className="flex items-center gap-3">
-                        <div className="h-14 w-14 rounded-xl bg-emerald-100 overflow-hidden border border-emerald-200 shrink-0 flex items-center justify-center">
-                          {product.imageUrl ? (
-                            <img src={product.imageUrl} alt={product.title} className="h-full w-full object-cover" />
-                          ) : (
-                            <Package className="h-6 w-6 text-emerald-700" />
-                          )}
+                  {cartItems.length > 0 ? (
+                    cartItems.map((item, idx) => (
+                      <div 
+                        key={item.id || idx} 
+                        className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-2xl border transition-all gap-3 ${
+                          item.selected ? "bg-emerald-50/50 border-emerald-300 shadow-sm" : "bg-gray-50 border-gray-200 opacity-60"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {/* Checkbox to Select / Deselect individual item */}
+                          <Checkbox 
+                            checked={!!item.selected} 
+                            onCheckedChange={() => toggleItemSelection(item.id)}
+                            aria-label={`Select ${item.title}`}
+                          />
+                          <div className="h-14 w-14 rounded-xl bg-emerald-100 overflow-hidden border border-emerald-200 shrink-0 flex items-center justify-center">
+                            {item.imageUrl || item.img ? (
+                              <img src={item.imageUrl || item.img} alt={item.title} className="h-full w-full object-cover" />
+                            ) : (
+                              <Package className="h-6 w-6 text-emerald-700" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-extrabold text-gray-900 text-sm line-clamp-1">{item.title}</h4>
+                            <p className="text-[10px] text-gray-500">Seller: {item.sellerName || item.seller || "Verified Merchant"}</p>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <span className="text-[11px] font-bold text-gray-500">Qty:</span>
+                              <div className="flex items-center border border-gray-200 rounded-lg bg-white overflow-hidden">
+                                <button type="button" onClick={() => updateQuantity(item.id, -1)} className="h-6 w-6 font-extrabold text-gray-600 hover:bg-gray-100">-</button>
+                                <span className="px-2 text-xs font-black text-gray-900">{item.quantity || 1}</span>
+                                <button type="button" onClick={() => updateQuantity(item.id, 1)} className="h-6 w-6 font-extrabold text-gray-600 hover:bg-gray-100">+</button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-extrabold text-gray-900 text-sm line-clamp-1">{product.title}</h4>
-                          <p className="text-[10px] text-gray-400">Seller: {product.sellerName || product.profiles?.full_name || "Verified Merchant"}</p>
-                          <span className="text-[10px] text-emerald-700 font-bold">Qty: 1</span>
+
+                        <div className="flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-200/60 shrink-0">
+                          <p className="font-black text-emerald-800 text-sm">FCFA {((item.price || 0) * (item.quantity || 1)).toLocaleString()}</p>
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.id)}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 hover:text-red-700 hover:underline mt-1"
+                          >
+                            <Trash2 className="h-3 w-3" /> Remove
+                          </button>
                         </div>
                       </div>
-                      <div className="text-right space-y-1">
-                        <p className="font-black text-emerald-700 text-sm">FCFA {basePrice.toLocaleString()}</p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const productUrl = window.location.href;
-                            const productImg = product?.imageUrl || `${window.location.origin}/og-image.png`;
-                            const shareText = `🛒 *${product?.title}*\n💰 Price: FCFA ${basePrice.toLocaleString()}\n📍 Seller: ${product?.sellerName || 'Verified Merchant'}\n🖼️ View Image: ${productImg}\n\n👉 Order directly on CameMark: ${productUrl}`;
-                            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, "_blank");
-                          }}
-                          className="inline-flex items-center gap-1 text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded-full shadow-sm"
-                        >
-                          <Share2 className="h-2.5 w-2.5" /> Share Item
-                        </button>
-                      </div>
-                    </div>
+                    ))
                   ) : (
                     <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 space-y-3">
                       <div className="h-12 w-12 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
@@ -782,10 +903,10 @@ const CheckoutPage = () => {
                   </Button>
                   <Button 
                     type="submit"
-                    disabled={!product}
-                    className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold text-xs h-11 px-8 rounded-xl shadow-lg"
+                    disabled={selectedItems.length === 0}
+                    className="bg-[#064E3B] hover:bg-emerald-950 disabled:bg-gray-300 text-white font-extrabold text-xs h-11 px-8 rounded-xl shadow-lg"
                   >
-                    🔒 Confirm & Pay →
+                    {selectedItems.length === 0 ? "Select Items to Pay" : `🔒 Confirm & Pay (${totalSelectedCount} items) →`}
                   </Button>
                 </div>
               </div>
@@ -829,7 +950,7 @@ const CheckoutPage = () => {
 
             <div className="space-y-2.5 text-xs text-gray-600 border-b border-gray-100 pb-4">
               <div className="flex justify-between">
-                <span>Subtotal ({product ? '1 item' : '0 items'})</span>
+                <span>Subtotal ({totalSelectedCount} {totalSelectedCount === 1 ? 'item' : 'items'})</span>
                 <span className="font-bold text-gray-900">FCFA {basePrice.toLocaleString()}</span>
               </div>
               {discount > 0 && (
@@ -1036,8 +1157,10 @@ const CheckoutPage = () => {
                 <span className="font-extrabold text-gray-900 uppercase">{paymentMethod || 'MTN Mobile Money'}</span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500">Product:</span>
-                <span className="font-bold text-gray-800 line-clamp-1 max-w-[200px]">{product?.title || 'Marketplace Item'}</span>
+                <span className="text-gray-500">Product(s):</span>
+                <span className="font-bold text-gray-800 line-clamp-1 max-w-[200px]">
+                  {selectedItems.length > 0 ? selectedItems.map(i => i.title).join(", ") : 'Marketplace Item'}
+                </span>
               </div>
               <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-200">
                 <span className="font-extrabold text-gray-700">Total Payable:</span>
@@ -1104,6 +1227,13 @@ const CheckoutPage = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Interactive Refer & Earn Program Modal */}
+      <ReferralModal 
+        isOpen={isReferralModalOpen} 
+        onClose={() => setIsReferralModalOpen(false)} 
+        user={profile} 
+      />
     </div>
   );
 };

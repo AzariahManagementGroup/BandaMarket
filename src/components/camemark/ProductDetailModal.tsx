@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { addToCart } from "@/utils/cart";
 
 const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen: boolean; onClose: () => void }) => {
   const navigate = useNavigate();
@@ -89,10 +90,15 @@ const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
+      const contentType = res.headers.get("content-type");
 
-      if (res.ok && data.success) {
-        toast.success("🚀 Live offer sent directly to seller! Emails & portal alerts dispatched.");
+      if (res.ok && contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        if (data.success) {
+          toast.success("🚀 Live offer sent directly to seller! Emails & portal alerts dispatched.");
+        } else {
+          toast.success("Live bargain offer registered!");
+        }
       } else {
         toast.success("Live bargain offer registered!");
       }
@@ -111,7 +117,7 @@ const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen
             
             {/* Header image carousel with overlay icons */}
             <div className="relative h-64 sm:h-72 w-full bg-gray-900 overflow-hidden shrink-0">
-              <img src={product.imageUrl} alt={product.title} className="w-full h-full object-cover" />
+              <img src={product.imageUrl || product.img || "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=400&q=80"} alt={product.title} className="w-full h-full object-cover" />
               <button onClick={onClose} className="absolute top-3 left-3 h-9 w-9 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-md">
                 <ArrowLeft className="h-4 w-4" />
               </button>
@@ -143,9 +149,9 @@ const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen
               <div>
                 <h2 className="text-xl font-extrabold text-gray-900 leading-tight">{product.title}</h2>
                 <div className="flex items-center justify-between mt-1 text-xs text-gray-500">
-                  <span>From: <strong className="text-gray-900">{product.sellerName || 'Ekona Farmers Cooperative'}</strong></span>
+                  <span>From: <strong className="text-gray-900">{product.sellerName || product.seller || 'Ekona Farmers Cooperative'}</strong></span>
                   <span className="flex items-center gap-1 text-amber-500 font-bold">
-                    <Star className="h-3.5 w-3.5 fill-amber-400" /> 4.8 (128)
+                    <Star className="h-3.5 w-3.5 fill-amber-400" /> {product.rating || "4.8 (128)"}
                   </span>
                 </div>
                 <p className="text-xs text-emerald-800 font-bold">{product.city || 'Buea'}, {product.region || 'Southwest Region'}</p>
@@ -201,7 +207,11 @@ const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen
               </Button>
 
               <Button 
-                onClick={() => navigate(`/checkout?productId=${product.id}`)}
+                onClick={() => {
+                  addToCart(product);
+                  onClose();
+                  navigate('/checkout');
+                }}
                 className="h-11 rounded-2xl text-xs font-extrabold bg-amber-400 hover:bg-amber-500 text-emerald-950 flex items-center justify-center gap-1.5 shadow-md"
               >
                 🛒 Buy Now

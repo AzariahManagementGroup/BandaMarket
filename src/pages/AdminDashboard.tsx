@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link, Routes, Route } from "react-router-dom";
-import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap } from "lucide-react";
+import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap, Gift, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getApiUrl } from "@/config";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ const AdminDashboard = () => {
 
   const navItems = [
     { label: "Overview", icon: LayoutDashboard, path: "" },
+    { label: "Referral Reward (20 FCFA)", icon: Gift, path: "/referrals" },
     { label: "Marketplace Orders", icon: ShoppingBag, path: "/orders" },
     { label: "Academy Courses Manager", icon: GraduationCap, path: "/courses" },
     { label: "Payment Gateway Keys", icon: CreditCard, path: "/payment-gateways" },
@@ -125,6 +126,7 @@ const AdminDashboard = () => {
         <div className="p-8">
           <Routes>
             <Route path="/" element={<AdminOverview />} />
+            <Route path="/referrals" element={<AdminReferralSettings />} />
             <Route path="/orders" element={<AdminOrders />} />
             <Route path="/courses" element={<AdminCoursesManager />} />
             <Route path="/payment-gateways" element={<AdminPaymentSettings />} />
@@ -1061,6 +1063,121 @@ const AdminCoursesManager = () => {
           <p className="text-xs text-muted-foreground py-4">No custom courses uploaded yet.</p>
         )}
       </div>
+    </div>
+  );
+};
+
+const AdminReferralSettings = () => {
+  const [rewardAmount, setRewardAmount] = useState<number>(20);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [totalClaimed, setTotalClaimed] = useState<number>(2);
+  const [totalPayout, setTotalPayout] = useState<number>(40);
+
+  const fetchSettings = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(getApiUrl("/api/referrals"));
+      if (res.ok) {
+        const data = await res.json();
+        if (data.rewardAmount !== undefined) {
+          setRewardAmount(data.rewardAmount);
+        }
+      }
+    } catch (e) {
+      console.error("Fetch referral setting error:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const handleSaveSetting = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch(getApiUrl("/api/referrals"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_settings",
+          rewardAmount: rewardAmount
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`🎉 Referral reward rate successfully updated to ${rewardAmount} FCFA!`);
+      } else {
+        toast.error(data.message || "Failed to update setting");
+      }
+    } catch (e) {
+      toast.error("Network error updating referral settings.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-black text-foreground flex items-center gap-2">
+            <Gift className="h-6 w-6 text-primary" /> Referral Program Administration
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Configure global reward amounts paid to referrers when a new member signs up using their link.
+          </p>
+        </div>
+        <Button onClick={fetchSettings} variant="outline" size="sm" className="gap-2">
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Refresh Rate
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-5 rounded-2xl bg-card border border-border shadow-xs">
+          <p className="text-xs font-bold text-muted-foreground uppercase">Current Reward Per Sign Up</p>
+          <p className="text-2xl font-black text-primary mt-1">FCFA {rewardAmount}</p>
+        </div>
+        <div className="p-5 rounded-2xl bg-card border border-border shadow-xs">
+          <p className="text-xs font-bold text-muted-foreground uppercase">Total Referrals Claimed</p>
+          <p className="text-2xl font-black text-foreground mt-1">{totalClaimed} Registrations</p>
+        </div>
+        <div className="p-5 rounded-2xl bg-card border border-border shadow-xs">
+          <p className="text-xs font-bold text-muted-foreground uppercase">Total Rewards Distributed</p>
+          <p className="text-2xl font-black text-emerald-600 mt-1">FCFA {totalPayout.toLocaleString()}</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSaveSetting} className="p-6 rounded-2xl bg-card border border-border shadow-sm space-y-4 max-w-xl">
+        <h4 className="font-extrabold text-sm text-foreground">Configure Referral Reward Amount</h4>
+        
+        <div className="space-y-2">
+          <Label className="text-xs font-bold text-muted-foreground uppercase">Reward Amount (FCFA / Points per user)</Label>
+          <div className="flex items-center gap-3">
+            <Input 
+              type="number"
+              min="0"
+              step="1"
+              required
+              value={rewardAmount}
+              onChange={(e) => setRewardAmount(parseFloat(e.target.value) || 0)}
+              className="h-11 rounded-xl bg-background border-border text-sm font-bold w-48"
+            />
+            <span className="text-xs font-bold text-muted-foreground">FCFA</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Current active reward amount: <strong>{rewardAmount} FCFA</strong>. Admins can update this amount anytime.
+          </p>
+        </div>
+
+        <Button type="submit" disabled={saving} className="bg-primary hover:bg-primary-glow text-primary-foreground font-bold h-11 px-6 rounded-xl">
+          {saving ? "Saving Rate..." : `Set Referral Reward to ${rewardAmount} FCFA`}
+        </Button>
+      </form>
     </div>
   );
 };

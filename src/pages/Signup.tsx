@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +60,7 @@ const schema = z.object({
 const Signup = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [agree, setAgree] = useState({ tos: false, wallet: false, privacy: false });
@@ -72,6 +73,13 @@ const Signup = () => {
   useEffect(() => {
     document.title = "Sign Up — CameMark | Cameroon's Digital Marketplace";
     
+    // Auto-fill referral code from URL parameter ?ref=...
+    const refParam = searchParams.get("ref") || searchParams.get("referral");
+    if (refParam) {
+      setForm(f => ({ ...f, referral: refParam }));
+      toast({ title: `Referral code detected!`, description: `Referred by: ${refParam}` });
+    }
+
     // Geo-detection for country and currency
     const detectLocation = async () => {
       try {
@@ -97,7 +105,7 @@ const Signup = () => {
     };
     
     detectLocation();
-  }, []);
+  }, [searchParams]);
 
   const handle = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -152,6 +160,23 @@ const Signup = () => {
 
       localStorage.setItem("camemark_token", data.token);
       localStorage.setItem("camemark_user", JSON.stringify(data.user));
+
+      if (form.referral) {
+        try {
+          fetch(getApiUrl("/api/referrals"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "claim",
+              refCode: form.referral,
+              newUserId: data.user?.id,
+              newUserName: data.user?.fullName || form.fullName,
+              newUserEmail: data.user?.email || form.email
+            })
+          });
+        } catch (e) {}
+      }
+
       toast({ title: "Account created successfully!" });
       navigate("/dashboard");
     } catch (err: any) {

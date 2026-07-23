@@ -18,8 +18,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Globe, Menu, ChevronDown } from "lucide-react";
+import { Globe, Menu, ChevronDown, ShoppingCart } from "lucide-react";
 import logo from "@/assets/camemark-logo.png";
+import CartBasketDrawer from "@/components/camemark/CartBasketDrawer";
+import { getCartItems } from "@/utils/cart";
 
 const LANGS = [
   { code: "en", label: "English", flag: "🇬🇧" },
@@ -35,8 +37,21 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
   const [session, setSession] = useState<any>(null);
   const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const updateCount = () => {
+      const items = getCartItems();
+      const count = items.reduce((acc, i) => acc + (i.quantity || 1), 0);
+      setCartCount(count);
+    };
+    updateCount();
+    window.addEventListener("cart_updated", updateCount);
+    return () => window.removeEventListener("cart_updated", updateCount);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("camemark_token");
@@ -153,6 +168,20 @@ const Navbar = () => {
 
         {/* Right cluster */}
         <div className="flex items-center gap-2">
+          {/* Cart Basket Header Button */}
+          <button
+            onClick={() => setIsCartOpen(true)}
+            className="relative p-2 text-foreground/80 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg border border-border transition-smooth shrink-0 cursor-pointer"
+            title="Open Cart Basket"
+          >
+            <ShoppingCart className="h-5 w-5 text-emerald-800" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-emerald-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-pulse">
+                {cartCount}
+              </span>
+            )}
+          </button>
+
           <DropdownMenu>
             <DropdownMenuTrigger className="hidden md:inline-flex items-center gap-1.5 text-sm font-medium text-foreground/70 hover:text-primary transition-smooth border border-border rounded-md px-2.5 py-1.5">
               <Globe className="h-4 w-4" />
@@ -334,6 +363,9 @@ const Navbar = () => {
           </Sheet>
         </div>
       </div>
+
+      {/* Interactive Cart Basket Drawer */}
+      <CartBasketDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </header>
   );
 };

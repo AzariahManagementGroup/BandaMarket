@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  LayoutDashboard, ShoppingBag, List, MessageCircle, 
+  LayoutDashboard, ShoppingBag, ShoppingCart, List, MessageCircle, 
   Settings, Wallet, Heart, Map, Truck, 
   Search, Bell, Globe, ChevronDown, 
   Plus, ArrowUpRight, Clock, CheckCircle2,
   Package, MapPin, Store, ArrowRight,
   TrendingUp, CreditCard, ExternalLink,
-  Menu, X, Loader2, Shield, GraduationCap, Radio, Layers, WifiOff
+  Menu, X, Loader2, Shield, ShieldCheck, GraduationCap, Radio, Layers, WifiOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,12 +29,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { getApiUrl } from "@/config";
 import { toast } from "sonner";
 import logo from "@/assets/camemark-logo.png";
+import ProductDetailModal from "@/components/camemark/ProductDetailModal";
+import CartBasketDrawer from "@/components/camemark/CartBasketDrawer";
+import ReferralModal from "@/components/camemark/ReferralModal";
+import { addToCart, getCartItems } from "@/utils/cart";
 
 const BuyerDashboard = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -50,6 +57,111 @@ const BuyerDashboard = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [walletAction, setWalletAction] = useState<"add" | "send" | "pay" | "withdraw" | null>(null);
+
+  // Product Detail Modal State
+  const [selectedProductForDetail, setSelectedProductForDetail] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
+
+  // Database Products & Bargains State
+  const [dbProducts, setDbProducts] = useState<any[]>([]);
+  const [bargainDeals, setBargainDeals] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
+  const [selectedRegion, setSelectedRegion] = useState<string>("All Regions");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
+
+  // Cart Badge Count State
+  const [cartCount, setCartCount] = useState<number>(0);
+
+  useEffect(() => {
+    const updateCount = () => {
+      const items = getCartItems();
+      const count = items.reduce((acc, i) => acc + (i.quantity || 1), 0);
+      setCartCount(count);
+    };
+    updateCount();
+    window.addEventListener("cart_updated", updateCount);
+    return () => window.removeEventListener("cart_updated", updateCount);
+  }, []);
+
+  const fetchBargainDeals = async () => {
+    try {
+      const res = await fetch(getApiUrl("/api/bargains"));
+      const contentType = res.headers.get("content-type");
+      if (res.ok && contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        if (Array.isArray(data.deals) && data.deals.length > 0) {
+          setBargainDeals(data.deals);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error("Error fetching bargain deals:", e);
+    }
+
+    setBargainDeals([
+      { id: 1, title: "Fresh Pineapples (1pc)", formattedPrice: "FCFA 1,200", formattedOldPrice: "FCFA 1,800", off: "-33%", img: "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?auto=format&fit=crop&w=150&q=80" },
+      { id: 2, title: "Cameroon Peppers (500g)", formattedPrice: "FCFA 800", formattedOldPrice: "FCFA 1,200", off: "-33%", img: "https://images.unsplash.com/photo-1588879460405-59427f7f4577?auto=format&fit=crop&w=150&q=80" },
+      { id: 3, title: "Dry Okra (250g)", formattedPrice: "FCFA 900", formattedOldPrice: "FCFA 1,400", off: "-36%", img: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=150&q=80" }
+    ]);
+  };
+
+  useEffect(() => {
+    fetchBargainDeals();
+  }, []);
+
+  const fetchDatabaseProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      const queryParams = [];
+      if (selectedCategory && selectedCategory !== "All Categories" && selectedCategory !== "all-cat") {
+        queryParams.push(`category=${encodeURIComponent(selectedCategory)}`);
+      }
+      if (selectedRegion && selectedRegion !== "All Regions" && selectedRegion !== "all-reg") {
+        queryParams.push(`region=${encodeURIComponent(selectedRegion)}`);
+      }
+      if (searchQuery) {
+        queryParams.push(`search=${encodeURIComponent(searchQuery)}`);
+      }
+
+      const queryString = queryParams.length > 0 ? "?" + queryParams.join("&") : "";
+      const res = await fetch(getApiUrl("/api/products" + queryString));
+      const contentType = res.headers.get("content-type");
+
+      if (res.ok && contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        if (Array.isArray(data.products) && data.products.length > 0) {
+          setDbProducts(data.products);
+          setLoadingProducts(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching database products:", err);
+    }
+
+    // Fallback to local storage or defaults
+    const local = localStorage.getItem("camemark_products");
+    if (local) {
+      try {
+        setDbProducts(JSON.parse(local));
+      } catch (e) {}
+    } else {
+      setDbProducts([
+        { id: 1, title: "Red Palm Oil (1L)", seller: "Best Palm Cooperative", region: "South West", price: 2100, tag: "Farm Fresh", img: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=400&q=80", rating: "4.8 (126)", isBargain: false },
+        { id: 2, title: "Organic Cocoa Beans (1kg)", seller: "Cocoa Farmers Union", region: "Centre", price: 3500, tag: "Bargain", img: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=400&q=80", rating: "4.7 (98)", isBargain: true },
+        { id: 3, title: "Plantains (1 Bunch)", seller: "Green Valley Farms", region: "Littoral", price: 800, tag: "Farm Fresh", img: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=400&q=80", rating: "4.6 (76)", isBargain: false },
+        { id: 4, title: "Fresh Tomatoes (1kg)", seller: "Healthy Fields Co-op", region: "North West", price: 1600, tag: "Farm Fresh", img: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=400&q=80", rating: "4.7 (112)", isBargain: false },
+        { id: 5, title: "Robusta Coffee (1kg)", seller: "Highland Coffee Farmers", region: "Ouest", price: 4200, tag: "Bargain", img: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=400&q=80", rating: "4.8 (89)", isBargain: true },
+        { id: 6, title: "Handmade Woven Basket", seller: "Artisans du Cameroun", region: "Adamawa", price: 3600, tag: "Handmade", img: "https://images.unsplash.com/photo-1590736969955-71cc94801759?auto=format&fit=crop&w=400&q=80", rating: "4.7 (64)", isBargain: false }
+      ]);
+    }
+    setLoadingProducts(false);
+  };
+
+  useEffect(() => {
+    fetchDatabaseProducts();
+  }, [selectedCategory, selectedRegion, searchQuery]);
 
   useEffect(() => {
     document.title = "Dashboard | CameMark";
@@ -334,6 +446,7 @@ const BuyerDashboard = () => {
     { id: "marketplace", icon: ShoppingBag, label: "Marketplace", href: "/market-zone" },
     { id: "categories", icon: Layers, label: "Categories", href: "/market-zone?tab=categories" },
     { id: "bargains", icon: MessageCircle, label: "Bargains", href: "/market-zone?tab=bargains" },
+    { id: "cart", icon: ShoppingCart, label: "Cart Basket", badge: cartCount, href: "#", highlight: true },
     { id: "orders", icon: Package, label: "Orders", href: "/dashboard?tab=orders" },
     { id: "wallet", icon: Wallet, label: "Wallet", href: "/cards-wallet" },
     { id: "saved", icon: Heart, label: "Saved Items", href: "/market-zone?tab=saved" },
@@ -367,6 +480,10 @@ const BuyerDashboard = () => {
               <button
                 key={item.label}
                 onClick={() => {
+                  if (item.id === "cart") {
+                    setIsCartDrawerOpen(true);
+                    return;
+                  }
                   setActiveNavTab(item.id);
                   if (item.id !== "marketplace" && item.id !== "dashboard" && item.href !== "#" && !item.href.startsWith("/dashboard")) {
                     navigate(item.href);
@@ -409,7 +526,11 @@ const BuyerDashboard = () => {
             <div className="relative z-10">
               <h4 className="text-sm font-bold text-emerald-900">Refer & Earn</h4>
               <p className="text-[10px] text-emerald-700 mt-1 mb-4">Invite friends and earn CaMark points on every purchase.</p>
-              <Button size="sm" className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white text-[11px] rounded-lg">
+              <Button 
+                size="sm" 
+                onClick={() => setIsReferralModalOpen(true)}
+                className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white text-[11px] rounded-lg cursor-pointer"
+              >
                 Invite Now <ArrowRight className="h-3 w-3 ml-2" />
               </Button>
             </div>
@@ -445,6 +566,11 @@ const BuyerDashboard = () => {
                   <button
                     key={item.label}
                     onClick={() => {
+                      if (item.id === "cart") {
+                        setIsCartDrawerOpen(true);
+                        setIsMobileMenuOpen(false);
+                        return;
+                      }
                       setActiveNavTab(item.id);
                       setIsMobileMenuOpen(false);
                       if (item.id !== "marketplace" && item.id !== "dashboard" && item.href !== "#" && !item.href.startsWith("/dashboard")) {
@@ -507,6 +633,8 @@ const BuyerDashboard = () => {
             <div className="relative group w-full">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />
               <Input 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products, farmers, orders, regions..." 
                 className="pl-10 sm:pl-12 bg-gray-50 border-transparent rounded-xl h-10 sm:h-11 focus-visible:ring-emerald-500 focus-visible:bg-white transition-all text-xs"
               />
@@ -514,6 +642,20 @@ const BuyerDashboard = () => {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4 ml-2 shrink-0">
+            {/* Cart Basket Header Icon Button */}
+            <button
+              onClick={() => setIsCartDrawerOpen(true)}
+              className="relative p-2 text-gray-700 hover:text-emerald-800 hover:bg-emerald-50 rounded-xl border border-gray-200 transition-colors shrink-0 cursor-pointer"
+              title="Open Cart Basket"
+            >
+              <ShoppingCart className="h-5 sm:h-6 w-5 sm:w-6 text-emerald-800" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 bg-emerald-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-pulse">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+
             <DropdownMenu>
               <DropdownMenuTrigger className="relative p-2 text-gray-400 hover:text-emerald-600 transition-colors">
                 <Bell className="h-5 sm:h-6 w-5 sm:w-6" />
@@ -587,16 +729,20 @@ const BuyerDashboard = () => {
                   <p className="text-xs sm:text-sm text-gray-500 mt-1">Discover products, services, and regional goods across Cameroon.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
-                    <ShoppingCart className="h-4 w-4 text-emerald-700" /> Cart (1 item)
-                  </span>
+                  <button 
+                    onClick={() => navigate("/checkout")}
+                    className="text-xs font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                  >
+                    <ShoppingCart className="h-4 w-4 text-emerald-700" /> Cart ({cartCount} {cartCount === 1 ? 'item' : 'items'})
+                  </button>
                 </div>
               </div>
 
               {/* Category Pills Bar */}
               <div className="flex items-center gap-3 overflow-x-auto pb-2 custom-scrollbar">
                 {[
-                  { name: "Agriculture", icon: "🌾", active: true },
+                  { name: "All Categories", icon: "🌐" },
+                  { name: "Agriculture", icon: "🌾" },
                   { name: "Food & Beverages", icon: "🥖" },
                   { name: "Fashion", icon: "👗" },
                   { name: "Beauty", icon: "💄" },
@@ -606,42 +752,50 @@ const BuyerDashboard = () => {
                   { name: "Services", icon: "🔧" },
                   { name: "Handmade", icon: "🏺" },
                   { name: "Wholesale", icon: "📦" }
-                ].map((cat, idx) => (
-                  <button 
-                    key={idx}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all shrink-0 ${
-                      cat.active ? "bg-[#064E3B] text-white shadow-md" : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
-                    }`}
-                  >
-                    <span>{cat.icon}</span>
-                    <span>{cat.name}</span>
-                  </button>
-                ))}
+                ].map((cat, idx) => {
+                  const isActive = selectedCategory === cat.name;
+                  return (
+                    <button 
+                      key={idx}
+                      onClick={() => setSelectedCategory(cat.name)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all shrink-0 ${
+                        isActive ? "bg-[#064E3B] text-white shadow-md" : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span>{cat.icon}</span>
+                      <span>{cat.name}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Filters & Sorting Bar */}
               <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm text-xs font-bold">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Select defaultValue="all-cat">
-                    <SelectTrigger className="h-9 w-36 bg-gray-50 border-gray-200 text-xs">
+                  <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val)}>
+                    <SelectTrigger className="h-9 w-44 bg-gray-50 border-gray-200 text-xs">
                       <SelectValue placeholder="All Categories" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all-cat">All Categories</SelectItem>
-                      <SelectItem value="agric">Agriculture</SelectItem>
-                      <SelectItem value="fashion">Fashion</SelectItem>
+                      <SelectItem value="All Categories">All Categories</SelectItem>
+                      <SelectItem value="Agriculture">Agriculture</SelectItem>
+                      <SelectItem value="Food & Beverages">Food & Beverages</SelectItem>
+                      <SelectItem value="Fashion">Fashion</SelectItem>
+                      <SelectItem value="Handmade">Handmade</SelectItem>
                     </SelectContent>
                   </Select>
 
-                  <Select defaultValue="all-reg">
-                    <SelectTrigger className="h-9 w-36 bg-gray-50 border-gray-200 text-xs">
+                  <Select value={selectedRegion} onValueChange={(val) => setSelectedRegion(val)}>
+                    <SelectTrigger className="h-9 w-44 bg-gray-50 border-gray-200 text-xs">
                       <SelectValue placeholder="All Regions" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all-reg">All Regions</SelectItem>
-                      <SelectItem value="littoral">Littoral (Douala)</SelectItem>
-                      <SelectItem value="centre">Centre (Yaoundé)</SelectItem>
-                      <SelectItem value="southwest">South West (Buea)</SelectItem>
+                      <SelectItem value="All Regions">All Regions</SelectItem>
+                      <SelectItem value="Littoral">Littoral (Douala)</SelectItem>
+                      <SelectItem value="Centre">Centre (Yaoundé)</SelectItem>
+                      <SelectItem value="South West">South West (Buea)</SelectItem>
+                      <SelectItem value="North West">North West (Bamenda)</SelectItem>
+                      <SelectItem value="Ouest">Ouest (Bafoussam)</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -657,8 +811,21 @@ const BuyerDashboard = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <button className="text-gray-400 hover:text-gray-600 text-xs">Clear Filters</button>
-                  <Button size="sm" className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold text-xs h-9 px-4 rounded-xl">
+                  <button 
+                    onClick={() => {
+                      setSelectedCategory("All Categories");
+                      setSelectedRegion("All Regions");
+                      setSearchQuery("");
+                    }} 
+                    className="text-gray-400 hover:text-gray-600 text-xs"
+                  >
+                    Clear Filters
+                  </button>
+                  <Button 
+                    onClick={() => fetchDatabaseProducts()}
+                    size="sm" 
+                    className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold text-xs h-9 px-4 rounded-xl"
+                  >
                     Apply Filters
                   </Button>
                 </div>
@@ -670,60 +837,81 @@ const BuyerDashboard = () => {
                 {/* Left 3 Columns: Product Grid */}
                 <div className="xl:col-span-3 space-y-4">
                   <div className="flex items-center justify-between text-xs text-gray-500 font-bold">
-                    <span>Showing 1-12 of 1,248 products</span>
+                    <span>Showing {dbProducts.length} live database products</span>
                     <div className="flex items-center gap-2">
                       <span>Sort By:</span>
                       <span className="text-gray-900 font-black">Recommended</span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-                    {[
-                      { id: 1, title: "Red Palm Oil (1L)", seller: "Best Palm Cooperative", region: "South West", price: 2100, tag: "Farm Fresh", img: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=400&q=80", rating: "4.8 (126)", isBargain: false },
-                      { id: 2, title: "Organic Cocoa Beans (1kg)", seller: "Cocoa Farmers Union", region: "Centre", price: 3500, tag: "Bargain", img: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=400&q=80", rating: "4.7 (98)", isBargain: true },
-                      { id: 3, title: "Plantains (1 Bunch)", seller: "Green Valley Farms", region: "Littoral", price: 800, tag: "Farm Fresh", img: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=400&q=80", rating: "4.6 (76)", isBargain: false },
-                      { id: 4, title: "Fresh Tomatoes (1kg)", seller: "Healthy Fields Co-op", region: "North West", price: 1600, tag: "Farm Fresh", img: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=400&q=80", rating: "4.7 (112)", isBargain: false },
-                      { id: 5, title: "Robusta Coffee (1kg)", seller: "Highland Coffee Farmers", region: "Ouest", price: 4200, tag: "Bargain", img: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=400&q=80", rating: "4.8 (89)", isBargain: true },
-                      { id: 6, title: "Handmade Basket", seller: "Artisans du Cameroun", region: "Adamawa", price: 3600, tag: "Handmade", img: "https://images.unsplash.com/photo-1590736969955-71cc94801759?auto=format&fit=crop&w=400&q=80", rating: "4.7 (64)", isBargain: false }
-                    ].map((prod) => (
-                      <div key={prod.id} className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col">
-                        <div className="h-44 bg-gray-100 relative overflow-hidden">
-                          <img src={prod.img} alt={prod.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          <span className={`absolute top-3 left-3 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-sm ${
-                            prod.tag === "Bargain" ? "bg-amber-400 text-amber-950" : "bg-emerald-600 text-white"
-                          }`}>
-                            {prod.tag}
-                          </span>
-                        </div>
-                        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                          <div>
-                            <h4 className="font-extrabold text-gray-900 text-sm line-clamp-1">{prod.title}</h4>
-                            <p className="text-[11px] text-gray-400 mt-0.5">{prod.seller} • <span className="text-emerald-700 font-bold">{prod.region}</span></p>
-                            <span className="text-[10px] text-amber-500 font-bold mt-1 block">★ {prod.rating}</span>
+                  {loadingProducts ? (
+                    <div className="p-12 text-center text-gray-400 flex flex-col items-center gap-2">
+                      <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+                      <p className="text-xs font-bold">Loading live database products...</p>
+                    </div>
+                  ) : dbProducts.length === 0 ? (
+                    <div className="p-12 text-center bg-white rounded-3xl border border-gray-200 text-gray-500 space-y-2">
+                      <Package className="h-10 w-10 text-gray-300 mx-auto" />
+                      <p className="font-bold text-sm">No products found matching filters.</p>
+                      <p className="text-xs text-gray-400">Try clearing your search or selecting another region/category.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                      {dbProducts.map((prod) => (
+                        <div 
+                          key={prod.id} 
+                          onClick={() => {
+                            setSelectedProductForDetail(prod);
+                            setIsDetailModalOpen(true);
+                          }}
+                          className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col cursor-pointer"
+                        >
+                          <div className="h-44 bg-gray-100 relative overflow-hidden">
+                            <img src={prod.img || prod.imageUrl} alt={prod.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            <span className={`absolute top-3 left-3 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-sm ${
+                              prod.tag === "Bargain" ? "bg-amber-400 text-amber-950" : "bg-emerald-600 text-white"
+                            }`}>
+                              {prod.tag || "Verified"}
+                            </span>
                           </div>
-                          <div>
-                            <span className="text-base font-black text-gray-900 block">FCFA {prod.price.toLocaleString()}</span>
-                            <div className="flex items-center gap-2 mt-2">
-                              <button 
-                                onClick={() => navigate(`/checkout?productId=${prod.id}`)}
-                                className="h-9 px-3 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center justify-center shrink-0"
-                              >
-                                <ShoppingCart className="h-4 w-4" />
-                              </button>
-                              <Button 
-                                onClick={() => navigate(`/checkout?productId=${prod.id}`)}
-                                className={`w-full font-extrabold text-xs h-9 rounded-xl ${
-                                  prod.isBargain ? "bg-amber-400 hover:bg-amber-500 text-amber-950" : "bg-[#064E3B] hover:bg-emerald-950 text-white"
-                                }`}
-                              >
-                                {prod.isBargain ? "Start Bargain" : "View Product"}
-                              </Button>
+                          <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                            <div>
+                              <h4 className="font-extrabold text-gray-900 text-sm line-clamp-1">{prod.title}</h4>
+                              <p className="text-[11px] text-gray-400 mt-0.5">{prod.seller || prod.sellerName} • <span className="text-emerald-700 font-bold">{prod.region}</span></p>
+                              <span className="text-[10px] text-amber-500 font-bold mt-1 block">★ {prod.rating || "4.8 (120)"}</span>
+                            </div>
+                            <div>
+                              <span className="text-base font-black text-gray-900 block">FCFA {Number(prod.price).toLocaleString()}</span>
+                              <div className="flex items-center gap-2 mt-2">
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    addToCart(prod);
+                                  }}
+                                  className="h-9 px-3 rounded-xl border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center justify-center shrink-0 transition-colors"
+                                  title="Add to Cart"
+                                >
+                                  <ShoppingCart className="h-4 w-4" />
+                                </button>
+                                <Button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedProductForDetail(prod);
+                                    setIsDetailModalOpen(true);
+                                  }}
+                                  className={`w-full font-extrabold text-xs h-9 rounded-xl ${
+                                    prod.isBargain ? "bg-amber-400 hover:bg-amber-500 text-amber-950" : "bg-[#064E3B] hover:bg-emerald-950 text-white"
+                                  }`}
+                                >
+                                  {prod.isBargain ? "Start Bargain" : "View Product"}
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Guarantees Bar at Bottom */}
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-3 pt-6 border-t border-gray-200 text-center text-xs">
@@ -773,20 +961,20 @@ const BuyerDashboard = () => {
                     </div>
 
                     <div className="space-y-3">
-                      {[
-                        { title: "Fresh Pineapples (1pc)", price: "FCFA 1,200", old: "FCFA 1,800", off: "-33%", img: "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?auto=format&fit=crop&w=150&q=80" },
-                        { title: "Cameroon Peppers (500g)", price: "FCFA 800", old: "FCFA 1,200", off: "-33%", img: "https://images.unsplash.com/photo-1588879460405-59427f7f4577?auto=format&fit=crop&w=150&q=80" },
-                        { title: "Dry Okra (250g)", price: "FCFA 900", old: "FCFA 1,400", off: "-36%", img: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=150&q=80" }
-                      ].map((b, i) => (
-                        <div key={i} className="flex items-center justify-between p-2 rounded-2xl bg-gray-50 border border-gray-100 text-xs">
+                      {bargainDeals.map((b, i) => (
+                        <div key={b.id || i} className="flex items-center justify-between p-2 rounded-2xl bg-gray-50 border border-gray-100 text-xs">
                           <div className="flex items-center gap-2.5">
                             <img src={b.img} alt={b.title} className="h-10 w-10 rounded-xl object-cover" />
                             <div>
                               <p className="font-extrabold text-gray-900 text-[11px] line-clamp-1">{b.title}</p>
                               <div className="flex items-center gap-1.5">
-                                <span className="font-black text-emerald-700 text-xs">{b.price}</span>
-                                <span className="text-[9px] text-gray-400 line-through">{b.old}</span>
-                                <span className="text-[9px] font-bold bg-red-100 text-red-700 px-1 rounded">{b.off}</span>
+                                <span className="font-black text-emerald-700 text-xs">{b.formattedPrice || b.price}</span>
+                                { (b.formattedOldPrice || b.old) && (
+                                  <span className="text-[9px] text-gray-400 line-through">{b.formattedOldPrice || b.old}</span>
+                                )}
+                                { b.off && (
+                                  <span className="text-[9px] font-bold bg-red-100 text-red-700 px-1 rounded">{b.off}</span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1141,6 +1329,25 @@ const BuyerDashboard = () => {
         </SheetContent>
       </Sheet>
 
+      {/* Interactive Product & Bargain Details Modal */}
+      <ProductDetailModal 
+        product={selectedProductForDetail} 
+        isOpen={isDetailModalOpen} 
+        onClose={() => setIsDetailModalOpen(false)} 
+      />
+
+      {/* Interactive Cart Basket Drawer */}
+      <CartBasketDrawer 
+        isOpen={isCartDrawerOpen} 
+        onClose={() => setIsCartDrawerOpen(false)} 
+      />
+
+      {/* Interactive Refer & Earn Program Modal */}
+      <ReferralModal 
+        isOpen={isReferralModalOpen} 
+        onClose={() => setIsReferralModalOpen(false)} 
+        user={profile || session?.user} 
+      />
     </div>
   );
 };

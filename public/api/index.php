@@ -3,6 +3,11 @@
 require_once __DIR__ . '/config.php';
 
 // Route matching based on request URL
+if (strpos($uri, 'referrals') !== false) {
+    require_once __DIR__ . '/referrals.php';
+    exit();
+}
+
 if (strpos($uri, 'send-email') !== false) {
     require_once __DIR__ . '/send-email.php';
     exit();
@@ -20,6 +25,11 @@ if (strpos($uri, 'offline-sync') !== false) {
 
 if (strpos($uri, 'bargains') !== false) {
     require_once __DIR__ . '/bargains.php';
+    exit();
+}
+
+if (strpos($uri, 'products') !== false) {
+    require_once __DIR__ . '/products.php';
     exit();
 }
 

@@ -81,15 +81,17 @@ const MarketZone = () => {
       }
 
       try {
-        const response = await fetch(getApiUrl("/api/products"));
-        const data = await response.json();
+        const queryParam = region && region !== "All Regions" ? `?region=${encodeURIComponent(region)}` : "";
+        const response = await fetch(getApiUrl("/api/products" + queryParam));
+        const contentType = response.headers.get("content-type");
 
-        if (response.ok && Array.isArray(data.products) && data.products.length > 0) {
-          const filtered = region === "All Regions" 
-            ? data.products 
-            : data.products.filter((p: any) => p.region === region);
-          setProducts(filtered);
-          localStorage.setItem("camemark_products", JSON.stringify(data.products));
+        if (response.ok && contentType && contentType.includes("application/json")) {
+          const data = await response.json();
+
+          if (Array.isArray(data.products) && data.products.length > 0) {
+            setProducts(data.products);
+            localStorage.setItem("camemark_products", JSON.stringify(data.products));
+          }
         }
       } catch (err) {
         console.error("Error fetching products:", err);
