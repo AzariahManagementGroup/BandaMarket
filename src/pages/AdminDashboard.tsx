@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link, Routes, Route } from "react-router-dom";
 import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap, Gift, RefreshCw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+
 import { getApiUrl } from "@/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import UserManager from "@/components/camemark/admin/UserManager";
 import RoleManager from "@/components/camemark/admin/RoleManager";
+import AdminForumRegistrations from "@/components/camemark/admin/AdminForumRegistrations";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -20,10 +21,10 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const token = localStorage.getItem("camemark_token");
       const userStr = localStorage.getItem("camemark_user");
 
-      if (!session && !userStr) {
+      if (!token && !userStr) {
         navigate("/signin");
         return;
       }
@@ -45,6 +46,7 @@ const AdminDashboard = () => {
     { label: "Logistics Delivery Fees", icon: Truck, path: "/delivery-fees" },
     { label: "SMTP Email Settings", icon: Mail, path: "/smtp" },
     { label: "User Management", icon: Users, path: "/users" },
+    { label: "Forum Registrations", icon: CheckCircle, path: "/forum-registrations" },
     { label: "Roles & Permissions", icon: Shield, path: "/roles" },
   ];
 
@@ -100,7 +102,6 @@ const AdminDashboard = () => {
             onClick={async () => {
               localStorage.removeItem("camemark_token");
               localStorage.removeItem("camemark_user");
-              await supabase.auth.signOut();
               navigate("/signin");
             }}
           >
@@ -134,6 +135,7 @@ const AdminDashboard = () => {
             <Route path="/delivery-fees" element={<AdminDeliveryFees />} />
             <Route path="/smtp" element={<AdminSmtpSettings />} />
             <Route path="/users" element={<UserManager />} />
+            <Route path="/forum-registrations" element={<AdminForumRegistrations />} />
             <Route path="/roles" element={<RoleManager />} />
             <Route path="*" element={<AdminOverview />} />
           </Routes>
@@ -153,24 +155,26 @@ const AdminOverview = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      // 1. Total Users
-      const { count: usersCount } = await supabase.from("profiles").select("*", { count: "exact", head: true });
-      
-      // 2. Active Sellers (Sellers + Farmers)
-      const { count: sellersCount } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .or("role.eq.seller,signup_role.eq.seller,signup_role.eq.farmer");
+      let usersCount = 0;
+      let sellersCount = 0;
+      let totalSales = 0;
+      let pendingCount = 0;
 
-      // 3. Marketplace Sales (Sum of orders)
-      const { data: salesData } = await supabase.from("orders").select("total_amount");
-      const totalSales = salesData?.reduce((acc, curr) => acc + (curr.total_amount || 0), 0) || 0;
-
-      // 4. Pending Approvals (Unverified profiles or pending deliveries)
-      const { count: pendingCount } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .eq("is_verified", false);
+      try {
+        const token = localStorage.getItem("camemark_token");
+        const headers = token ? { "Authorization": `Bearer ${token}` } : undefined;
+        
+        const res = await fetch(getApiUrl("/api/user-data?action=admin-stats"), { headers });
+        if (res.ok) {
+          const data = await res.json();
+          usersCount = data.usersCount || 0;
+          sellersCount = data.sellersCount || 0;
+          totalSales = data.totalSales || 0;
+          pendingCount = data.pendingCount || 0;
+        }
+      } catch (err) {
+        console.error("Failed to fetch admin stats:", err);
+      }
 
       setStats({
         totalUsers: { value: (usersCount || 0).toLocaleString(), change: "+12%" },
@@ -641,7 +645,9 @@ const AdminPaymentSettings = () => {
     cinetpayApiKey: "cinetpay_sandbox_api_key",
     momoApiUser: "momo_sandbox_user_camemark",
     momoApiKey: "momo_sandbox_api_key",
-    omMerchantId: "om_sandbox_merchant_camemark"
+    omMerchantId: "om_sandbox_merchant_camemark",
+    tranzakAppId: "",
+    tranzakAppKey: ""
   });
   const [saving, setSaving] = useState(false);
 
@@ -658,7 +664,9 @@ const AdminPaymentSettings = () => {
             paystackPublicKey: data.payment.paystackPublicKey || "pk_test_sandbox_camemark_002",
             cinetpaySiteId: data.payment.cinetpaySiteId || "5870001_sandbox",
             momoApiUser: data.payment.momoApiUser || "momo_sandbox_user_camemark",
-            omMerchantId: data.payment.omMerchantId || "om_sandbox_merchant_camemark"
+            omMerchantId: data.payment.omMerchantId || "om_sandbox_merchant_camemark",
+            tranzakAppId: data.payment.tranzakAppId || "",
+            tranzakAppKey: data.payment.tranzakAppKey || ""
           }));
         }
       })
@@ -726,6 +734,7 @@ const AdminPaymentSettings = () => {
                 <option value="flutterwave">Flutterwave Cameroon (MoMo, OM, Visa/MC)</option>
                 <option value="paystack">Paystack Africa</option>
                 <option value="cinetpay">CinetPay CEMAC (MoMo & OM Direct)</option>
+                <option value="tranzak">Tranzak Cameroon (Default for Forum)</option>
                 <option value="momo">MTN Mobile Money Direct API</option>
                 <option value="orange">Orange Money Cameroon Direct API</option>
               </select>
@@ -755,6 +764,34 @@ const AdminPaymentSettings = () => {
                   className="h-10 rounded-xl bg-background text-xs font-mono"
                   value={paymentConfig.flwSecretKey}
                   onChange={(e) => setPaymentConfig({ ...paymentConfig, flwSecretKey: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Provider: Tranzak Keys */}
+          <div className="space-y-3 pt-2 border-t border-border">
+            <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-purple-600" /> Tranzak Credentials
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">Tranzak App ID</Label>
+                <Input 
+                  placeholder="e.g. 29384729"
+                  className="h-10 rounded-xl bg-background text-xs font-mono"
+                  value={paymentConfig.tranzakAppId}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, tranzakAppId: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">Tranzak App Key</Label>
+                <Input 
+                  type="password"
+                  placeholder="SAND_..."
+                  className="h-10 rounded-xl bg-background text-xs font-mono"
+                  value={paymentConfig.tranzakAppKey}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, tranzakAppKey: e.target.value })}
                 />
               </div>
             </div>

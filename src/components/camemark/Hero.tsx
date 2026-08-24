@@ -44,9 +44,12 @@ const Hero = () => {
   const typed = useTypewriter(Array.isArray(phrases) ? phrases : ["One Digital Market"]);
 
   useEffect(() => {
-    import("@/integrations/supabase/client").then(({ supabase }) => {
-      supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    });
+    const userStr = localStorage.getItem("camemark_user");
+    if (userStr) {
+      try {
+        setSession({ user: JSON.parse(userStr) });
+      } catch (e) {}
+    }
   }, []);
 
   return (

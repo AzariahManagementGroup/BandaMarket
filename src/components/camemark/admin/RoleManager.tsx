@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getApiUrl } from "@/config";
 import { 
   Table, 
   TableBody, 
@@ -30,15 +30,16 @@ const RoleManager = () => {
 
   const fetchPermissions = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("roles_permissions")
-      .select("*")
-      .order("role");
-
-    if (error) {
+    try {
+      const res = await fetch(getApiUrl("/api/admin/roles"));
+      if (res.ok) {
+        const data = await res.json();
+        setRolePermissions(data || []);
+      } else {
+        toast.error("Failed to load roles");
+      }
+    } catch (e) {
       toast.error("Failed to load roles");
-    } else {
-      setRolePermissions(data || []);
     }
     setLoading(false);
   };
@@ -54,16 +55,20 @@ const RoleManager = () => {
     // Special case for super_admin "all"
     if (currentModules.includes("all")) return;
 
-    const { error } = await supabase
-      .from("roles_permissions")
-      .update({ modules: newModules })
-      .eq("id", roleId);
-
-    if (error) {
+    try {
+      const res = await fetch(getApiUrl("/api/admin/roles"), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roleId, modules: newModules })
+      });
+      if (res.ok) {
+        toast.success("Permission updated");
+        fetchPermissions();
+      } else {
+        toast.error("Update failed");
+      }
+    } catch (e) {
       toast.error("Update failed");
-    } else {
-      toast.success("Permission updated");
-      fetchPermissions();
     }
   };
 

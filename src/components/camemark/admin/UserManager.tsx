@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getApiUrl } from "@/config";
 import { 
   Table, 
   TableBody, 
@@ -41,30 +41,34 @@ const UserManager = () => {
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
+    try {
+      const res = await fetch(getApiUrl("/api/admin/users"));
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data || []);
+      } else {
+        toast.error("Failed to load users");
+      }
+    } catch (e) {
       toast.error("Failed to load users");
-    } else {
-      setUsers(data || []);
     }
     setLoading(false);
   };
 
   const updateRole = async (userId: string, newRole: string) => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ role: newRole })
-      .eq("id", userId);
-
-    if (error) {
-      toast.error("Failed to update role");
-    } else {
-      toast.success("Role updated successfully");
-      fetchUsers();
+    try {
+      const res = await fetch(getApiUrl("/api/admin/users"), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, role: newRole })
+      });
+      if (res.ok) {
+        toast.success("Role updated successfully");
+        fetchUsers();
+      } else {
+        toast.error("Failed to update role");
+      }
+    } catch (e) {
     }
   };
 

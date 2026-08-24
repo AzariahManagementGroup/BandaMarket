@@ -3,6 +3,26 @@
 require_once __DIR__ . '/config.php';
 
 // Route matching based on request URL
+if (strpos($uri, 'admin-forum-registrations') !== false) {
+    require_once __DIR__ . '/admin-forum-registrations.php';
+    exit();
+}
+
+if (strpos($uri, 'popup-banner') !== false) {
+    require_once __DIR__ . '/popup-banner.php';
+    exit();
+}
+
+if (strpos($uri, 'payment-settings') !== false) {
+    require_once __DIR__ . '/payment-settings.php';
+    exit();
+}
+
+if (strpos($uri, 'tranzak-payment') !== false) {
+    require_once __DIR__ . '/tranzak-payment.php';
+    exit();
+}
+
 if (strpos($uri, 'referrals') !== false) {
     require_once __DIR__ . '/referrals.php';
     exit();
@@ -39,6 +59,11 @@ if (strpos($uri, 'courses') !== false || strpos($uri, 'course-enroll') !== false
     } else {
         require_once __DIR__ . '/courses.php';
     }
+    exit();
+}
+
+if (strpos($uri, 'user-data') !== false) {
+    require_once __DIR__ . '/user-data.php';
     exit();
 }
 
@@ -99,7 +124,11 @@ if (strpos($uri, 'signup') !== false) {
             // Create notification
             create_inapp_notification($conn, $userId, "Welcome to CameMark! 🇨🇲", "Your account has been created successfully. Explore verified local products and regional bargains!");
 
-            $token = base64_encode($userId . ":" . time());
+            $token = generate_jwt([
+                "sub" => $userId,
+                "email" => $email,
+                "role" => $role
+            ]);
 
             http_response_code(201);
             echo json_encode([
@@ -145,7 +174,11 @@ if (strpos($uri, 'signin') !== false) {
 
     if ($row = $result->fetch_assoc()) {
         if (password_verify($password, $row['passwordHash'])) {
-            $token = base64_encode($row['id'] . ":" . time());
+            $token = generate_jwt([
+                "sub" => $row['id'],
+                "email" => $row['email'],
+                "role" => $row['role']
+            ]);
 
             // Fetch wallet
             $wstmt = $conn->prepare("SELECT balance, currency FROM wallets WHERE userId = ?");

@@ -114,6 +114,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS seller_payouts (
     status VARCHAR(50) DEFAULT 'Completed',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+$conn->query("CREATE TABLE IF NOT EXISTS smtp_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     smtpHost VARCHAR(255) NOT NULL,
     smtpPort VARCHAR(50) NOT NULL,
@@ -247,5 +248,81 @@ function create_inapp_notification($conn, $userId, $title, $message) {
     $stmt->bind_param("sssss", $notifId, $userId, $title, $message, $now);
     $stmt->execute();
     $stmt->close();
+}
+// JWT Configuration
+$jwt_secret = "camemark_super_secret_key_2026_!@#";
+
+function base64url_encode($data) {
+    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+}
+
+function base64url_decode($data) {
+    return base64_decode(strtr($data, '-_', '+/'));
+}
+
+function generate_jwt($payload) {
+    global $jwt_secret;
+    $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
+    $base64UrlHeader = base64url_encode($header);
+    
+    // Add expiration (24 hours)
+    if (!isset($payload['exp'])) {
+        $payload['exp'] = time() + (24 * 60 * 60);
+    }
+    
+    $base64UrlPayload = base64url_encode(json_encode($payload));
+    $signature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, $jwt_secret, true);
+    $base64UrlSignature = base64url_encode($signature);
+    
+    return $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
+}
+
+function verify_jwt($token) {
+    global $jwt_secret;
+    $parts = explode('.', $token);
+    if (count($parts) !== 3) return null;
+    
+    list($base64UrlHeader, $base64UrlPayload, $base64UrlSignature) = $parts;
+    
+    $signature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, $jwt_secret, true);
+    $base64UrlSignatureExpected = base64url_encode($signature);
+    
+    if (hash_equals($base64UrlSignatureExpected, $base64UrlSignature)) {
+        $payload = json_decode(base64url_decode($base64UrlPayload), true);
+        if (isset($payload['exp']) && $payload['exp'] < time()) {
+            return null; // Expired
+        }
+        return $payload;
+    }
+    return null;
+}
+
+function authenticate_request() {
+    $authHeader = null;
+    if (isset($_SERVER['Authorization'])) {
+        $authHeader = trim($_SERVER["Authorization"]);
+    } else if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $authHeader = trim($_SERVER["HTTP_AUTHORIZATION"]);
+    } elseif (function_exists('apache_request_headers')) {
+        $requestHeaders = apache_request_headers();
+        $requestHeaders = array_combine(array_map('strtolower', array_keys($requestHeaders)), array_values($requestHeaders));
+        if (isset($requestHeaders['authorization'])) {
+            $authHeader = trim($requestHeaders['authorization']);
+        }
+    } elseif (function_exists('getallheaders')) {
+        $requestHeaders = getallheaders();
+        $requestHeaders = array_combine(array_map('strtolower', array_keys($requestHeaders)), array_values($requestHeaders));
+        if (isset($requestHeaders['authorization'])) {
+            $authHeader = trim($requestHeaders['authorization']);
+        }
+    }
+    
+    if (empty($authHeader)) return null;
+    
+    $parts = explode(" ", $authHeader);
+    if (count($parts) === 2 && strcasecmp($parts[0], 'Bearer') === 0) {
+        return verify_jwt($parts[1]);
+    }
+    return null;
 }
 ?>

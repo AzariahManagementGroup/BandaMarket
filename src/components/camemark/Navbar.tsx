@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   Breadcrumb,
@@ -17,6 +16,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import { Globe, Menu, ChevronDown, ShoppingCart } from "lucide-react";
 import logo from "@/assets/camemark-logo.png";
@@ -62,38 +65,39 @@ const Navbar = () => {
       setSession({ user });
       setRole(user.role || "buyer");
     } else {
-      supabase.auth.getSession().then(({ data }) => {
-        setSession(data.session);
-        if (data.session) fetchRole(data.session.user.id);
-      });
+      setSession(null);
+      setRole(null);
     }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        setSession(session);
-        fetchRole(session.user.id);
-      }
-    });
-    return () => subscription.unsubscribe();
   }, []);
 
-  const fetchRole = async (userId: string) => {
-    const { data } = await supabase.from("profiles").select("role, signup_role").eq("id", userId).single();
-    const finalRole = data?.role || data?.signup_role || "buyer";
-    setRole(finalRole);
-  };
-
-  const links = [
-    { key: "home", label: t("nav.home"), href: "/" },
-    { key: "offline", label: "COCF Offline 📶", href: "/offline-commerce", highlight: true },
-    { key: "academy", label: "Academy 🎓", href: "/academy", academy: true },
-    { key: "marketplace", label: t("nav.marketplace"), href: "/market-zone" },
-    { key: "forum", label: "Forum 2026 🇨🇲", href: "/#forum-2026", highlight: true },
-    { key: "regions", label: t("nav.regions"), href: "#regions", caret: true },
-    { key: "wallet", label: t("nav.wallet"), href: "#wallet" },
-    { key: "logistics", label: t("nav.logistics"), href: "#logistics" },
-    { key: "about", label: t("nav.about"), href: "#about" },
-    { key: "contact", label: t("nav.contact"), href: "#contact" },
+  const menuGroups = [
+    {
+      key: "discover",
+      label: "Discover",
+      items: [
+        { key: "marketplace", label: t("nav.marketplace"), href: "/market-zone" },
+        { key: "regions", label: t("nav.regions"), href: "#regions", isRegions: true },
+        { key: "forum", label: "Forum 2026 🇨🇲", href: "/#forum-2026", highlight: true },
+      ],
+    },
+    {
+      key: "services",
+      label: "Services",
+      items: [
+        { key: "wallet", label: t("nav.wallet"), href: "#wallet" },
+        { key: "logistics", label: t("nav.logistics"), href: "#logistics" },
+        { key: "offline", label: "COCF Offline 📶", href: "/offline-commerce", highlight: true },
+      ],
+    },
+    {
+      key: "learn",
+      label: "About & Connect",
+      items: [
+        { key: "academy", label: "Academy 🎓", href: "/academy", academy: true },
+        { key: "about", label: t("nav.about"), href: "#about" },
+        { key: "contact", label: t("nav.contact"), href: "#contact" },
+      ],
+    },
   ];
 
   const current = LANGS.find((l) => l.code === i18n.language?.split("-")[0]) ?? LANGS[0];
@@ -130,40 +134,56 @@ const Navbar = () => {
 
         {/* Desktop full menu */}
         <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-xs xl:text-sm font-semibold">
-          {links.map((l) => {
-            if (l.key === "regions") {
-              return (
-                <DropdownMenu key={l.key}>
-                  <DropdownMenuTrigger className="story-link inline-flex items-center gap-1 text-foreground/85 hover:text-primary transition-smooth outline-none">
-                    {l.label}
-                    <ChevronDown className="h-3.5 w-3.5 opacity-70" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-popover z-50">
-                    {REGIONS.map((r) => (
-                      <DropdownMenuItem key={r} onClick={() => navigate(`/market-zone?region=${r}`)}>
-                        {r}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              );
-            }
-            return (
-              <a
-                key={l.key}
-                href={l.href}
-                className={`inline-flex items-center gap-1 transition-smooth ${
-                  l.highlight
-                    ? "bg-amber-400 text-emerald-950 font-black px-3 py-1.5 rounded-full shadow-md hover:bg-amber-300 hover:scale-105"
-                    : l.academy
-                    ? "bg-emerald-100 text-emerald-900 font-extrabold px-3 py-1.5 rounded-full border border-emerald-300 hover:bg-emerald-200 hover:scale-105"
-                    : "story-link text-foreground/85 hover:text-primary"
-                }`}
-              >
-                {l.label}
-              </a>
-            );
-          })}
+          <a href="/" className="story-link text-foreground/85 hover:text-primary transition-smooth">
+            {t("nav.home")}
+          </a>
+          
+          {menuGroups.map((group) => (
+            <DropdownMenu key={group.key}>
+              <DropdownMenuTrigger className="story-link inline-flex items-center gap-1 text-foreground/85 hover:text-primary transition-smooth outline-none">
+                {group.label}
+                <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-popover z-50">
+                {group.items.map((item) => {
+                  if (item.isRegions) {
+                    return (
+                      <DropdownMenuSub key={item.key}>
+                        <DropdownMenuSubTrigger className="cursor-pointer">
+                          {item.label}
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuSubContent>
+                            {REGIONS.map((r) => (
+                              <DropdownMenuItem key={r} onClick={() => navigate(`/market-zone?region=${r}`)}>
+                                {r}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuSub>
+                    );
+                  }
+                  return (
+                    <DropdownMenuItem 
+                      key={item.key} 
+                      onClick={() => {
+                        if (item.href.startsWith("/")) navigate(item.href);
+                        else window.location.href = item.href;
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <span className={`${
+                        item.highlight ? "text-amber-600 font-bold" : item.academy ? "text-emerald-600 font-bold" : ""
+                      }`}>
+                        {item.label}
+                      </span>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ))}
         </nav>
 
         {/* Right cluster */}
@@ -273,28 +293,50 @@ const Navbar = () => {
 
               {/* Mobile nav links */}
               <nav className="flex-1 overflow-y-auto px-3 py-4">
-                <ul className="space-y-1">
-                  {links.map((l, i) => (
-                    <li key={l.key}>
-                      {l.href.startsWith("/") ? (
-                        <Link
-                          to={l.href}
-                          onClick={() => setOpen(false)}
-                          className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-foreground/85 hover:bg-primary/5 hover:text-primary transition-smooth"
-                        >
-                          {l.label}
-                          {l.caret && <ChevronDown className="h-4 w-4 opacity-60" />}
-                        </Link>
-                      ) : (
-                        <a
-                          href={l.href}
-                          onClick={() => setOpen(false)}
-                          className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-foreground/85 hover:bg-primary/5 hover:text-primary transition-smooth"
-                        >
-                          {l.label}
-                          {l.caret && <ChevronDown className="h-4 w-4 opacity-60" />}
-                        </a>
-                      )}
+                <ul className="space-y-4">
+                  <li>
+                    <Link
+                      to="/"
+                      onClick={() => setOpen(false)}
+                      className="flex items-center justify-between rounded-xl px-4 py-2 text-sm font-semibold text-foreground/85 hover:bg-primary/5 hover:text-primary transition-smooth"
+                    >
+                      {t("nav.home")}
+                    </Link>
+                  </li>
+                  {menuGroups.map((group) => (
+                    <li key={group.key}>
+                      <div className="px-4 py-1 text-xs uppercase font-bold text-muted-foreground tracking-wider">
+                        {group.label}
+                      </div>
+                      <ul className="space-y-1 mt-1">
+                        {group.items.map((item) => (
+                          <li key={item.key}>
+                            {item.href.startsWith("/") ? (
+                              <Link
+                                to={item.href}
+                                onClick={() => setOpen(false)}
+                                className={`flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-primary/5 transition-smooth ${
+                                  item.highlight ? "text-amber-600" : item.academy ? "text-emerald-600" : "text-foreground/85 hover:text-primary"
+                                }`}
+                              >
+                                {item.label}
+                                {item.isRegions && <ChevronDown className="h-4 w-4 opacity-60 -rotate-90" />}
+                              </Link>
+                            ) : (
+                              <a
+                                href={item.href}
+                                onClick={() => setOpen(false)}
+                                className={`flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-primary/5 transition-smooth ${
+                                  item.highlight ? "text-amber-600" : item.academy ? "text-emerald-600" : "text-foreground/85 hover:text-primary"
+                                }`}
+                              >
+                                {item.label}
+                                {item.isRegions && <ChevronDown className="h-4 w-4 opacity-60 -rotate-90" />}
+                              </a>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
                     </li>
                   ))}
                 </ul>

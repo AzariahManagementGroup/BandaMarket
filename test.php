@@ -1,0 +1,1 @@
+<?php \ = new mysqli('localhost', 'root', '', 'camemark_db'); \ = \->query('DESCRIBE products'); while(\=\->fetch_assoc())print_r(\); ?>

@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { getApiUrl } from "@/config";
-import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/camemark/Navbar";
 import Footer from "@/components/camemark/Footer";
 
@@ -46,17 +45,6 @@ const AcademyPage = () => {
           phone: u.phone || ""
         });
       } catch (e) {}
-    } else {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          setUserSession(session.user);
-          setEnrollForm({
-            name: session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "",
-            email: session.user.email || "",
-            phone: ""
-          });
-        }
-      });
     }
   }, []);
 

@@ -1,0 +1,1 @@
+<?php file_put_contents('debug.log', print_r(, true) . print_r(getallheaders(), true)); ?>

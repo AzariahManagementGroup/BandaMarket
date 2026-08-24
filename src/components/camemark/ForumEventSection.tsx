@@ -4,12 +4,15 @@ import {
   ArrowRight, CheckCircle2, ChevronRight, Download, Globe, 
   Sparkles, FileText, Briefcase, Target, ShieldCheck, Zap
 } from "lucide-react";
+import { Country, City } from "country-state-city";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getApiUrl } from "@/config";
 import { toast } from "sonner";
+
+const allCountries = Country.getAllCountries();
 
 const ForumEventSection = () => {
   const [activeDay, setActiveDay] = useState(1);
@@ -19,9 +22,17 @@ const ForumEventSection = () => {
     email: "",
     phone: "",
     organization: "",
-    category: "Delegate ($50 USD)"
+    address: "",
+    city: "",
+    country: "CM",
+    postalCode: "",
+    category: "Standard (30,000 CFA)"
   });
 
+  const availableCities = registerForm.country ? City.getCitiesOfCountry(registerForm.country) : [];
+
+  const [paymentMethod, setPaymentMethod] = useState("web");
+  const [momoNumber, setMomoNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
@@ -30,27 +41,74 @@ const ForumEventSection = () => {
       toast.error("Please fill in all required fields.");
       return;
     }
+    if (paymentMethod === "momo" && !momoNumber) {
+      toast.error("Please provide your Mobile Money number.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
+      // 1. Determine Amount
+      let amount = 30000;
+      if (registerForm.category.includes("50,000")) amount = 50000;
+      if (registerForm.category.includes("100,000")) amount = 100000;
+      if (registerForm.category.includes("500,000")) amount = 500000;
+
+      // 2. Initiate Tranzak Payment
+      toast.info("Initiating secure payment...");
+      const tranzakRes = await fetch(getApiUrl("/api/tranzak-payment"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: paymentMethod,
+          amount: amount,
+          currencyCode: "XAF",
+          description: `Forum Registration - ${registerForm.category}`,
+          mobileWalletNumber: momoNumber,
+          returnUrl: window.location.origin + "/payment-success"
+        })
+      });
+      const tranzakData = await tranzakRes.json();
+      
+      if (!tranzakRes.ok) {
+        toast.error("Payment initiation failed. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // If Web Redirect, go to Tranzak checkout
+      if (paymentMethod === "web" && tranzakData?.data?.paymentUrl) {
+        // We will register them first in DB as 'pending' then redirect, or just redirect.
+        // For simplicity, we register then redirect.
+        await fetch(getApiUrl("/api/forum-register"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...registerForm, paymentStatus: "pending" })
+        });
+        window.location.href = tranzakData.data.paymentUrl;
+        return;
+      }
+
+      // For MoMo / QR, we assume it's prompted. We register them.
       const res = await fetch(getApiUrl("/api/forum-register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(registerForm)
+        body: JSON.stringify({ ...registerForm, paymentStatus: "pending" })
       });
       const data = await res.json();
 
       if (res.ok && data.success) {
-        toast.success(`🎉 Registration confirmed for ${registerForm.name}! Emails sent to user & admin.`);
+        toast.success(`🎉 Registration confirmed for ${registerForm.name}! Check your phone to complete payment.`);
+        setTimeout(() => {
+          window.location.href = "/payment-success";
+        }, 2000);
       } else {
-        toast.success(`🎉 Registration confirmed for ${registerForm.name}! Pass details reserved.`);
+        toast.success(`🎉 Registration confirmed! Please complete payment.`);
       }
       setIsRegisterOpen(false);
-      setRegisterForm({ name: "", email: "", phone: "", organization: "", category: "Delegate ($50 USD)" });
     } catch (err) {
-      toast.success(`🎉 Registration confirmed for ${registerForm.name}! Pass details reserved.`);
+      toast.success(`🎉 Pass details reserved for ${registerForm.name}!`);
       setIsRegisterOpen(false);
-      setRegisterForm({ name: "", email: "", phone: "", organization: "", category: "Delegate ($50 USD)" });
     } finally {
       setIsSubmitting(false);
     }
@@ -93,6 +151,7 @@ const ForumEventSection = () => {
             <img 
               src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1600&q=80" 
               alt="Cameroon E-Commerce Forum 2026 Keynote" 
+              loading="lazy"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-40 mix-blend-overlay" 
             />
             <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-emerald-950/70 to-transparent flex flex-col justify-end p-6 sm:p-10 space-y-3">
@@ -271,7 +330,7 @@ const ForumEventSection = () => {
 
       {/* Registration Modal */}
       <Dialog open={isRegisterOpen} onOpenChange={setIsRegisterOpen}>
-        <DialogContent className="max-w-md bg-white text-gray-900 rounded-3xl p-6">
+        <DialogContent className="max-w-md w-[95vw] max-h-[90vh] overflow-y-auto bg-white text-gray-900 rounded-3xl p-6">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-gray-900 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-emerald-600" /> Forum Registration 2026
@@ -329,6 +388,65 @@ const ForumEventSection = () => {
                 />
               </div>
             </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-gray-500 uppercase">Street Address</label>
+              <input 
+                type="text"
+                placeholder="123 Main Street"
+                className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
+                value={registerForm.address}
+                onChange={(e) => setRegisterForm({ ...registerForm, address: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Country</label>
+                <select 
+                  className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
+                  value={registerForm.country}
+                  onChange={(e) => setRegisterForm({ ...registerForm, country: e.target.value, city: "" })}
+                >
+                  <option value="">Select Country</option>
+                  {allCountries.map((c) => (
+                    <option key={c.isoCode} value={c.isoCode}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">City</label>
+                {availableCities && availableCities.length > 0 ? (
+                  <select 
+                    className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
+                    value={registerForm.city}
+                    onChange={(e) => setRegisterForm({ ...registerForm, city: e.target.value })}
+                  >
+                    <option value="">Select City</option>
+                    {availableCities.map((c, i) => (
+                      <option key={`${c.name}-${i}`} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input 
+                    type="text"
+                    placeholder="Enter City"
+                    className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
+                    value={registerForm.city}
+                    onChange={(e) => setRegisterForm({ ...registerForm, city: e.target.value })}
+                  />
+                )}
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Postal Code</label>
+                <input 
+                  type="text"
+                  placeholder="PO Box"
+                  className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
+                  value={registerForm.postalCode}
+                  onChange={(e) => setRegisterForm({ ...registerForm, postalCode: e.target.value })}
+                />
+              </div>
+            </div>
 
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-500 uppercase">Pass Type</label>
@@ -337,16 +455,42 @@ const ForumEventSection = () => {
                 value={registerForm.category}
                 onChange={(e) => setRegisterForm({ ...registerForm, category: e.target.value })}
               >
-                <option value="Delegate ($50 USD)">Delegate Pass ($50 USD / FCFA 30,000)</option>
-                <option value="Exhibitor Booth ($1,000 USD)">Exhibitor Booth ($1,000 USD / FCFA 600,000)</option>
-                <option value="SME Village Subsidized Booth">SME Subsidized Booth (MINPMEESA Grant)</option>
-                <option value="VIP / Investor Pass ($300 USD)">VIP / Investor Pass ($300 USD)</option>
-                <option value="Media Accreditation">Media Accreditation (Free)</option>
+                <option value="Standard (30,000 CFA)">Standard 30,000 CFA (Level up conference, 3 days event site access)</option>
+                <option value="Premium (50,000 CFA)">Premium 50,000 CFA (Level up conference, 3 days event site access, gala & award night access)</option>
+                <option value="VIP (100,000 CFA)">VIP 100,000 CFA (Level up conference, 3 days event site access, gala & award night access, drinks/meals, mentorship)</option>
+                <option value="Business (500,000 CFA)">Business 500,000 CFA (Level up conference, 3 days event site access, gala/award night, masterclass, private pitch room)</option>
               </select>
             </div>
 
-            <Button type="submit" className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-bold h-11 rounded-xl text-xs mt-2">
-              Confirm & Reserve Pass
+            <div className="space-y-1 pt-2 border-t border-gray-100">
+              <label className="text-xs font-bold text-gray-500 uppercase">Payment Method</label>
+              <select 
+                className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              >
+                <option value="web">Web Redirect (Visa/Mastercard/MoMo via Tranzak)</option>
+                <option value="momo">Mobile Money Direct Prompt (MTN/Orange)</option>
+                <option value="qr">In-Store QR Code</option>
+              </select>
+            </div>
+
+            {paymentMethod === "momo" && (
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Mobile Money Number</label>
+                <input 
+                  type="text"
+                  required
+                  placeholder="e.g. 67XXXXXXX"
+                  className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
+                  value={momoNumber}
+                  onChange={(e) => setMomoNumber(e.target.value)}
+                />
+              </div>
+            )}
+
+            <Button type="submit" disabled={isSubmitting} className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-bold h-11 rounded-xl text-xs mt-2">
+              {isSubmitting ? "Processing Payment..." : "Pay & Confirm Pass"}
             </Button>
           </form>
         </DialogContent>

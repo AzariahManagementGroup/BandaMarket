@@ -27,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
 import { getApiUrl } from "@/config";
 import { toast } from "sonner";
 import logo from "@/assets/camemark-logo.png";
@@ -62,14 +61,18 @@ const SellerDashboard = () => {
 
     try {
       if (session?.user?.id) {
-        await supabase
-          .from("profiles")
-          .update({
+        const token = localStorage.getItem("camemark_token");
+        const headers = token ? { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
+        
+        await fetch(getApiUrl("/api/user-data?action=profile"), {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({
             full_name: storeSettings.storeName,
             region: storeSettings.region,
             phone: storeSettings.phone
           })
-          .eq("id", session.user.id);
+        });
       }
 
       // Update local storage backup
@@ -191,14 +194,7 @@ const SellerDashboard = () => {
     const userStr = localStorage.getItem("camemark_user");
 
     if (!token && !userStr) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session) {
-          navigate("/signin");
-        } else {
-          setSession(session);
-          setLoading(false);
-        }
-      });
+      navigate("/signin");
     } else if (userStr) {
       const user = JSON.parse(userStr);
       setSession({ user });

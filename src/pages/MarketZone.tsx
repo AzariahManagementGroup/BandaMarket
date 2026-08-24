@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Store, MapPin, Package, AlertCircle, ShoppingCart, MessageCircle, Lock, Eye, EyeOff, Share2, Copy } from "lucide-react";
 import Navbar from "@/components/camemark/Navbar";
 import Footer from "@/components/camemark/Footer";
-import { supabase } from "@/integrations/supabase/client";
 import { getApiUrl } from "@/config";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -56,7 +55,11 @@ const MarketZone = () => {
     document.title = `Market Zone: ${region} — CameMark`;
     
     // Check if user is logged in
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const token = localStorage.getItem("camemark_token");
+    const userStr = localStorage.getItem("camemark_user");
+    if (token && userStr) {
+      setSession({ user: JSON.parse(userStr) });
+    }
 
     // Detect user location/currency
     fetch("https://ipapi.co/json/")

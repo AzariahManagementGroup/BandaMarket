@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, Lock, Loader2, KeyRound, ShieldAlert } from "lucide-react";
+import { Mail, Lock, Loader2, KeyRound, ShieldAlert, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logo from "@/assets/camemark-logo.png";
 import { getApiUrl } from "@/config";
@@ -11,6 +10,7 @@ import { getApiUrl } from "@/config";
 const Signin = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
   const [requiresOtp, setRequiresOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
@@ -20,9 +20,10 @@ const Signin = () => {
     document.title = "Sign In — CameMark";
     
     // Check if already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/dashboard");
-    });
+    const token = localStorage.getItem("camemark_token");
+    if (token) {
+      navigate("/dashboard");
+    }
   }, [navigate]);
 
   const handle = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -187,13 +188,20 @@ const Signin = () => {
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />
                   <Input 
-                    type="password" 
+                    type={showPassword ? "text" : "password"} 
                     placeholder="••••••••" 
                     required 
-                    className="pl-12 h-12 bg-gray-50 border-transparent rounded-xl focus-visible:ring-emerald-500 focus-visible:bg-white transition-all"
+                    className="pl-12 pr-12 h-12 bg-gray-50 border-transparent rounded-xl focus-visible:ring-emerald-500 focus-visible:bg-white transition-all"
                     value={form.password}
                     onChange={(e) => handle("password", e.target.value)}
                   />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword((s) => !s)} 
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 focus:outline-none transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
               </div>
 

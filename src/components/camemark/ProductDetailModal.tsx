@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/camemark/Navbar";
 import Footer from "@/components/camemark/Footer";
-import { supabase } from "@/integrations/supabase/client";
 import { getApiUrl } from "@/config";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";

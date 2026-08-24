@@ -1,24 +1,34 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
-import Signup from "./pages/Signup.tsx";
-import Signin from "./pages/Signin.tsx";
-import MarketZone from "./pages/MarketZone.tsx";
-import BuyerDashboard from "./pages/BuyerDashboard.tsx";
-import SellerDashboard from "./pages/SellerDashboard.tsx";
-import CardsWallet from "./pages/CardsWallet.tsx";
-import AdminDashboard from "./pages/AdminDashboard.tsx";
-import CheckoutPage from "./pages/CheckoutPage.tsx";
-import AcademyPage from "./pages/AcademyPage.tsx";
-import ChatAssistant from "./components/camemark/ChatAssistant.tsx";
 import { Navigate } from "react-router-dom";
-import OfflineCommercePage from "./pages/OfflineCommercePage";
+import ChatAssistant from "./components/camemark/ChatAssistant.tsx";
+
+const Index = lazy(() => import("./pages/Index.tsx"));
+const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const Signup = lazy(() => import("./pages/Signup.tsx"));
+const Signin = lazy(() => import("./pages/Signin.tsx"));
+const MarketZone = lazy(() => import("./pages/MarketZone.tsx"));
+const BuyerDashboard = lazy(() => import("./pages/BuyerDashboard.tsx"));
+const SellerDashboard = lazy(() => import("./pages/SellerDashboard.tsx"));
+const CardsWallet = lazy(() => import("./pages/CardsWallet.tsx"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage.tsx"));
+const AcademyPage = lazy(() => import("./pages/AcademyPage.tsx"));
+const OfflineCommercePage = lazy(() => import("./pages/OfflineCommercePage"));
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess.tsx"));
 
 const queryClient = new QueryClient();
+
+// A simple loading fallback for route transitions
+const PageLoader = () => (
+  <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -26,21 +36,24 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/academy" element={<AcademyPage />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/signin" element={<Signin />} />
-          <Route path="/market-zone" element={<MarketZone />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/dashboard" element={<BuyerDashboard />} />
-          <Route path="/seller-dashboard/*" element={<SellerDashboard />} />
-          <Route path="/cards-wallet" element={<CardsWallet />} />
-          <Route path="/offline-commerce" element={<OfflineCommercePage />} />
-          <Route path="/admin/*" element={<AdminDashboard />} />
-          <Route path="/marketplace" element={<Navigate to="/market-zone" replace />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/academy" element={<AcademyPage />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/signin" element={<Signin />} />
+            <Route path="/market-zone" element={<MarketZone />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/dashboard" element={<BuyerDashboard />} />
+            <Route path="/seller-dashboard/*" element={<SellerDashboard />} />
+            <Route path="/cards-wallet" element={<CardsWallet />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/offline-commerce" element={<OfflineCommercePage />} />
+            <Route path="/admin/*" element={<AdminDashboard />} />
+            <Route path="/marketplace" element={<Navigate to="/market-zone" replace />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
       <ChatAssistant />
     </TooltipProvider>

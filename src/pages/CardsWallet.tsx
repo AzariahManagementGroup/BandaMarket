@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogDescription
 } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
+import { getApiUrl } from "@/config";
 import { toast } from "sonner";
 import Navbar from "@/components/camemark/Navbar";
 
@@ -26,6 +26,7 @@ const CardsWallet = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [wallet, setWallet] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
   const [cards, setCards] = useState<any[]>([]);
   const [isTopupOpen, setIsTopupOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
@@ -37,18 +38,46 @@ const CardsWallet = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const token = localStorage.getItem("camemark_token");
+    const userStr = localStorage.getItem("camemark_user");
+
+    if (!token || token === "null" || (!token && !userStr)) {
       navigate("/signin");
       return;
+    } else if (userStr) {
+      const user = JSON.parse(userStr);
+      setSession({ user });
+      fetchUserData(user.id || user.email);
+    }
+  };
+
+  const fetchUserData = async (userId: string) => {
+    const token = localStorage.getItem("camemark_token");
+    let profileData = null, walletData = null, cardsData = [];
+
+    if (token) {
+      const headers = { "Authorization": `Bearer ${token}` };
+      const [wRes, cRes] = await Promise.all([
+        fetch(getApiUrl("/api/user-data?action=wallets"), { headers }).catch(()=>null),
+        fetch(getApiUrl("/api/user-data?action=cards"), { headers }).catch(()=>null)
+      ]);
+
+      if (wRes && wRes.ok) walletData = await wRes.json();
+      if (cRes && cRes.ok) cardsData = await cRes.json();
     }
 
-    const { data: profileData } = await supabase.from("profiles").select("*").eq("id", session.user.id).maybeSingle();
-    const { data: walletData } = await supabase.from("wallets").select("*").eq("profile_id", session.user.id).maybeSingle();
-    const { data: cardsData } = await supabase.from("cards").select("*").eq("profile_id", session.user.id);
+    if (session?.user) {
+      setProfile({
+        id: userId,
+        full_name: session.user.fullName || session.user.full_name || session.user.email?.split('@')[0],
+        signup_role: session.user.role || 'buyer',
+      });
+    }
 
-    setProfile(profileData);
-    setWallet(walletData);
+    if (walletData) setWallet(walletData);
+    else if (session?.user?.wallet) setWallet(session.user.wallet);
+    else setWallet({ balance: 0, currency: "XAF" });
+
     setCards(cardsData || []);
     setLoading(false);
   };
@@ -57,19 +86,29 @@ const CardsWallet = () => {
     e.preventDefault();
     setLoading(true);
     const amount = (e.currentTarget as any).amount.value;
+    const token = localStorage.getItem("camemark_token");
     
-    // Simulate payment gateway
     toast.info("Simulating Secure Payment Gateway...");
     setTimeout(async () => {
-      const { error } = await supabase
-        .from("wallets")
-        .update({ balance: (wallet?.balance || 0) + parseFloat(amount) })
-        .eq("profile_id", profile.id);
-
-      if (!error) {
-        toast.success(`Successfully topped up ${wallet?.currency} ${amount}`);
-        setIsTopupOpen(false);
-        fetchData();
+      try {
+        const res = await fetch(getApiUrl("/api/user-data?action=wallets"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ amount: parseFloat(amount) })
+        });
+        
+        if (res.ok) {
+          toast.success(`Successfully topped up ${wallet?.currency} ${amount}`);
+          setIsTopupOpen(false);
+          fetchData();
+        } else {
+          toast.error("Failed to process topup.");
+        }
+      } catch (e) {
+        toast.error("Network error.");
       }
       setLoading(false);
     }, 2000);
@@ -78,6 +117,7 @@ const CardsWallet = () => {
   const handleCreateCard = async (type: 'virtual' | 'physical') => {
     setLoading(true);
     const fee = type === 'virtual' ? 2500 : 5000;
+    const token = localStorage.getItem("camemark_token");
     
     if (wallet.balance < fee) {
       toast.error("Insufficient funds in wallet.");
@@ -87,20 +127,32 @@ const CardsWallet = () => {
 
     const cardNumber = "5592 " + Math.floor(Math.random() * 8999 + 1000) + " " + Math.floor(Math.random() * 8999 + 1000) + " " + Math.floor(Math.random() * 8999 + 1000);
     
-    const { error } = await supabase.from("cards").insert({
-      profile_id: profile.id,
-      card_number: cardNumber,
-      card_holder_name: profile.full_name,
-      expiry_date: "12/28",
-      cvv: "321",
-      type: type
-    });
+    try {
+      const res = await fetch(getApiUrl("/api/user-data?action=cards"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          card_number: cardNumber,
+          card_holder_name: profile.full_name,
+          expiry_date: "12/28",
+          cvv: "321",
+          type: type,
+          fee: fee
+        })
+      });
 
-    if (!error) {
-      await supabase.from("wallets").update({ balance: wallet.balance - fee }).eq("profile_id", profile.id);
-      toast.success(`${type.toUpperCase()} card generated!`);
-      setIsCardModalOpen(false);
-      fetchData();
+      if (res.ok) {
+        toast.success(`${type.toUpperCase()} card generated!`);
+        setIsCardModalOpen(false);
+        fetchData();
+      } else {
+        toast.error("Failed to generate card.");
+      }
+    } catch (e) {
+      toast.error("Network error.");
     }
     setLoading(false);
   };
