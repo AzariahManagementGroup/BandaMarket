@@ -1148,6 +1148,19 @@ const AdminCoursesManager = () => {
                 if (file) {
                   setNewCourse({ ...newCourse, imageFile: file, image: file.name });
                 }
+              }}
+            />
+          </div>
+
+          <Button type="submit" disabled={saving}>
+            {saving ? "Publishing..." : "Publish Course"}
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const AdminReferralSettings = () => {
   const [rewardAmount, setRewardAmount] = useState<number>(20);
   const [loading, setLoading] = useState(false);
@@ -1502,3 +1515,5 @@ const AdminExamBuilder = ({ courseId }: { courseId: string }) => {
     </div>
   );
 };
+
+export default AdminDashboard;
