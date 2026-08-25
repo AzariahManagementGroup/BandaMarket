@@ -1282,7 +1282,6 @@ const AdminReferralSettings = () => {
   );
 };
 
-export default AdminDashboard;
 
 const AdminCourseCurriculum = ({ courseId, onBack }: { courseId: string, onBack: () => void }) => {
   const [curriculum, setCurriculum] = useState<any[]>([]);
