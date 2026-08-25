@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link, Routes, Route } from "react-router-dom";
-import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap, Gift, RefreshCw } from "lucide-react";
+import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap, Gift, RefreshCw, Cloud } from "lucide-react";
 
 import { getApiUrl } from "@/config";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import UserManager from "@/components/camemark/admin/UserManager";
 import RoleManager from "@/components/camemark/admin/RoleManager";
 import AdminForumRegistrations from "@/components/camemark/admin/AdminForumRegistrations";
+import AdminActivityLogs from "@/components/camemark/admin/AdminActivityLogs";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -42,11 +43,13 @@ const AdminDashboard = () => {
     { label: "Marketplace Orders", icon: ShoppingBag, path: "/orders" },
     { label: "Academy Courses Manager", icon: GraduationCap, path: "/courses" },
     { label: "Payment Gateway Keys", icon: CreditCard, path: "/payment-gateways" },
+    { label: "Cloud Storage (Cloudinary)", icon: Cloud, path: "/cloud-storage" },
     { label: "Launch Popup Banner", icon: Image, path: "/popup-banner" },
     { label: "Logistics Delivery Fees", icon: Truck, path: "/delivery-fees" },
     { label: "SMTP Email Settings", icon: Mail, path: "/smtp" },
     { label: "User Management", icon: Users, path: "/users" },
     { label: "Forum Registrations", icon: CheckCircle, path: "/forum-registrations" },
+    { label: "Global Activity Logs", icon: LayoutDashboard, path: "/activity-logs" },
     { label: "Roles & Permissions", icon: Shield, path: "/roles" },
   ];
 
@@ -131,12 +134,14 @@ const AdminDashboard = () => {
             <Route path="/orders" element={<AdminOrders />} />
             <Route path="/courses" element={<AdminCoursesManager />} />
             <Route path="/payment-gateways" element={<AdminPaymentSettings />} />
+            <Route path="/cloud-storage" element={<AdminCloudStorage />} />
             <Route path="/popup-banner" element={<AdminPopupBanner />} />
             <Route path="/delivery-fees" element={<AdminDeliveryFees />} />
             <Route path="/smtp" element={<AdminSmtpSettings />} />
             <Route path="/users" element={<UserManager />} />
             <Route path="/forum-registrations" element={<AdminForumRegistrations />} />
             <Route path="/roles" element={<RoleManager />} />
+            <Route path="/activity-logs" element={<AdminActivityLogs />} />
             <Route path="*" element={<AdminOverview />} />
           </Routes>
         </div>
@@ -151,6 +156,10 @@ const AdminOverview = () => {
     activeSellers: { value: "0", change: "+0%" },
     sales: { value: "0 XAF", change: "+0%" },
     pending: { value: "0", change: "0" },
+    totalOrders: { value: "0", change: "+0%" },
+    productsListed: { value: "0", change: "+0%" },
+    supportTickets: { value: "0", change: "0" },
+    revenue: { value: "0 XAF", change: "+0%" },
   });
 
   useEffect(() => {
@@ -159,6 +168,10 @@ const AdminOverview = () => {
       let sellersCount = 0;
       let totalSales = 0;
       let pendingCount = 0;
+      let totalOrders = 0;
+      let productsListed = 0;
+      let supportTickets = 0;
+      let revenue = 0;
 
       try {
         const token = localStorage.getItem("camemark_token");
@@ -171,6 +184,10 @@ const AdminOverview = () => {
           sellersCount = data.sellersCount || 0;
           totalSales = data.totalSales || 0;
           pendingCount = data.pendingCount || 0;
+          totalOrders = data.totalOrders || 0;
+          productsListed = data.productsListed || 0;
+          supportTickets = data.supportTickets || 0;
+          revenue = data.revenue || 0;
         }
       } catch (err) {
         console.error("Failed to fetch admin stats:", err);
@@ -181,6 +198,10 @@ const AdminOverview = () => {
         activeSellers: { value: (sellersCount || 0).toLocaleString(), change: "+5%" },
         sales: { value: `${(totalSales / 1000000).toFixed(1)}M XAF`, change: "+18%" },
         pending: { value: (pendingCount || 0).toString(), change: "-2" },
+        totalOrders: { value: (totalOrders || 0).toLocaleString(), change: "+8%" },
+        productsListed: { value: (productsListed || 0).toLocaleString(), change: "+15%" },
+        supportTickets: { value: (supportTickets || 0).toString(), change: "-5" },
+        revenue: { value: `${(revenue / 1000000).toFixed(1)}M XAF`, change: "+20%" },
       });
     };
 
@@ -194,8 +215,12 @@ const AdminOverview = () => {
         { label: "Active Sellers", ...stats.activeSellers },
         { label: "Marketplace Sales", ...stats.sales },
         { label: "Pending Approvals", ...stats.pending },
+        { label: "Total Orders", ...stats.totalOrders },
+        { label: "Products Listed", ...stats.productsListed },
+        { label: "Support Tickets", ...stats.supportTickets },
+        { label: "Total Revenue", ...stats.revenue },
       ].map((stat) => (
-        <div key={stat.label} className="p-6 rounded-2xl bg-card border border-border shadow-sm hover-lift">
+        <div key={stat.label} className="p-6 rounded-2xl bg-card border border-border shadow-sm hover-lift flex flex-col justify-between">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
           <p className="text-2xl font-extrabold text-foreground mt-2">{stat.value}</p>
           <p className={`text-xs mt-2 font-medium ${stat.change.startsWith("+") ? "text-emerald-500" : stat.change.startsWith("-") ? "text-amber-500" : "text-muted-foreground"}`}>
@@ -524,6 +549,7 @@ const AdminPopupBanner = () => {
     enabled: 1
   });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetch(getApiUrl("/api/popup-banner"))
@@ -540,6 +566,32 @@ const AdminPopupBanner = () => {
       })
       .catch(err => console.error(err));
   }, []);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setUploading(true);
+    try {
+      const res = await fetch(getApiUrl("/api/upload"), {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setBanner({ ...banner, imageUrl: getApiUrl(data.url) });
+        toast.success("Image uploaded successfully!");
+      } else {
+        toast.error(data.error || "Failed to upload image");
+      }
+    } catch (err) {
+      toast.error("Network error during upload");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSaveBanner = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -591,14 +643,28 @@ const AdminPopupBanner = () => {
 
         <form onSubmit={handleSaveBanner} className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-muted-foreground uppercase">Banner Image URL</Label>
-            <Input 
-              placeholder="https://images.unsplash.com/... or your custom hosted image URL"
-              required
-              className="h-11 rounded-xl bg-background border-border text-xs"
-              value={banner.imageUrl}
-              onChange={(e) => setBanner({ ...banner, imageUrl: e.target.value })}
-            />
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Banner Image</Label>
+            <div className="flex gap-2">
+              <Input 
+                placeholder="https://images.unsplash.com/... or upload"
+                required
+                className="h-11 rounded-xl bg-background border-border text-xs flex-1"
+                value={banner.imageUrl}
+                onChange={(e) => setBanner({ ...banner, imageUrl: e.target.value })}
+              />
+              <div className="relative">
+                <Input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleImageUpload} 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={uploading}
+                />
+                <Button type="button" variant="outline" className="h-11 rounded-xl px-4 pointer-events-none" disabled={uploading}>
+                  {uploading ? "Uploading..." : "Upload File"}
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -935,16 +1001,42 @@ const AdminCoursesManager = () => {
   const handleUploadCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCourse.title || !newCourse.image) {
-      toast.error("Course Title and Cover Image URL are required.");
+      toast.error("Course Title and Cover Image are required.");
       return;
     }
 
     setSaving(true);
     try {
+      let body: FormData | string;
+      let headers: HeadersInit = {};
+      
+      if ((newCourse as any).imageFile) {
+        const formData = new FormData();
+        formData.append("title", newCourse.title);
+        formData.append("category", newCourse.category);
+        formData.append("instructor", newCourse.instructor);
+        formData.append("level", newCourse.level);
+        formData.append("duration", newCourse.duration);
+        formData.append("price", newCourse.price);
+        formData.append("description", newCourse.description);
+        formData.append("videoUrl", newCourse.videoUrl);
+        formData.append("image", (newCourse as any).imageFile);
+        if ((newCourse as any).certParticipationFile) {
+          formData.append("certParticipation", (newCourse as any).certParticipationFile);
+        }
+        if ((newCourse as any).certCompletionFile) {
+          formData.append("certCompletion", (newCourse as any).certCompletionFile);
+        }
+        body = formData;
+      } else {
+        body = JSON.stringify(newCourse);
+        headers["Content-Type"] = "application/json";
+      }
+
       const res = await fetch(getApiUrl("/api/courses"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newCourse)
+        headers,
+        body
       });
       const data = await res.json();
 
@@ -1046,64 +1138,16 @@ const AdminCoursesManager = () => {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-muted-foreground uppercase">Cover Image URL</Label>
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Cover Image</Label>
             <Input 
-              placeholder="https://images.unsplash.com/... or hosted image URL"
-              required
-              className="h-10 rounded-xl bg-background border-border text-xs"
-              value={newCourse.image}
-              onChange={(e) => setNewCourse({ ...newCourse, image: e.target.value })}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-muted-foreground uppercase">Course Summary & Syllabus Description</Label>
-            <Textarea 
-              placeholder="Explain course goals, curriculum, and key takeaways..."
-              className="rounded-xl bg-background border-border text-xs min-h-[90px]"
-              value={newCourse.description}
-              onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
-            />
-          </div>
-
-          <Button type="submit" disabled={saving} className="bg-primary hover:bg-primary-glow text-primary-foreground font-bold h-11 px-8 rounded-xl">
-            {saving ? "Publishing Course..." : "Upload & Publish Course"}
-          </Button>
-        </form>
-      </div>
-
-      {/* Active Published Courses Table */}
-      <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm p-6 space-y-4">
-        <h4 className="font-extrabold text-base text-foreground">Published Courses ({courses.length})</h4>
-        {loading ? (
-          <div className="h-32 rounded-xl bg-muted animate-pulse" />
-        ) : courses.length > 0 ? (
-          <div className="divide-y divide-border">
-            {courses.map((c) => (
-              <div key={c.id} className="py-3 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-xl bg-muted overflow-hidden shrink-0">
-                    <img src={c.image} alt={c.title} className="h-full w-full object-cover" />
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-sm text-foreground">{c.title}</h5>
-                    <p className="text-xs text-muted-foreground">Instructor: {c.instructor} • Category: {c.category}</p>
-                  </div>
-                </div>
-                <span className="text-xs font-black bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-full shrink-0">
-                  {c.price}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground py-4">No custom courses uploaded yet.</p>
-        )}
-      </div>
-    </div>
-  );
-};
-
+              type="file"
+              accept="image/*"
+              className="h-10 rounded-xl bg-background border-border text-xs py-2"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setNewCourse({ ...newCourse, imageFile: file, image: file.name });
+                }
 const AdminReferralSettings = () => {
   const [rewardAmount, setRewardAmount] = useState<number>(20);
   const [loading, setLoading] = useState(false);
@@ -1114,11 +1158,17 @@ const AdminReferralSettings = () => {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const res = await fetch(getApiUrl("/api/referrals"));
+      const res = await fetch(getApiUrl("/api/referrals?action=admin_stats"));
       if (res.ok) {
         const data = await res.json();
         if (data.rewardAmount !== undefined) {
           setRewardAmount(data.rewardAmount);
+        }
+        if (data.totalClaimed !== undefined) {
+          setTotalClaimed(data.totalClaimed);
+        }
+        if (data.totalPayout !== undefined) {
+          setTotalPayout(data.totalPayout);
         }
       }
     } catch (e) {
@@ -1220,3 +1270,235 @@ const AdminReferralSettings = () => {
 };
 
 export default AdminDashboard;
+
+const AdminCourseCurriculum = ({ courseId, onBack }: { courseId: string, onBack: () => void }) => {
+  const [curriculum, setCurriculum] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newSectionTitle, setNewSectionTitle] = useState('');
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const [newTopic, setNewTopic] = useState({ title: '', description: '', materialType: 'video', file: null as File | null });
+
+  const fetchCurriculum = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(getApiUrl(`/api/curriculum.php?courseId=${courseId}`), { headers: { 'Authorization': `Bearer ${localStorage.getItem('camemark_token')}` } });
+      const data = await res.json();
+      if (data.success) setCurriculum(data.curriculum);
+    } catch (e) { toast.error('Failed to fetch curriculum'); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchCurriculum(); }, [courseId]);
+
+  const handleAddSection = async () => {
+    if(!newSectionTitle) return;
+    try {
+      const res = await fetch(getApiUrl('/api/curriculum.php'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('camemark_token')}` },
+        body: JSON.stringify({ action: 'add_section', courseId, title: newSectionTitle })
+      });
+      const data = await res.json();
+      if (data.success) { toast.success('Section added'); setNewSectionTitle(''); fetchCurriculum(); }
+      else toast.error(data.error);
+    } catch(e) { toast.error('Error adding section'); }
+  };
+
+  const handleAddTopic = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if(!activeSectionId || !newTopic.title) return;
+    const formData = new FormData();
+    formData.append('action', 'add_topic');
+    formData.append('sectionId', activeSectionId);
+    formData.append('title', newTopic.title);
+    formData.append('description', newTopic.description);
+    formData.append('materialType', newTopic.materialType);
+    if(newTopic.file) formData.append('material', newTopic.file);
+
+    try {
+      const res = await fetch(getApiUrl('/api/curriculum.php'), {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('camemark_token')}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) { toast.success('Topic added'); setNewTopic({title:'', description:'', materialType:'video', file:null}); fetchCurriculum(); }
+      else toast.error(data.error);
+    } catch(e) { toast.error('Error adding topic'); }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Button variant="outline" onClick={onBack}>&larr; Back to Courses</Button>
+      <div>
+        <h3 className="text-2xl font-bold">Course Curriculum Builder</h3>
+        <p className="text-muted-foreground text-sm">Manage sections and topics for this course.</p>
+      </div>
+
+      <div className="flex gap-2 mb-6">
+        <Input placeholder="New Section Title..." value={newSectionTitle} onChange={e => setNewSectionTitle(e.target.value)} />
+        <Button onClick={handleAddSection}>Add Section</Button>
+      </div>
+
+      {loading ? <p>Loading...</p> : curriculum.map((sec) => (
+        <div key={sec.id} className="bg-card border rounded-xl p-4 space-y-4 mb-4">
+          <div className="flex justify-between items-center">
+            <h4 className="font-bold text-lg">{sec.title}</h4>
+            <Button size="sm" variant="outline" onClick={() => setActiveSectionId(activeSectionId === sec.id ? null : sec.id)}>
+              {activeSectionId === sec.id ? 'Cancel' : '+ Add Topic'}
+            </Button>
+          </div>
+
+          {activeSectionId === sec.id && (
+            <form onSubmit={handleAddTopic} className="bg-muted/50 p-4 rounded-lg space-y-3">
+              <Input placeholder="Topic Title" required value={newTopic.title} onChange={e => setNewTopic({...newTopic, title: e.target.value})} />
+              <Textarea placeholder="Topic Description" value={newTopic.description} onChange={e => setNewTopic({...newTopic, description: e.target.value})} />
+              <div className="flex gap-4 items-center">
+                <select className="p-2 rounded-md border text-sm" value={newTopic.materialType} onChange={e => setNewTopic({...newTopic, materialType: e.target.value})}>
+                  <option value="video">Video</option>
+                  <option value="pdf">PDF Document</option>
+                </select>
+                <Input type="file" onChange={e => setNewTopic({...newTopic, file: e.target.files?.[0] || null})} />
+              </div>
+              <Button size="sm" type="submit">Save Topic</Button>
+            </form>
+          )}
+
+          <div className="pl-4 space-y-2 border-l-2 border-primary/20 mt-4">
+            {sec.topics?.map((topic: any) => (
+              <div key={topic.id} className="bg-background border rounded-lg p-3 flex justify-between">
+                <div>
+                  <h5 className="font-semibold text-sm">{topic.title}</h5>
+                  <p className="text-xs text-muted-foreground">{topic.description}</p>
+                </div>
+                <div className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-md h-fit">{topic.materialType.toUpperCase()}</div>
+              </div>
+            ))}
+            {sec.topics?.length === 0 && <p className="text-xs text-muted-foreground italic">No topics in this section yet.</p>}
+          </div>
+        </div>
+      ))}
+
+      <AdminExamBuilder courseId={courseId} />
+    </div>
+  );
+};
+
+const AdminExamBuilder = ({ courseId }: { courseId: string }) => {
+  const [exams, setExams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newExam, setNewExam] = useState({ title: '', description: '', passingScore: 80 });
+  const [activeExamId, setActiveExamId] = useState<string | null>(null);
+  const [newQuestion, setNewQuestion] = useState({ questionText: '', questionType: 'multiple_choice', options: ['', ''], correctAnswer: '', points: 1 });
+
+  const fetchExams = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(getApiUrl(`/api/exams.php?courseId=${courseId}`), { headers: { 'Authorization': `Bearer ${localStorage.getItem('camemark_token')}` } });
+      const data = await res.json();
+      if (data.success) setExams(data.exams);
+    } catch (e) { toast.error('Failed to fetch exams'); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchExams(); }, [courseId]);
+
+  const handleAddExam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(getApiUrl('/api/exams.php'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('camemark_token')}` },
+        body: JSON.stringify({ action: 'create_exam', courseId, ...newExam })
+      });
+      const data = await res.json();
+      if (data.success) { toast.success('Exam created'); setNewExam({title:'', description:'', passingScore:80}); fetchExams(); }
+      else toast.error(data.error);
+    } catch(e) { toast.error('Error creating exam'); }
+  };
+
+  const handleAddQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if(!activeExamId) return;
+    try {
+      const res = await fetch(getApiUrl('/api/exams.php'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('camemark_token')}` },
+        body: JSON.stringify({ action: 'add_question', examId: activeExamId, ...newQuestion })
+      });
+      const data = await res.json();
+      if (data.success) { toast.success('Question added'); setNewQuestion({questionText:'', questionType:'multiple_choice', options:['',''], correctAnswer:'', points:1}); fetchExams(); }
+      else toast.error(data.error);
+    } catch(e) { toast.error('Error adding question'); }
+  };
+
+  return (
+    <div className="space-y-6 mt-10 border-t pt-8">
+      <div>
+        <h3 className="text-2xl font-bold">Course Exams</h3>
+        <p className="text-muted-foreground text-sm">Manage exams for this course.</p>
+      </div>
+
+      <form onSubmit={handleAddExam} className="flex gap-2 mb-6 items-center bg-card p-4 rounded-xl border">
+        <Input placeholder="Exam Title..." required value={newExam.title} onChange={e => setNewExam({...newExam, title: e.target.value})} />
+        <Input placeholder="Description..." value={newExam.description} onChange={e => setNewExam({...newExam, description: e.target.value})} />
+        <Input type="number" placeholder="Passing %" required value={newExam.passingScore} onChange={e => setNewExam({...newExam, passingScore: parseInt(e.target.value) || 80})} className="w-24" />
+        <Button type="submit">Create Exam</Button>
+      </form>
+
+      {loading ? <p>Loading exams...</p> : exams.map((exam) => (
+        <div key={exam.id} className="bg-card border rounded-xl p-4 space-y-4 mb-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h4 className="font-bold text-lg">{exam.title}</h4>
+              <p className="text-xs text-muted-foreground">{exam.description} (Pass: {exam.passingScore}%)</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setActiveExamId(activeExamId === exam.id ? null : exam.id)}>
+              {activeExamId === exam.id ? 'Cancel' : '+ Add Question'}
+            </Button>
+          </div>
+
+          {activeExamId === exam.id && (
+            <form onSubmit={handleAddQuestion} className="bg-muted/50 p-4 rounded-lg space-y-3">
+              <select className="w-full p-2 rounded-md border text-sm" value={newQuestion.questionType} onChange={e => setNewQuestion({...newQuestion, questionType: e.target.value})}>
+                <option value="multiple_choice">Multiple Choice</option>
+                <option value="true_false">True / False</option>
+                <option value="short_answer">Short Answer</option>
+              </select>
+              <Textarea placeholder="Question Text" required value={newQuestion.questionText} onChange={e => setNewQuestion({...newQuestion, questionText: e.target.value})} />
+              
+              {newQuestion.questionType === 'multiple_choice' && (
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold">Options</Label>
+                  {newQuestion.options.map((opt, i) => (
+                    <div key={i} className="flex gap-2">
+                      <Input placeholder={Option } value={opt} onChange={e => { const newOpts = [...newQuestion.options]; newOpts[i] = e.target.value; setNewQuestion({...newQuestion, options: newOpts}) }} />
+                    </div>
+                  ))}
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setNewQuestion({...newQuestion, options: [...newQuestion.options, '']})}>+ Add Option</Button>
+                </div>
+              )}
+
+              <Input placeholder="Correct Answer" required value={newQuestion.correctAnswer} onChange={e => setNewQuestion({...newQuestion, correctAnswer: e.target.value})} />
+              
+              <Button size="sm" type="submit">Save Question</Button>
+            </form>
+          )}
+
+          <div className="pl-4 space-y-2 border-l-2 border-primary/20 mt-4">
+            {exam.questions?.map((q: any) => (
+              <div key={q.id} className="bg-background border rounded-lg p-3">
+                <div className="flex justify-between">
+                  <h5 className="font-semibold text-sm">{q.questionText}</h5>
+                  <span className="text-[10px] bg-primary/10 px-2 py-0.5 rounded uppercase">{q.questionType}</span>
+                </div>
+                <p className="text-xs text-emerald-600 mt-1">Ans: {q.correctAnswer}</p>
+              </div>
+            ))}
+            {exam.questions?.length === 0 && <p className="text-xs text-muted-foreground italic">No questions added yet.</p>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};

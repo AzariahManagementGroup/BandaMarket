@@ -80,6 +80,27 @@ $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
 
 if ($method === 'GET') {
+    if ($action === 'admin_stats') {
+        $rewardAmount = get_referral_reward_amount($pdo);
+        $totalClaimed = 0;
+        $totalPayout = 0.0;
+        try {
+            $stmt = $pdo->query("SELECT COUNT(*) as total, SUM(reward_amount) as payout FROM referrals WHERE status = 'completed'");
+            if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $totalClaimed = (int)$row['total'];
+                $totalPayout = (float)$row['payout'] ?? 0.0;
+            }
+        } catch (Exception $e) {}
+        
+        echo json_encode([
+            "success" => true,
+            "rewardAmount" => $rewardAmount,
+            "totalClaimed" => $totalClaimed,
+            "totalPayout" => $totalPayout
+        ]);
+        exit();
+    }
+
     $userId = $_GET['user_id'] ?? $_GET['userId'] ?? 'user-default';
     $userName = $_GET['user_name'] ?? $_GET['userName'] ?? 'User';
     $userEmail = $_GET['user_email'] ?? $_GET['userEmail'] ?? '';

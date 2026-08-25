@@ -30,6 +30,22 @@ if ($conn->connect_error) {
     }
 }
 
+// Helper for PDO connection used by referrals
+function get_db_connection() {
+    global $db_host, $db_user, $db_pass, $db_name;
+    try {
+        $dsn = "mysql:host=$db_host;dbname=$db_name;charset=utf8mb4";
+        return new PDO($dsn, $db_user, $db_pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    } catch (PDOException $e) {
+        // Fallback
+        try {
+            return new PDO("mysql:host=localhost;dbname=worlvjwl_camemark_db;charset=utf8mb4", 'worlvjwl_camemark_dbuser', 'camemark_dbuser$1', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        } catch (PDOException $e2) {
+            die("PDO Connection failed: " . $e2->getMessage());
+        }
+    }
+}
+
 // Automatic Schema Initialization
 $conn->query("CREATE TABLE IF NOT EXISTS courses (
     id VARCHAR(100) PRIMARY KEY,
@@ -124,7 +140,107 @@ $conn->query("CREATE TABLE IF NOT EXISTS smtp_settings (
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+$conn->query("CREATE TABLE IF NOT EXISTS cloudinary_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cloudName VARCHAR(255) NOT NULL,
+    apiKey VARCHAR(255) NOT NULL,
+    apiSecret VARCHAR(255) NOT NULL,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+$conn->query("CREATE TABLE IF NOT EXISTS forum_registrations (
+    id VARCHAR(100) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(100) NOT NULL,
+    organization VARCHAR(255),
+    address VARCHAR(255),
+    city VARCHAR(100),
+    country VARCHAR(100) DEFAULT 'Cameroon',
+    postalCode VARCHAR(50),
+    category VARCHAR(100) DEFAULT 'Standard',
+    payment_status VARCHAR(50) DEFAULT 'pending',
+    amount_paid VARCHAR(100) DEFAULT '0 XAF',
+    registered_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+$conn->query("CREATE TABLE IF NOT EXISTS roles_permissions (
+    id VARCHAR(100) PRIMARY KEY,
+    role VARCHAR(100) UNIQUE NOT NULL,
+    modules TEXT NOT NULL,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+$conn->query("CREATE TABLE IF NOT EXISTS course_sections (
+    id VARCHAR(100) PRIMARY KEY,
+    courseId VARCHAR(100) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    orderIndex INT DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+$conn->query("CREATE TABLE IF NOT EXISTS course_topics (
+    id VARCHAR(100) PRIMARY KEY,
+    sectionId VARCHAR(100) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    materialUrl TEXT,
+    materialType VARCHAR(50),
+    orderIndex INT DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+$conn->query("CREATE TABLE IF NOT EXISTS course_exams (
+    id VARCHAR(100) PRIMARY KEY,
+    courseId VARCHAR(100) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    passScore INT DEFAULT 80,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+$conn->query("CREATE TABLE IF NOT EXISTS course_exam_questions (
+    id VARCHAR(100) PRIMARY KEY,
+    examId VARCHAR(100) NOT NULL,
+    questionType VARCHAR(50) DEFAULT 'multiple_choice',
+    questionText TEXT NOT NULL,
+    options TEXT,
+    correctAnswer TEXT NOT NULL,
+    orderIndex INT DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+$conn->query("CREATE TABLE IF NOT EXISTS user_progress (
+    id VARCHAR(100) PRIMARY KEY,
+    userId VARCHAR(100) NOT NULL,
+    courseId VARCHAR(100) NOT NULL,
+    sectionId VARCHAR(100),
+    topicId VARCHAR(100),
+    status VARCHAR(50) DEFAULT 'completed',
+    completedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+$conn->query("CREATE TABLE IF NOT EXISTS user_certificates (
+    id VARCHAR(100) PRIMARY KEY,
+    userId VARCHAR(100) NOT NULL,
+    courseId VARCHAR(100) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    certificateUrl TEXT,
+    issuedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+// Seed default roles if empty
+$resRoles = $conn->query("SELECT count(*) as count FROM roles_permissions");
+$rowRoles = $resRoles->fetch_assoc();
+if ($rowRoles['count'] == 0) {
+    $conn->query("INSERT INTO roles_permissions (id, role, modules) VALUES ('1', 'super_admin', '[\"all\"]')");
+    $conn->query("INSERT INTO roles_permissions (id, role, modules) VALUES ('2', 'admin', '[\"marketplace\", \"users\", \"orders\", \"finance\"]')");
+    $conn->query("INSERT INTO roles_permissions (id, role, modules) VALUES ('3', 'manager', '[\"marketplace\", \"orders\", \"logistics\"]')");
+    $conn->query("INSERT INTO roles_permissions (id, role, modules) VALUES ('4', 'support', '[\"users\", \"orders\"]')");
+}
+
+// Ensure courses table has certificate template columns (if they don't already exist)
+$conn->query("ALTER TABLE courses ADD COLUMN IF NOT EXISTS certParticipationUrl TEXT AFTER videoUrl;");
+$conn->query("ALTER TABLE courses ADD COLUMN IF NOT EXISTS certCompletionUrl TEXT AFTER certParticipationUrl;");
 
 // Helper function to generate UUID v4
 function generate_uuid() {
@@ -249,6 +365,14 @@ function create_inapp_notification($conn, $userId, $title, $message) {
     $stmt->execute();
     $stmt->close();
 }
+
+// Helper function to log user activity (what the user does on the platform)
+function log_user_activity($conn, $userId, $action, $details) {
+    $stmt = $conn->prepare("INSERT INTO user_activity_logs (userId, action, details) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $userId, $action, $details);
+    $stmt->execute();
+    $stmt->close();
+}
 // JWT Configuration
 $jwt_secret = "camemark_super_secret_key_2026_!@#";
 
@@ -275,6 +399,49 @@ function generate_jwt($payload) {
     $base64UrlSignature = base64url_encode($signature);
     
     return $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
+}
+
+// Helper function to upload files to Cloudinary using their REST API
+function upload_to_cloudinary($conn, $tmpFilePath, $resourceType = 'auto') {
+    $res = $conn->query("SELECT cloudName, apiKey, apiSecret FROM cloudinary_settings ORDER BY id DESC LIMIT 1");
+    if (!$res || $res->num_rows === 0) return null;
+    $row = $res->fetch_assoc();
+    
+    $cloudName = $row['cloudName'];
+    $apiKey = $row['apiKey'];
+    $apiSecret = $row['apiSecret'];
+
+    $timestamp = time();
+    // Generate signature: signature = SHA1(timestamp=<timestamp><api_secret>)
+    $strToSign = "timestamp=" . $timestamp . $apiSecret;
+    $signature = sha1($strToSign);
+
+    $url = "https://api.cloudinary.com/v1_1/" . $cloudName . "/" . $resourceType . "/upload";
+
+    $cfile = new CURLFile($tmpFilePath);
+    
+    $postData = [
+        'file' => $cfile,
+        'api_key' => $apiKey,
+        'timestamp' => $timestamp,
+        'signature' => $signature
+    ];
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 200) {
+        $json = json_decode($response, true);
+        return $json['secure_url'] ?? null;
+    }
+    return null;
 }
 
 function verify_jwt($token) {

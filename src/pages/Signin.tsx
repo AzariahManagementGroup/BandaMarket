@@ -33,7 +33,8 @@ const Signin = () => {
     setLoading(true);
 
     try {
-      const res = await fetch(getApiUrl("/api/auth/signin"), {
+      // Updated path to match the backend router
+      const res = await fetch(getApiUrl("/api/signin"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

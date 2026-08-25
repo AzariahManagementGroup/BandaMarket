@@ -31,7 +31,10 @@ const RoleManager = () => {
   const fetchPermissions = async () => {
     setLoading(true);
     try {
-      const res = await fetch(getApiUrl("/api/admin/roles"));
+      const token = localStorage.getItem("camemark_token");
+      const res = await fetch(getApiUrl("/api/admin/roles"), {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
       if (res.ok) {
         const data = await res.json();
         setRolePermissions(data || []);
@@ -56,9 +59,13 @@ const RoleManager = () => {
     if (currentModules.includes("all")) return;
 
     try {
+      const token = localStorage.getItem("camemark_token");
       const res = await fetch(getApiUrl("/api/admin/roles"), {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ roleId, modules: newModules })
       });
       if (res.ok) {

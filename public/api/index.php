@@ -2,9 +2,13 @@
 // Unified Clean Router for /api Endpoint Routing
 require_once __DIR__ . '/config.php';
 
-// Route matching based on request URL
 if (strpos($uri, 'admin-forum-registrations') !== false) {
     require_once __DIR__ . '/admin-forum-registrations.php';
+    exit();
+}
+
+if (strpos($uri, 'forum-register') !== false) {
+    require_once __DIR__ . '/forum-register.php';
     exit();
 }
 
@@ -67,6 +71,11 @@ if (strpos($uri, 'user-data') !== false) {
     exit();
 }
 
+if (strpos($uri, 'upload') !== false) {
+    require_once __DIR__ . '/upload.php';
+    exit();
+}
+
 // 1. Sign Up Endpoint
 if (strpos($uri, 'signup') !== false) {
     $input = file_get_contents("php://input");
@@ -123,6 +132,8 @@ if (strpos($uri, 'signup') !== false) {
 
             // Create notification
             create_inapp_notification($conn, $userId, "Welcome to CameMark! 🇨🇲", "Your account has been created successfully. Explore verified local products and regional bargains!");
+            
+            log_user_activity($conn, $userId, "signup", "User registered an account");
 
             $token = generate_jwt([
                 "sub" => $userId,
@@ -188,6 +199,8 @@ if (strpos($uri, 'signin') !== false) {
             $walletData = $wres->fetch_assoc() ?: ["balance" => 0.0, "currency" => $row['preferredCurrency']];
             $wstmt->close();
 
+            log_user_activity($conn, $row['id'], "login", "User logged into their account");
+
             http_response_code(200);
             echo json_encode([
                 "message" => "Login successful!",
@@ -207,6 +220,40 @@ if (strpos($uri, 'signin') !== false) {
 
     http_response_code(401);
     echo json_encode(["error" => "Invalid email or password."]);
+    exit();
+}
+
+// 3. Dummy endpoints for admin dashboard
+if (strpos($uri, 'orders') !== false) {
+    echo json_encode([]);
+    exit();
+}
+if (strpos($uri, 'delivery-fees') !== false) {
+    echo json_encode([
+        "standardFee" => 1500,
+        "expressFee" => 3000,
+        "pickupFee" => 0,
+        "freeDeliveryThreshold" => 50000
+    ]);
+    exit();
+}
+if (strpos($uri, 'smtp') !== false) {
+    echo json_encode([
+        "host" => "smtp.gmail.com",
+        "port" => "465",
+        "user" => "podoremetropolis@gmail.com",
+        "pass" => "ptfjtrjyaidmyqrf",
+        "senderName" => "CameMark Marketplace"
+    ]);
+    exit();
+}
+if (strpos($uri, 'admin/users') !== false) {
+    require_once __DIR__ . '/admin-users.php';
+    exit();
+}
+
+if (strpos($uri, 'admin/roles') !== false) {
+    require_once __DIR__ . '/admin-roles.php';
     exit();
 }
 

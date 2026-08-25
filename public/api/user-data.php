@@ -216,6 +216,52 @@ if ($action === 'farmers') {
     }
 }
 
+// 8. Admin Stats
+if ($action === 'admin-stats') {
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $usersCount = 0;
+        $sellersCount = 0;
+        $totalSales = 0;
+        $pendingCount = 0;
+        $totalOrders = 0;
+        $productsListed = 0;
+        $supportTickets = 0;
+        $revenue = 0;
+
+        // Users
+        $res = $conn->query("SELECT COUNT(*) FROM users");
+        if($res) { $row = $res->fetch_array(); $usersCount = $row[0]; }
+
+        // Sellers
+        $res = $conn->query("SELECT COUNT(*) FROM users WHERE role='seller'");
+        if($res) { $row = $res->fetch_array(); $sellersCount = $row[0]; }
+
+        // Orders
+        $res = $conn->query("SELECT COUNT(*), SUM(totalPrice) FROM orders");
+        if($res) { $row = $res->fetch_array(); $totalOrders = $row[0]; $revenue = $row[1] ?? 0; $totalSales = $revenue; }
+
+        // Products
+        $res = $conn->query("SELECT COUNT(*) FROM products");
+        if($res) { $row = $res->fetch_array(); $productsListed = $row[0]; }
+
+        // Pending KYC
+        $res = $conn->query("SELECT COUNT(*) FROM kyc_verifications WHERE status='pending'");
+        if($res) { $row = $res->fetch_array(); $pendingCount = $row[0]; }
+
+        echo json_encode([
+            "usersCount" => $usersCount,
+            "sellersCount" => $sellersCount,
+            "totalSales" => $totalSales,
+            "pendingCount" => $pendingCount,
+            "totalOrders" => $totalOrders,
+            "productsListed" => $productsListed,
+            "supportTickets" => $supportTickets,
+            "revenue" => $revenue
+        ]);
+        exit();
+    }
+}
+
 // If no matched action
 http_response_code(404);
 echo json_encode(["error" => "Endpoint not found"]);

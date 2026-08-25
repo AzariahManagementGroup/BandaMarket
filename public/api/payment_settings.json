@@ -1,0 +1,18 @@
+{
+    "success": true,
+    "payment": {
+        "activeProvider": "tranzak",
+        "environment": "sandbox",
+        "flwPublicKey": "FLWPUBK_TEST-sandbox-camemark-001",
+        "flwSecretKey": "FLWSECK_TEST-sandbox-camemark-secret",
+        "paystackPublicKey": "pk_test_sandbox_camemark_002",
+        "paystackSecretKey": "sk_test_sandbox_camemark_secret",
+        "cinetpaySiteId": "5870001_sandbox",
+        "cinetpayApiKey": "cinetpay_sandbox_api_key",
+        "momoApiUser": "momo_sandbox_user_camemark",
+        "momoApiKey": "momo_sandbox_api_key",
+        "omMerchantId": "om_sandbox_merchant_camemark",
+        "tranzakAppId": "",
+        "tranzakAppKey": ""
+    }
+}
