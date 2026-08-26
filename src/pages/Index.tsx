@@ -18,6 +18,11 @@ const Index = () => {
   const { t, i18n } = useTranslation();
 
   useEffect(() => {
+    // Check if voice has already been played in this session
+    if (sessionStorage.getItem("welcome_voice_played") === "true") {
+      return;
+    }
+
     // Attempt to play a welcome voice
     const playWelcomeVoice = () => {
       const message = t("voice.welcome", "Bienvenue sur le marché numérique du Cameroun");
@@ -33,6 +38,9 @@ const Index = () => {
       
       // Try speaking immediately
       window.speechSynthesis.speak(utterance);
+      
+      // Mark as played
+      sessionStorage.setItem("welcome_voice_played", "true");
     };
 
     // Browsers often block autoplaying audio. We attach to first user interaction just in case.
@@ -52,7 +60,7 @@ const Index = () => {
       document.removeEventListener("click", handleFirstInteraction);
       document.removeEventListener("keydown", handleFirstInteraction);
     };
-  }, []);
+  }, [t, i18n.language]);
 
   return (
     <div className="min-h-screen bg-background">
