@@ -239,8 +239,14 @@ if ($rowRoles['count'] == 0) {
 }
 
 // Ensure courses table has certificate template columns (if they don't already exist)
-$conn->query("ALTER TABLE courses ADD COLUMN IF NOT EXISTS certParticipationUrl TEXT AFTER videoUrl;");
-$conn->query("ALTER TABLE courses ADD COLUMN IF NOT EXISTS certCompletionUrl TEXT AFTER certParticipationUrl;");
+$checkCol = $conn->query("SHOW COLUMNS FROM courses LIKE 'certParticipationUrl'");
+if ($checkCol && $checkCol->num_rows === 0) {
+    $conn->query("ALTER TABLE courses ADD COLUMN certParticipationUrl TEXT AFTER videoUrl;");
+}
+$checkCol2 = $conn->query("SHOW COLUMNS FROM courses LIKE 'certCompletionUrl'");
+if ($checkCol2 && $checkCol2->num_rows === 0) {
+    $conn->query("ALTER TABLE courses ADD COLUMN certCompletionUrl TEXT AFTER certParticipationUrl;");
+}
 
 // Helper function to generate UUID v4
 function generate_uuid() {
