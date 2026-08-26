@@ -796,7 +796,7 @@ const BuyerDashboard = () => {
                 {/* Left 3 Columns: Product Grid */}
                 <div className="xl:col-span-3 space-y-4">
                   <div className="flex items-center justify-between text-xs text-gray-500 font-bold">
-                    <span>Showing {dbProducts.length} live database products</span>
+                    <span>Showing {dbProducts.length} products</span>
                     <div className="flex items-center gap-2">
                       <span>Sort By:</span>
                       <span className="text-gray-900 font-black">Recommended</span>
@@ -806,7 +806,7 @@ const BuyerDashboard = () => {
                   {loadingProducts ? (
                     <div className="p-12 text-center text-gray-400 flex flex-col items-center gap-2">
                       <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-                      <p className="text-xs font-bold">Loading live database products...</p>
+                      <p className="text-xs font-bold">Loading products...</p>
                     </div>
                   ) : dbProducts.length === 0 ? (
                     <div className="p-12 text-center bg-white rounded-3xl border border-gray-200 text-gray-500 space-y-2">
