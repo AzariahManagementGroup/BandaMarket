@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link, Routes, Route } from "react-router-dom";
-import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap, Gift, RefreshCw, Cloud } from "lucide-react";
+import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap, Gift, RefreshCw, Cloud, Wallet, AlertCircle } from "lucide-react";
 
 import { getApiUrl } from "@/config";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import UserManager from "@/components/camemark/admin/UserManager";
 import RoleManager from "@/components/camemark/admin/RoleManager";
 import AdminForumRegistrations from "@/components/camemark/admin/AdminForumRegistrations";
+import AdminCardsManager from "@/components/camemark/admin/AdminCardsManager";
+import AdminSupportTickets from "@/components/camemark/admin/AdminSupportTickets";
 
 
 const AdminDashboard = () => {
@@ -47,6 +49,8 @@ const AdminDashboard = () => {
     { label: "Launch Popup Banner", icon: Image, path: "/popup-banner" },
     { label: "Logistics Delivery Fees", icon: Truck, path: "/delivery-fees" },
     { label: "SMTP Email Settings", icon: Mail, path: "/smtp" },
+    { label: "User Cards & Wallets", icon: Wallet, path: "/cards" },
+    { label: "Support Tickets", icon: AlertCircle, path: "/tickets" },
     { label: "User Management", icon: Users, path: "/users" },
     { label: "Forum Registrations", icon: CheckCircle, path: "/forum-registrations" },
     { label: "Global Activity Logs", icon: LayoutDashboard, path: "/activity-logs" },
@@ -138,6 +142,8 @@ const AdminDashboard = () => {
             <Route path="/popup-banner" element={<AdminPopupBanner />} />
             <Route path="/delivery-fees" element={<AdminDeliveryFees />} />
             <Route path="/smtp" element={<AdminSmtpSettings />} />
+            <Route path="/cards" element={<AdminCardsManager />} />
+            <Route path="/tickets" element={<AdminSupportTickets />} />
             <Route path="/users" element={<UserManager />} />
             <Route path="/forum-registrations" element={<AdminForumRegistrations />} />
             <Route path="/roles" element={<RoleManager />} />

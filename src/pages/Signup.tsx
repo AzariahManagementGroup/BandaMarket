@@ -62,6 +62,9 @@ const Signup = () => {
   const [searchParams] = useSearchParams();
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [requiresOtp, setRequiresOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpEmail, setOtpEmail] = useState("");
   const [agree, setAgree] = useState({ tos: false, wallet: false, privacy: false });
   const [form, setForm] = useState({
     fullName: "", email: "", phone: "", password: "", confirm: "",
@@ -157,6 +160,13 @@ const Signup = () => {
         return;
       }
 
+      if (data.requires_otp) {
+        setRequiresOtp(true);
+        setOtpEmail(form.email);
+        toast({ title: "OTP sent to your email. Please verify." });
+        return;
+      }
+
       localStorage.setItem("camemark_token", data.token);
       localStorage.setItem("camemark_user", JSON.stringify(data.user));
 
@@ -181,6 +191,51 @@ const Signup = () => {
     } catch (err: any) {
       setLoading(false);
       toast({ title: err.message || "Failed to connect to server", variant: "destructive" });
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch(getApiUrl("/api/auth/verify-otp"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: otpEmail,
+          otp: otpCode,
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Invalid OTP code");
+
+      localStorage.setItem("camemark_token", data.token);
+      localStorage.setItem("camemark_user", JSON.stringify(data.user));
+
+      if (form.referral) {
+        try {
+          fetch(getApiUrl("/api/referrals"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "claim",
+              refCode: form.referral,
+              newUserId: data.user?.id,
+              newUserName: data.user?.fullName || form.fullName,
+              newUserEmail: data.user?.email || form.email
+            })
+          });
+        } catch (e) {}
+      }
+
+      toast({ title: "OTP verified successfully! Welcome." });
+      navigate("/dashboard");
+    } catch (err: any) {
+      toast({ title: err.message || "OTP verification failed", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -245,10 +300,48 @@ const Signup = () => {
 
         {/* Right: form panel */}
         <section className="rounded-3xl bg-card border border-border shadow-elegant p-6 md:p-8 animate-scale-in">
-          <h2 className="text-2xl font-extrabold">{t("signup.panelTitle")}</h2>
-          <p className="text-sm text-muted-foreground mb-6">{t("signup.panelSub")}</p>
+          {requiresOtp ? (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-extrabold">Verify Your Email</h2>
+              <p className="text-sm text-muted-foreground mb-6">Enter the 6-digit OTP sent to {otpEmail}</p>
 
-          <form onSubmit={submit} className="space-y-4">
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">6-Digit Security Code</Label>
+                  <Input 
+                    type="text" 
+                    placeholder="123456" 
+                    maxLength={6}
+                    required 
+                    className="h-12 border-border rounded-xl focus-visible:ring-primary transition-all tracking-widest text-lg font-bold text-center"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                  />
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 bg-primary hover:bg-primary-glow text-primary-foreground rounded-xl font-bold transition-all hover-lift"
+                  disabled={loading}
+                >
+                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify OTP & Complete Signup"}
+                </Button>
+
+                <button 
+                  type="button"
+                  onClick={() => setRequiresOtp(false)}
+                  className="w-full text-xs font-bold text-muted-foreground hover:text-foreground transition-colors pt-2"
+                >
+                  ← Back to Signup
+                </button>
+              </form>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-2xl font-extrabold">{t("signup.panelTitle")}</h2>
+              <p className="text-sm text-muted-foreground mb-6">{t("signup.panelSub")}</p>
+
+              <form onSubmit={submit} className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label={t("signup.fullName")}>
                 <Input value={form.fullName} onChange={(e) => handle("fullName", e.target.value)} placeholder={t("signup.placeholders.name")} required />
@@ -387,6 +480,7 @@ const Signup = () => {
             <Link to="/signin" className="text-primary font-semibold story-link">{t("signup.signin")}</Link>
             </p>
           </form>
+          )}
         </section>
       </main>
     </div>

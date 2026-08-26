@@ -135,25 +135,25 @@ if (strpos($uri, 'signup') !== false) {
             
             log_user_activity($conn, $userId, "signup", "User registered an account");
 
-            $token = generate_jwt([
-                "sub" => $userId,
-                "email" => $email,
-                "role" => $role
-            ]);
+            // Generate OTP
+            $otpCode = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $otpExpiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+            
+            // Save OTP
+            $otpStmt = $conn->prepare("UPDATE users SET otpCode = ?, otpExpiresAt = ? WHERE id = ?");
+            $otpStmt->bind_param("sss", $otpCode, $otpExpiresAt, $userId);
+            $otpStmt->execute();
+            $otpStmt->close();
+
+            // Send OTP email
+            $subject = "Verify your CameMark account";
+            $htmlBody = "<h3>Welcome to CameMark!</h3><p>Your verification code is: <strong>$otpCode</strong></p><p>This code will expire in 15 minutes.</p>";
+            send_html_email($email, $subject, $htmlBody, $conn);
 
             http_response_code(201);
             echo json_encode([
-                "message" => "Registration successful!",
-                "token" => $token,
-                "user" => [
-                    "id" => $userId,
-                    "email" => $email,
-                    "fullName" => $fullName,
-                    "role" => $role,
-                    "country" => $country,
-                    "preferredCurrency" => $preferredCurrency,
-                    "wallet" => ["balance" => 0.0, "currency" => $preferredCurrency]
-                ]
+                "message" => "Registration successful. Please check your email for the OTP.",
+                "requires_otp" => true
             ]);
         } else {
             http_response_code(500);
@@ -178,21 +178,58 @@ if (strpos($uri, 'signin') !== false) {
         exit();
     }
 
-    $stmt = $conn->prepare("SELECT id, email, passwordHash, fullName, role, preferredCurrency FROM users WHERE email = ?");
+    $stmt = $conn->prepare("SELECT id, email, passwordHash, fullName, role, preferredCurrency, isVerified, lastLoginAt FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($row = $result->fetch_assoc()) {
         if (password_verify($password, $row['passwordHash'])) {
+            // Check if OTP is required (not verified, or last login was > 7 days ago)
+            $requiresOtp = false;
+            if (!$row['isVerified']) {
+                $requiresOtp = true;
+            } else {
+                $lastLogin = strtotime($row['lastLoginAt']);
+                $sevenDaysAgo = strtotime('-7 days');
+                if (!$lastLogin || $lastLogin < $sevenDaysAgo) {
+                    $requiresOtp = true;
+                }
+            }
+
+            if ($requiresOtp) {
+                // Generate OTP
+                $otpCode = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+                $otpExpiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+                
+                // Save OTP
+                $otpStmt = $conn->prepare("UPDATE users SET otpCode = ?, otpExpiresAt = ? WHERE id = ?");
+                $otpStmt->bind_param("sss", $otpCode, $otpExpiresAt, $row['id']);
+                $otpStmt->execute();
+                $otpStmt->close();
+
+                // Send OTP email
+                $subject = "Your CameMark Login OTP";
+                $htmlBody = "<h3>CameMark Login</h3><p>Your OTP code is: <strong style='font-size: 20px; letter-spacing: 2px;'>" . $otpCode . "</strong></p><p>This code will expire in 15 minutes.</p>";
+                send_html_email($email, $subject, $htmlBody, $conn);
+
+                http_response_code(200);
+                echo json_encode([
+                    "message" => "Please check your email for the OTP.",
+                    "requires_otp" => true
+                ]);
+                exit();
+            }
+
+            // Normal login if OTP is not required
             $token = generate_jwt([
                 "sub" => $row['id'],
                 "email" => $row['email'],
                 "role" => $row['role']
             ]);
 
-            // Fetch wallet
-            $wstmt = $conn->prepare("SELECT balance, currency FROM wallets WHERE userId = ?");
+            // Get wallet balance
+            $wstmt = $conn->prepare("SELECT balance FROM wallets WHERE userId = ?");
             $wstmt->bind_param("s", $row['id']);
             $wstmt->execute();
             $wres = $wstmt->get_result();
@@ -211,7 +248,7 @@ if (strpos($uri, 'signin') !== false) {
                     "fullName" => $row['fullName'],
                     "role" => $row['role'],
                     "preferredCurrency" => $row['preferredCurrency'],
-                    "wallet" => $walletData
+                    "wallet" => ["balance" => (float)$walletData['balance'], "currency" => $row['preferredCurrency']]
                 ]
             ]);
             exit();
@@ -220,6 +257,78 @@ if (strpos($uri, 'signin') !== false) {
 
     http_response_code(401);
     echo json_encode(["error" => "Invalid email or password."]);
+    exit();
+}
+
+// 2.5 Verify OTP Endpoint
+if (strpos($uri, 'verify-otp') !== false) {
+    $input = file_get_contents("php://input");
+    $data = json_decode($input, true);
+
+    $email = isset($data['email']) ? strtolower(trim($data['email'])) : '';
+    $otp = isset($data['otp']) ? trim($data['otp']) : '';
+
+    if (empty($email) || empty($otp)) {
+        http_response_code(400);
+        echo json_encode(["error" => "Email and OTP are required."]);
+        exit();
+    }
+
+    $stmt = $conn->prepare("SELECT id, email, fullName, role, preferredCurrency, otpCode, otpExpiresAt FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        $now = date('Y-m-d H:i:s');
+        if ($row['otpCode'] === $otp && $row['otpExpiresAt'] > $now) {
+            // OTP is valid
+            // Clear OTP and set verified
+            $updateStmt = $conn->prepare("UPDATE users SET otpCode = NULL, otpExpiresAt = NULL, isVerified = 1, lastLoginAt = CURRENT_TIMESTAMP(3) WHERE id = ?");
+            $updateStmt->bind_param("s", $row['id']);
+            $updateStmt->execute();
+            $updateStmt->close();
+
+            // Generate JWT and finalize login
+            $token = generate_jwt([
+                "sub" => $row['id'],
+                "email" => $row['email'],
+                "role" => $row['role']
+            ]);
+
+            // Fetch wallet
+            $wstmt = $conn->prepare("SELECT balance, currency FROM wallets WHERE userId = ?");
+            $wstmt->bind_param("s", $row['id']);
+            $wstmt->execute();
+            $wres = $wstmt->get_result();
+            $walletData = $wres->fetch_assoc() ?: ["balance" => 0.0, "currency" => $row['preferredCurrency']];
+            $wstmt->close();
+
+            log_user_activity($conn, $row['id'], "login", "User verified OTP and logged in");
+
+            http_response_code(200);
+            echo json_encode([
+                "message" => "Login successful!",
+                "token" => $token,
+                "user" => [
+                    "id" => $row['id'],
+                    "email" => $row['email'],
+                    "fullName" => $row['fullName'],
+                    "role" => $row['role'],
+                    "preferredCurrency" => $row['preferredCurrency'],
+                    "wallet" => $walletData
+                ]
+            ]);
+            exit();
+        } else {
+            http_response_code(401);
+            echo json_encode(["error" => "Invalid or expired OTP."]);
+            exit();
+        }
+    }
+
+    http_response_code(404);
+    echo json_encode(["error" => "User not found."]);
     exit();
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Store, MapPin, Package, AlertCircle, ShoppingCart, MessageCircle, Lock, Eye, EyeOff, Share2, Copy } from "lucide-react";
+import { Store, MapPin, Package, AlertCircle, ShoppingCart, MessageCircle, Lock, Eye, EyeOff, Share2, Copy, Heart } from "lucide-react";
 import Navbar from "@/components/camemark/Navbar";
 import Footer from "@/components/camemark/Footer";
 import { getApiUrl } from "@/config";
@@ -18,7 +18,9 @@ const MarketZone = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const region = searchParams.get("region") || "All Regions";
+  const tab = searchParams.get("tab") || "";
   const [products, setProducts] = useState<any[]>([]);
+  const [savedItemIds, setSavedItemIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
   const [userCurrency, setUserCurrency] = useState("XAF");
@@ -105,6 +107,52 @@ const MarketZone = () => {
 
     fetchProducts();
   }, [region]);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const token = localStorage.getItem("camemark_token");
+    fetch(getApiUrl("/api/saved_items.php"), { headers: { "Authorization": `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setSavedItemIds(data.savedIds || []);
+        }
+      })
+      .catch(e => console.error("Error fetching saved items", e));
+  }, [session?.user?.id]);
+
+  const toggleSaveProduct = async (e: React.MouseEvent, productId: number) => {
+    e.stopPropagation();
+    const token = localStorage.getItem("camemark_token");
+    if (!token) return toast.error("Please sign in first");
+    
+    const isSaved = savedItemIds.includes(productId);
+    const method = isSaved ? 'DELETE' : 'POST';
+    
+    try {
+      const res = await fetch(getApiUrl("/api/saved_items.php"), {
+        method,
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ productId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (isSaved) {
+          setSavedItemIds(prev => prev.filter(id => id !== productId));
+          toast.success("Removed from saved items");
+        } else {
+          setSavedItemIds(prev => [...prev, productId]);
+          toast.success("Added to saved items");
+        }
+      }
+    } catch(err) {
+      toast.error("Error updating saved items");
+    }
+  };
+
+  const displayedProducts = tab === "saved" 
+    ? products.filter(p => savedItemIds.includes(p.id)) 
+    : products;
 
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -245,9 +293,9 @@ const MarketZone = () => {
                 <div key={i} className="h-80 rounded-2xl bg-muted animate-pulse" />
               ))}
             </div>
-          ) : products.length > 0 ? (
+          ) : displayedProducts.length > 0 ? (
             <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.map((product) => (
+              {displayedProducts.map((product) => (
                 <div 
                   key={product.id} 
                   onClick={() => {
@@ -266,6 +314,15 @@ const MarketZone = () => {
 
                     {/* Quick WhatsApp & Social Share Overlay Badge */}
                     <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
+                      <button
+                        onClick={(e) => toggleSaveProduct(e, product.id)}
+                        className={`h-8 w-8 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 ${
+                          savedItemIds.includes(product.id) ? "bg-red-50 text-red-500" : "bg-white text-gray-400 hover:text-red-500"
+                        }`}
+                        title={savedItemIds.includes(product.id) ? "Unsave" : "Save"}
+                      >
+                        <Heart className="h-4 w-4" fill={savedItemIds.includes(product.id) ? "currentColor" : "none"} />
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

@@ -69,8 +69,55 @@ const BuyerDashboard = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
 
+  const [filterBargain, setFilterBargain] = useState<boolean>(false);
+  const [filterVerified, setFilterVerified] = useState<boolean>(false);
+  const [filterFarmFresh, setFilterFarmFresh] = useState<boolean>(false);
+
   // Cart Badge Count State
   const [cartCount, setCartCount] = useState<number>(0);
+  const [savedItemIds, setSavedItemIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const token = localStorage.getItem("camemark_token");
+    fetch(getApiUrl("/api/saved_items.php"), { headers: { "Authorization": `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setSavedItemIds(data.savedIds || []);
+        }
+      })
+      .catch(e => console.error("Error fetching saved items", e));
+  }, [session?.user?.id]);
+
+  const toggleSaveProduct = async (e: React.MouseEvent, productId: number) => {
+    e.stopPropagation();
+    const token = localStorage.getItem("camemark_token");
+    if (!token) return toast.error("Please sign in first");
+    
+    const isSaved = savedItemIds.includes(productId);
+    const method = isSaved ? 'DELETE' : 'POST';
+    
+    try {
+      const res = await fetch(getApiUrl("/api/saved_items.php"), {
+        method,
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ productId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (isSaved) {
+          setSavedItemIds(prev => prev.filter(id => id !== productId));
+          toast.success("Removed from saved items");
+        } else {
+          setSavedItemIds(prev => [...prev, productId]);
+          toast.success("Added to saved items");
+        }
+      }
+    } catch(err) {
+      toast.error("Error updating saved items");
+    }
+  };
 
   useEffect(() => {
     const updateCount = () => {
@@ -414,6 +461,13 @@ const BuyerDashboard = () => {
     );
   }
 
+  const filteredDbProducts = dbProducts.filter((prod) => {
+    if (filterBargain && !prod.isBargain) return false;
+    if (filterFarmFresh && prod.tag !== "Farm Fresh") return false;
+    if (filterVerified && prod.seller !== "Verified Merchant") return false; // Heuristic based on current seed data
+    return true;
+  });
+
   return (
     <div className="flex h-screen bg-[#F8F9FA] overflow-hidden font-sans">
       {/* Sidebar - Desktop */}
@@ -748,13 +802,19 @@ const BuyerDashboard = () => {
                     </SelectContent>
                   </Select>
 
-                  <span className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 cursor-pointer hover:bg-gray-100">
+                  <span 
+                    onClick={() => setFilterBargain(!filterBargain)}
+                    className={`px-3 py-1.5 border rounded-xl cursor-pointer transition-colors ${filterBargain ? "bg-emerald-50 border-emerald-200 text-emerald-800 font-bold" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"}`}>
                     Bargain Available
                   </span>
-                  <span className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl cursor-pointer font-bold">
+                  <span 
+                    onClick={() => setFilterVerified(!filterVerified)}
+                    className={`px-3 py-1.5 border rounded-xl cursor-pointer transition-colors ${filterVerified ? "bg-emerald-50 border-emerald-200 text-emerald-800 font-bold" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"}`}>
                     ✓ Verified Sellers
                   </span>
-                  <span className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 cursor-pointer hover:bg-gray-100">
+                  <span 
+                    onClick={() => setFilterFarmFresh(!filterFarmFresh)}
+                    className={`px-3 py-1.5 border rounded-xl cursor-pointer transition-colors ${filterFarmFresh ? "bg-emerald-50 border-emerald-200 text-emerald-800 font-bold" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"}`}>
                     Farm Fresh
                   </span>
                 </div>
@@ -786,7 +846,7 @@ const BuyerDashboard = () => {
                 {/* Left 3 Columns: Product Grid */}
                 <div className="xl:col-span-3 space-y-4">
                   <div className="flex items-center justify-between text-xs text-gray-500 font-bold">
-                    <span>Showing {dbProducts.length} products</span>
+                    <span>Showing {filteredDbProducts.length} products</span>
                     <div className="flex items-center gap-2">
                       <span>Sort By:</span>
                       <span className="text-gray-900 font-black">Recommended</span>
@@ -798,7 +858,7 @@ const BuyerDashboard = () => {
                       <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
                       <p className="text-xs font-bold">Loading products...</p>
                     </div>
-                  ) : dbProducts.length === 0 ? (
+                  ) : filteredDbProducts.length === 0 ? (
                     <div className="p-12 text-center bg-white rounded-3xl border border-gray-200 text-gray-500 space-y-2">
                       <Package className="h-10 w-10 text-gray-300 mx-auto" />
                       <p className="font-bold text-sm">No products found matching filters.</p>
@@ -806,7 +866,7 @@ const BuyerDashboard = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-                      {dbProducts.map((prod) => (
+                      {filteredDbProducts.map((prod) => (
                         <div 
                           key={prod.id} 
                           onClick={() => {
@@ -841,6 +901,17 @@ const BuyerDashboard = () => {
                                   title="Add to Cart"
                                 >
                                   <ShoppingCart className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={(e) => toggleSaveProduct(e, prod.id)}
+                                  className={`h-9 px-3 rounded-xl border flex items-center justify-center shrink-0 transition-colors ${
+                                    savedItemIds.includes(prod.id) 
+                                      ? "bg-red-50 border-red-200 text-red-500 hover:bg-red-100" 
+                                      : "border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-red-500"
+                                  }`}
+                                  title={savedItemIds.includes(prod.id) ? "Unsave" : "Save"}
+                                >
+                                  <Heart className="h-4 w-4" fill={savedItemIds.includes(prod.id) ? "currentColor" : "none"} />
                                 </button>
                                 <Button 
                                   onClick={(e) => {
@@ -906,30 +977,34 @@ const BuyerDashboard = () => {
                       <h4 className="font-extrabold text-sm text-gray-900 flex items-center gap-1.5">
                         🔥 Today's Bargain Deals
                       </h4>
-                      <span className="text-[10px] text-emerald-700 font-bold cursor-pointer">View all</span>
+                      <span onClick={() => navigate('/market-zone')} className="text-[10px] text-emerald-700 font-bold cursor-pointer hover:underline">View all</span>
                     </div>
 
                     <div className="space-y-3">
-                      {bargainDeals.map((b, i) => (
-                        <div key={b.id || i} className="flex items-center justify-between p-2 rounded-2xl bg-gray-50 border border-gray-100 text-xs">
-                          <div className="flex items-center gap-2.5">
-                            <img src={b.img} alt={b.title} className="h-10 w-10 rounded-xl object-cover" />
-                            <div>
-                              <p className="font-extrabold text-gray-900 text-[11px] line-clamp-1">{b.title}</p>
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-black text-emerald-700 text-xs">{b.formattedPrice || b.price}</span>
-                                { (b.formattedOldPrice || b.old) && (
-                                  <span className="text-[9px] text-gray-400 line-through">{b.formattedOldPrice || b.old}</span>
-                                )}
-                                { b.off && (
-                                  <span className="text-[9px] font-bold bg-red-100 text-red-700 px-1 rounded">{b.off}</span>
-                                )}
+                      {bargainDeals.length > 0 ? (
+                        bargainDeals.map((b, i) => (
+                          <div key={b.id || i} className="flex items-center justify-between p-2 rounded-2xl bg-gray-50 border border-gray-100 text-xs">
+                            <div className="flex items-center gap-2.5">
+                              <img src={b.img} alt={b.title} className="h-10 w-10 rounded-xl object-cover" />
+                              <div>
+                                <p className="font-extrabold text-gray-900 text-[11px] line-clamp-1">{b.title}</p>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-black text-emerald-700 text-xs">{b.formattedPrice || b.price}</span>
+                                  { (b.formattedOldPrice || b.old) && (
+                                    <span className="text-[9px] text-gray-400 line-through">{b.formattedOldPrice || b.old}</span>
+                                  )}
+                                  { b.off && (
+                                    <span className="text-[9px] font-bold bg-red-100 text-red-700 px-1 rounded">{b.off}</span>
+                                  )}
+                                </div>
                               </div>
                             </div>
+                            <span className="text-[10px] font-black bg-amber-400 text-amber-950 px-2 py-1 rounded-lg">Bargain</span>
                           </div>
-                          <span className="text-[10px] font-black bg-amber-400 text-amber-950 px-2 py-1 rounded-lg">Bargain</span>
-                        </div>
-                      ))}
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-400 text-center py-4">No bargains available right now.</p>
+                      )}
                     </div>
                   </div>
 
@@ -937,7 +1012,7 @@ const BuyerDashboard = () => {
                   <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="font-extrabold text-sm text-gray-900">Top Rated Sellers</h4>
-                      <span className="text-[10px] text-emerald-700 font-bold cursor-pointer">View all</span>
+                      <span onClick={() => navigate('/market-zone')} className="text-[10px] text-emerald-700 font-bold cursor-pointer hover:underline">View all</span>
                     </div>
 
                     <div className="space-y-3">
@@ -1019,7 +1094,7 @@ const BuyerDashboard = () => {
                 />
                 <StatCard 
                   title="Saved Items" 
-                  value="12" 
+                  value={savedItemIds.length.toString()} 
                   subValue="Products in wishlist" 
                   icon={Heart} 
                   action="View Saved"

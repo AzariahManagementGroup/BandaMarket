@@ -2,7 +2,7 @@
     "success": true,
     "payment": {
         "activeProvider": "tranzak",
-        "environment": "sandbox",
+        "environment": "live",
         "flwPublicKey": "FLWPUBK_TEST-sandbox-camemark-001",
         "flwSecretKey": "FLWSECK_TEST-sandbox-camemark-secret",
         "paystackPublicKey": "pk_test_sandbox_camemark_002",
@@ -12,7 +12,7 @@
         "momoApiUser": "momo_sandbox_user_camemark",
         "momoApiKey": "momo_sandbox_api_key",
         "omMerchantId": "om_sandbox_merchant_camemark",
-        "tranzakAppId": "",
-        "tranzakAppKey": ""
+        "tranzakAppId": "YOUR_LIVE_APP_ID",
+        "tranzakAppKey": "YOUR_LIVE_APP_KEY"
     }
 }

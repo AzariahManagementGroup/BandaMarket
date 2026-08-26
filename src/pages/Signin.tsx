@@ -51,10 +51,10 @@ const Signin = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to sign in");
 
-      if (data.requiresOtp) {
+      if (data.requires_otp) {
         setRequiresOtp(true);
-        setOtpEmail(data.email);
-        toast.info("Weekly security check required. 6-digit OTP sent to your email.");
+        setOtpEmail(form.email);
+        toast.info("Security check required. 6-digit OTP sent to your email.");
         return;
       }
 
@@ -80,7 +80,7 @@ const Signin = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: otpEmail,
-          otpCode: otpCode,
+          otp: otpCode,
         })
       });
 

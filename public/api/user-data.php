@@ -103,12 +103,102 @@ if ($action === 'cards') {
         $stmt = $conn->prepare("INSERT INTO cards (id, userId, card_number, card_holder_name, expiry_date, cvv, type, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("ssssssss", $cardId, $userId, $cardNumber, $cardHolderName, $expiryDate, $cvv, $type, $now);
         if ($stmt->execute()) {
+            // Fetch user email to send notification
+            $stmtUser = $conn->prepare("SELECT email FROM users WHERE id = ?");
+            if ($stmtUser) {
+                $stmtUser->bind_param("s", $userId);
+                $stmtUser->execute();
+                $resUser = $stmtUser->get_result();
+                $userRow = $resUser->fetch_assoc();
+                $stmtUser->close();
+                
+                if ($userRow && !empty($userRow['email'])) {
+                    $userEmail = $userRow['email'];
+                    $maskedCard = "**** **** **** " . substr(str_replace(' ', '', $cardNumber), -4);
+                    $cardType = ucfirst($type);
+                    $subject = "Your New CameMark {$cardType} Card is Ready!";
+                    $body = "<h2>Hello {$cardHolderName},</h2>
+                             <p>Your new CameMark <strong>{$cardType} Card</strong> has been successfully generated and is ready to use.</p>
+                             <p><strong>Card Details:</strong></p>
+                             <ul>
+                                <li>Card Number: {$maskedCard}</li>
+                                <li>Type: {$cardType}</li>
+                             </ul>
+                             <p>You can view your full card details securely in your <a href='https://camemark.com/cards-wallet'>Cards & Wallet dashboard</a>.</p>
+                             <p>Thank you for using CameMark!</p>";
+                             
+                    send_html_email($userEmail, $subject, $body, $conn);
+                }
+            }
+            
             echo json_encode(["message" => "Card generated successfully"]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Failed to create card"]);
         }
         $stmt->close();
+        exit();
+    }
+}
+
+// 2b. Update Card Status
+if ($action === 'update-card-status') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $input = json_decode(file_get_contents("php://input"), true);
+        $cardId = $input['cardId'] ?? '';
+        $newStatus = $input['status'] ?? '';
+
+        if ($cardId && $newStatus) {
+            if ($newStatus === 'deleted') {
+                $stmt = $conn->prepare("DELETE FROM cards WHERE id = ? AND userId = ?");
+                $stmt->bind_param("ss", $cardId, $userId);
+            } else {
+                $stmt = $conn->prepare("UPDATE cards SET status = ? WHERE id = ? AND userId = ?");
+                $stmt->bind_param("sss", $newStatus, $cardId, $userId);
+            }
+
+            if ($stmt->execute()) {
+                // Send email & notification
+                $stmtUser = $conn->prepare("SELECT email, fullName FROM users WHERE id = ?");
+                $stmtUser->bind_param("s", $userId);
+                $stmtUser->execute();
+                $resUser = $stmtUser->get_result();
+                $userRow = $resUser->fetch_assoc();
+                $stmtUser->close();
+                
+                if ($userRow && !empty($userRow['email'])) {
+                    $userEmail = $userRow['email'];
+                    $userName = $userRow['fullName'];
+                    $subject = "Your Card Status Has Been Updated";
+                    $statusText = $newStatus === 'deleted' ? 'deleted' : ($newStatus === 'frozen' ? 'frozen' : 'unfrozen');
+                    
+                    $body = "<h2>Hello {$userName},</h2>
+                             <p>This is to confirm that your card has been successfully <strong>{$statusText}</strong>.</p>
+                             <p>If you did not perform this action, please contact support immediately.</p>
+                             <p>Thank you for using CameMark!</p>";
+                    send_html_email($userEmail, $subject, $body, $conn);
+                    
+                    // Add notification
+                    $notifId = generate_uuid();
+                    $notifTitle = "Card " . ucfirst($statusText);
+                    $notifMessage = "Your card was successfully {$statusText}.";
+                    $notifStmt = $conn->prepare("INSERT INTO notifications (id, userId, title, message) VALUES (?, ?, ?, ?)");
+                    if ($notifStmt) {
+                        $notifStmt->bind_param("ssss", $notifId, $userId, $notifTitle, $notifMessage);
+                        $notifStmt->execute();
+                        $notifStmt->close();
+                    }
+                }
+                echo json_encode(["success" => true, "message" => "Card status updated to {$newStatus}"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["error" => "Failed to update card status"]);
+            }
+            $stmt->close();
+        } else {
+            http_response_code(400);
+            echo json_encode(["error" => "Missing cardId or status"]);
+        }
         exit();
     }
 }
@@ -258,6 +348,73 @@ if ($action === 'admin-stats') {
             "supportTickets" => $supportTickets,
             "revenue" => $revenue
         ]);
+        exit();
+    }
+}
+
+// 9. Card Transactions
+if ($action === 'card-transactions') {
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $cardId = $_GET['cardId'] ?? '';
+        if (!$cardId) {
+            http_response_code(400);
+            echo json_encode(["error" => "Card ID required"]);
+            exit();
+        }
+        
+        // Verify card belongs to user
+        $stmt = $conn->prepare("SELECT id FROM cards WHERE id = ? AND userId = ?");
+        $stmt->bind_param("ss", $cardId, $userId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($res->num_rows === 0) {
+            http_response_code(403);
+            echo json_encode(["error" => "Access denied"]);
+            exit();
+        }
+        $stmt->close();
+        
+        // Fetch transactions
+        $stmt = $conn->prepare("SELECT * FROM card_transactions WHERE cardId = ? ORDER BY createdAt DESC");
+        $stmt->bind_param("s", $cardId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $txs = [];
+        while ($row = $res->fetch_assoc()) {
+            $txs[] = $row;
+        }
+        $stmt->close();
+        echo json_encode($txs);
+        exit();
+    }
+}
+
+// 10. Report Issue
+if ($action === 'report-issue') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $input = json_decode(file_get_contents("php://input"), true);
+        $cardId = $input['cardId'] ?? null;
+        $transactionId = $input['transactionId'] ?? null;
+        $subject = $input['subject'] ?? '';
+        $message = $input['message'] ?? '';
+        
+        if (empty($subject) || empty($message)) {
+            http_response_code(400);
+            echo json_encode(["error" => "Subject and message are required"]);
+            exit();
+        }
+        
+        $ticketId = generate_uuid();
+        $stmt = $conn->prepare("INSERT INTO support_tickets (id, userId, cardId, transactionId, subject, message) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssss", $ticketId, $userId, $cardId, $transactionId, $subject, $message);
+        
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "ticketId" => $ticketId]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to create ticket"]);
+        }
+        $stmt->close();
         exit();
     }
 }

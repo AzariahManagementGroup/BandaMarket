@@ -16,56 +16,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS bargain_deals (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
-// 2. Automatic Seed Logic if bargain_deals is empty
-$countRes = $conn->query("SELECT COUNT(*) as cnt FROM bargain_deals");
-$countRow = $countRes ? $countRes->fetch_assoc() : ['cnt' => 0];
-
-if (intval($countRow['cnt']) === 0) {
-    $seedDeals = [
-        [
-            'title' => 'Fresh Pineapples (1pc)',
-            'price' => 1200.00,
-            'originalPrice' => 1800.00,
-            'discountPercent' => '-33%',
-            'imageUrl' => 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?auto=format&fit=crop&w=150&q=80',
-            'region' => 'South West',
-            'sellerName' => 'Penja Farmers Co-op'
-        ],
-        [
-            'title' => 'Cameroon Peppers (500g)',
-            'price' => 800.00,
-            'originalPrice' => 1200.00,
-            'discountPercent' => '-33%',
-            'imageUrl' => 'https://images.unsplash.com/photo-1588879460405-59427f7f4577?auto=format&fit=crop&w=150&q=80',
-            'region' => 'Littoral',
-            'sellerName' => 'Douala Green Market'
-        ],
-        [
-            'title' => 'Dry Okra (250g)',
-            'price' => 900.00,
-            'originalPrice' => 1400.00,
-            'discountPercent' => '-36%',
-            'imageUrl' => 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=150&q=80',
-            'region' => 'Extreme-Nord',
-            'sellerName' => 'Maroua Produce Hub'
-        ]
-    ];
-
-    $stmt = $conn->prepare("INSERT INTO bargain_deals (title, price, originalPrice, discountPercent, imageUrl, region, sellerName) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    foreach ($seedDeals as $d) {
-        $stmt->bind_param("sddssss", 
-            $d['title'], 
-            $d['price'], 
-            $d['originalPrice'], 
-            $d['discountPercent'], 
-            $d['imageUrl'], 
-            $d['region'], 
-            $d['sellerName']
-        );
-        $stmt->execute();
-    }
-    $stmt->close();
-}
+// Removed automatic seed logic for bargain deals per user request.
 
 $request_method = $_SERVER['REQUEST_METHOD'];
 

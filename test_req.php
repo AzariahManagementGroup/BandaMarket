@@ -1,0 +1,1 @@
+<?php echo file_get_contents("http://localhost:5000/api/signin", false, stream_context_create(["http" => ["method" => "POST", "header" => "Content-Type: application/json\r\n", "content" => json_encode(["email" => "info@azariahmg.com", "password" => "test"])]])); ?>

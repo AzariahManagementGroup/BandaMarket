@@ -1,5 +1,6 @@
 <?php
 // Shared Database & Mail Configuration
+ini_set('display_errors', '0');
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
@@ -228,6 +229,29 @@ $conn->query("CREATE TABLE IF NOT EXISTS user_certificates (
     issuedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+$conn->query("CREATE TABLE IF NOT EXISTS support_tickets (
+    id VARCHAR(100) PRIMARY KEY,
+    userId VARCHAR(191) NOT NULL,
+    cardId VARCHAR(100) DEFAULT NULL,
+    transactionId VARCHAR(100) DEFAULT NULL,
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    adminResponse TEXT DEFAULT NULL,
+    status ENUM('open', 'resolved') DEFAULT 'open',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+$conn->query("CREATE TABLE IF NOT EXISTS card_transactions (
+    id VARCHAR(100) PRIMARY KEY,
+    cardId VARCHAR(100) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    currency VARCHAR(10) DEFAULT 'XAF',
+    merchant VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'completed',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
 // Seed default roles if empty
 $resRoles = $conn->query("SELECT count(*) as count FROM roles_permissions");
 $rowRoles = $resRoles->fetch_assoc();
@@ -262,13 +286,14 @@ function generate_uuid() {
 
 // Helper function to send email via SSL/TLS Socket SMTP (Dynamic DB Config)
 function send_html_email($toEmail, $subject, $bodyContent, $conn = null) {
+    ob_start();
     $smtpHost = "ssl://smtp.gmail.com";
     $smtpPort = 465;
     $smtpUser = "podoremetropolis@gmail.com";
     $smtpPass = "ptfjtrjyaidmyqrf";
 
     if ($conn) {
-        $conn->query("REPLACE INTO smtp_settings (id, smtpHost, smtpPort, smtpUser, smtpPass, senderName, updatedAt) VALUES (1, 'smtp.gmail.com', '465', 'podoremetropolis@gmail.com', 'ptfjtrjyaidmyqrf', 'CameMark Marketplace', NOW())");
+        $conn->query("REPLACE INTO smtp_settings (id, smtpHost, smtpPort, smtpUser, smtpPass, updatedAt) VALUES (1, 'smtp.gmail.com', '465', 'podoremetropolis@gmail.com', 'ptfjtrjyaidmyqrf', NOW())");
 
         $res = $conn->query("SELECT * FROM smtp_settings ORDER BY id DESC LIMIT 1");
         if ($res && $row = $res->fetch_assoc()) {
@@ -325,7 +350,8 @@ function send_html_email($toEmail, $subject, $bodyContent, $conn = null) {
 
     $readSmtp = function($sock) {
         $data = "";
-        while ($line = fgets($sock, 512)) {
+        if (!$sock) return $data;
+        while ($line = @fgets($sock, 512)) {
             $data .= $line;
             if (substr($line, 3, 1) === " ") break;
         }
@@ -336,29 +362,31 @@ function send_html_email($toEmail, $subject, $bodyContent, $conn = null) {
     if (!$socket) {
         $mailHeaders = "MIME-Version: 1.0\r\nContent-type:text/html;charset=UTF-8\r\nFrom: CameMark <" . $smtpUser . ">\r\n";
         @mail($toEmail, $subject, $message, $mailHeaders);
+        ob_end_clean();
         return false;
     }
 
     $readSmtp($socket);
-    fputs($socket, "EHLO CameMark\r\n");
+    @fputs($socket, "EHLO CameMark\r\n");
     $readSmtp($socket);
-    fputs($socket, "AUTH LOGIN\r\n");
+    @fputs($socket, "AUTH LOGIN\r\n");
     $readSmtp($socket);
-    fputs($socket, base64_encode($smtpUser) . "\r\n");
+    @fputs($socket, base64_encode($smtpUser) . "\r\n");
     $readSmtp($socket);
-    fputs($socket, base64_encode($smtpPass) . "\r\n");
+    @fputs($socket, base64_encode($smtpPass) . "\r\n");
     $readSmtp($socket);
-    fputs($socket, "MAIL FROM: <" . $smtpUser . ">\r\n");
+    @fputs($socket, "MAIL FROM: <" . $smtpUser . ">\r\n");
     $readSmtp($socket);
-    fputs($socket, "RCPT TO: <" . $toEmail . ">\r\n");
+    @fputs($socket, "RCPT TO: <" . $toEmail . ">\r\n");
     $readSmtp($socket);
-    fputs($socket, "DATA\r\n");
+    @fputs($socket, "DATA\r\n");
     $readSmtp($socket);
-    fputs($socket, $emailData . "\r\n");
+    @fputs($socket, $emailData . "\r\n");
     $readSmtp($socket);
-    fputs($socket, "QUIT\r\n");
-    fclose($socket);
+    @fputs($socket, "QUIT\r\n");
+    @fclose($socket);
 
+    ob_end_clean();
     return true;
 }
 
