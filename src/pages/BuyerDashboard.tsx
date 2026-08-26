@@ -98,11 +98,8 @@ const BuyerDashboard = () => {
       console.error("Error fetching bargain deals:", e);
     }
 
-    setBargainDeals([
-      { id: 1, title: "Fresh Pineapples (1pc)", formattedPrice: "FCFA 1,200", formattedOldPrice: "FCFA 1,800", off: "-33%", img: "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?auto=format&fit=crop&w=150&q=80" },
-      { id: 2, title: "Cameroon Peppers (500g)", formattedPrice: "FCFA 800", formattedOldPrice: "FCFA 1,200", off: "-33%", img: "https://images.unsplash.com/photo-1588879460405-59427f7f4577?auto=format&fit=crop&w=150&q=80" },
-      { id: 3, title: "Dry Okra (250g)", formattedPrice: "FCFA 900", formattedOldPrice: "FCFA 1,400", off: "-36%", img: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=150&q=80" }
-    ]);
+    // If API fails, we just don't show bargains (no mockups)
+    setBargainDeals([]);
   };
 
   useEffect(() => {
@@ -146,14 +143,7 @@ const BuyerDashboard = () => {
         setDbProducts(JSON.parse(local));
       } catch (e) {}
     } else {
-      setDbProducts([
-        { id: 1, title: "Red Palm Oil (1L)", seller: "Best Palm Cooperative", region: "South West", price: 2100, tag: "Farm Fresh", img: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=400&q=80", rating: "4.8 (126)", isBargain: false },
-        { id: 2, title: "Organic Cocoa Beans (1kg)", seller: "Cocoa Farmers Union", region: "Centre", price: 3500, tag: "Bargain", img: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=400&q=80", rating: "4.7 (98)", isBargain: true },
-        { id: 3, title: "Plantains (1 Bunch)", seller: "Green Valley Farms", region: "Littoral", price: 800, tag: "Farm Fresh", img: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=400&q=80", rating: "4.6 (76)", isBargain: false },
-        { id: 4, title: "Fresh Tomatoes (1kg)", seller: "Healthy Fields Co-op", region: "North West", price: 1600, tag: "Farm Fresh", img: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=400&q=80", rating: "4.7 (112)", isBargain: false },
-        { id: 5, title: "Robusta Coffee (1kg)", seller: "Highland Coffee Farmers", region: "Ouest", price: 4200, tag: "Bargain", img: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=400&q=80", rating: "4.8 (89)", isBargain: true },
-        { id: 6, title: "Handmade Woven Basket", seller: "Artisans du Cameroun", region: "Adamawa", price: 3600, tag: "Handmade", img: "https://images.unsplash.com/photo-1590736969955-71cc94801759?auto=format&fit=crop&w=400&q=80", rating: "4.7 (64)", isBargain: false }
-      ]);
+      setDbProducts([]); // No mockups
     }
     setLoadingProducts(false);
   };
@@ -951,12 +941,17 @@ const BuyerDashboard = () => {
                     </div>
 
                     <div className="space-y-3">
-                      {[
-                        { rank: 1, name: "Best Palm Cooperative", location: "South West", rating: "4.8 (126)" },
-                        { rank: 2, name: "Green Valley Farms", location: "Littoral", rating: "4.8 (98)" },
-                        { rank: 3, name: "Highland Coffee Farmers", location: "Ouest", rating: "4.7 (89)" },
-                        { rank: 4, name: "Healthy Fields Co-op", location: "North West", rating: "4.7 (112)" }
-                      ].map((s) => (
+                      {Array.from(new Set(dbProducts.filter(p => p.seller).map(p => p.seller)))
+                        .slice(0, 4)
+                        .map((sellerName, idx) => {
+                          const p = dbProducts.find(p => p.seller === sellerName);
+                          return {
+                            rank: idx + 1,
+                            name: sellerName,
+                            location: p?.region || "Cameroon",
+                            rating: p?.rating || "4.5"
+                          };
+                        }).map((s) => (
                         <div key={s.rank} className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-2">
                             <span className="h-5 w-5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black flex items-center justify-center">{s.rank}</span>
