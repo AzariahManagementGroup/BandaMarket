@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import UserManager from "@/components/camemark/admin/UserManager";
 import RoleManager from "@/components/camemark/admin/RoleManager";
 import AdminForumRegistrations from "@/components/camemark/admin/AdminForumRegistrations";
-import AdminActivityLogs from "@/components/camemark/admin/AdminActivityLogs";
+
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -545,7 +545,7 @@ const AdminPopupBanner = () => {
   const [banner, setBanner] = useState({
     imageUrl: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
     title: "Cameroon E-Commerce Forum 2026",
-    linkUrl: "/#forum-2026",
+    linkUrl: "/forum",
     enabled: 1
   });
   const [saving, setSaving] = useState(false);
@@ -559,7 +559,7 @@ const AdminPopupBanner = () => {
           setBanner({
             imageUrl: data.banner.imageUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
             title: data.banner.title || "Cameroon E-Commerce Forum 2026",
-            linkUrl: data.banner.linkUrl || "/#forum-2026",
+            linkUrl: data.banner.linkUrl || "/forum",
             enabled: data.banner.enabled !== undefined ? parseInt(data.banner.enabled, 10) : 1
           });
         }
@@ -681,7 +681,7 @@ const AdminPopupBanner = () => {
           <div className="space-y-1.5">
             <Label className="text-xs font-bold text-muted-foreground uppercase">Destination Target Link</Label>
             <Input 
-              placeholder="/#forum-2026"
+              placeholder="/forum"
               required
               className="h-11 rounded-xl bg-background border-border text-xs font-mono"
               value={banner.linkUrl}

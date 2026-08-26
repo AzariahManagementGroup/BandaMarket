@@ -21,6 +21,8 @@ const AcademyPage = lazy(() => import("./pages/AcademyPage.tsx"));
 const OfflineCommercePage = lazy(() => import("./pages/OfflineCommercePage"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess.tsx"));
 
+const ForumPage = lazy(() => import("./pages/ForumPage.tsx"));
+
 const queryClient = new QueryClient();
 
 // A simple loading fallback for route transitions
@@ -39,6 +41,7 @@ const App = () => (
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/forum" element={<ForumPage />} />
             <Route path="/academy" element={<AcademyPage />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/signin" element={<Signin />} />

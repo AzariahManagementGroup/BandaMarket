@@ -12,7 +12,7 @@ const EventPopupModal = () => {
   }>({
     imageUrl: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
     title: "Cameroon E-Commerce Forum 2026",
-    linkUrl: "/#forum-2026"
+    linkUrl: "/forum"
   });
 
   useEffect(() => {
@@ -28,7 +28,7 @@ const EventPopupModal = () => {
           setBanner({
             imageUrl: data.banner.imageUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
             title: data.banner.title || "Cameroon E-Commerce Forum 2026",
-            linkUrl: data.banner.linkUrl || "/#forum-2026"
+            linkUrl: data.banner.linkUrl || "/forum"
           });
         }
       })

@@ -10,7 +10,6 @@ import RegionsMap from "@/components/camemark/RegionsMap";
 import HowItWorks from "@/components/camemark/HowItWorks";
 import BuiltFor from "@/components/camemark/BuiltFor";
 import TrustBar from "@/components/camemark/TrustBar";
-import ForumEventSection from "@/components/camemark/ForumEventSection";
 import AcademyLandingSection from "@/components/camemark/AcademyLandingSection";
 import EventPopupModal from "@/components/camemark/EventPopupModal";
 import Footer from "@/components/camemark/Footer";
@@ -65,7 +64,6 @@ const Index = () => {
         <StrategicPartners />
         <Hero />
         <AcademyLandingSection />
-        <ForumEventSection />
         <FeatureGrid />
         <section className="container py-20 grid gap-12 lg:grid-cols-2 items-start">
           <RegionsMap />

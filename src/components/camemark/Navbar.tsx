@@ -77,7 +77,7 @@ const Navbar = () => {
       items: [
         { key: "marketplace", label: t("nav.marketplace"), href: "/market-zone" },
         { key: "regions", label: t("nav.regions"), href: "#regions", isRegions: true },
-        { key: "forum", label: "Forum 2026 🇨🇲", href: "/#forum-2026", highlight: true },
+        { key: "forum", label: "Forum 2026 🇨🇲", href: "/forum", highlight: true },
       ],
     },
     {
