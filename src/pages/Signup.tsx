@@ -480,6 +480,8 @@ const Signup = () => {
             <Link to="/signin" className="text-primary font-semibold story-link">{t("signup.signin")}</Link>
             </p>
           </form>
+            </>
+          )}
         </section>
       </main>
     </div>
