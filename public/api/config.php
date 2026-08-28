@@ -409,17 +409,21 @@ function create_inapp_notification($conn, $userId, $title, $message) {
     $notifId = generate_uuid();
     $now = date('Y-m-d H:i:s');
     $stmt = $conn->prepare("INSERT INTO notifications (id, userId, title, message, isRead, createdAt) VALUES (?, ?, ?, ?, 0, ?)");
-    $stmt->bind_param("sssss", $notifId, $userId, $title, $message, $now);
-    $stmt->execute();
-    $stmt->close();
+    if ($stmt) {
+        $stmt->bind_param("sssss", $notifId, $userId, $title, $message, $now);
+        $stmt->execute();
+        $stmt->close();
+    }
 }
 
 // Helper function to log user activity (what the user does on the platform)
 function log_user_activity($conn, $userId, $action, $details) {
     $stmt = $conn->prepare("INSERT INTO user_activity_logs (userId, action, details) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $userId, $action, $details);
-    $stmt->execute();
-    $stmt->close();
+    if ($stmt) {
+        $stmt->bind_param("sss", $userId, $action, $details);
+        $stmt->execute();
+        $stmt->close();
+    }
 }
 // JWT Configuration
 $jwt_secret = "camemark_super_secret_key_2026_!@#";
