@@ -49,6 +49,11 @@ function get_db_connection() {
 }
 
 // Automatic Schema Initialization
+@$conn->query("ALTER TABLE users ADD COLUMN isVerified tinyint(1) NOT NULL DEFAULT 0");
+@$conn->query("ALTER TABLE users ADD COLUMN otpCode varchar(191) DEFAULT NULL");
+@$conn->query("ALTER TABLE users ADD COLUMN otpExpiresAt datetime DEFAULT NULL");
+@$conn->query("ALTER TABLE users ADD COLUMN lastLoginAt datetime DEFAULT NULL");
+
 $conn->query("CREATE TABLE IF NOT EXISTS courses (
     id VARCHAR(100) PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
