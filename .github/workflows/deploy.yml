@@ -1,0 +1,41 @@
+name: Deploy to Namecheap cPanel
+
+on:
+  push:
+    branches:
+      - main
+      - master # In case your main branch is named master
+
+jobs:
+  web-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # You can adjust this to your preferred Node version
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Sync files via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: /camemark.com/
+          # Optional: add exclude patterns here if needed
+          # exclude: |
+          #   **/.git*
+          #   **/.git*/**
+          #   **/node_modules/**
