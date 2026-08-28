@@ -209,6 +209,11 @@ if (strpos($uri, 'signin') !== false) {
                 
                 // Save OTP
                 $otpStmt = $conn->prepare("UPDATE users SET otpCode = ?, otpExpiresAt = ? WHERE id = ?");
+                if (!$otpStmt) {
+                    http_response_code(500);
+                    echo json_encode(["error" => "Database error on OTP save: " . $conn->error]);
+                    exit();
+                }
                 $otpStmt->bind_param("sss", $otpCode, $otpExpiresAt, $row['id']);
                 $otpStmt->execute();
                 $otpStmt->close();
@@ -235,6 +240,11 @@ if (strpos($uri, 'signin') !== false) {
 
             // Get wallet balance
             $wstmt = $conn->prepare("SELECT balance FROM wallets WHERE userId = ?");
+            if (!$wstmt) {
+                http_response_code(500);
+                echo json_encode(["error" => "Database error on wallet fetch: " . $conn->error]);
+                exit();
+            }
             $wstmt->bind_param("s", $row['id']);
             $wstmt->execute();
             $wres = $wstmt->get_result();
