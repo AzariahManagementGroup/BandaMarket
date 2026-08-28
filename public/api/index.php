@@ -289,7 +289,12 @@ if (strpos($uri, 'verify-otp') !== false) {
         if ($row['otpCode'] === $otp && $row['otpExpiresAt'] > $now) {
             // OTP is valid
             // Clear OTP and set verified
-            $updateStmt = $conn->prepare("UPDATE users SET otpCode = NULL, otpExpiresAt = NULL, isVerified = 1, lastLoginAt = CURRENT_TIMESTAMP(3) WHERE id = ?");
+            $updateStmt = $conn->prepare("UPDATE users SET otpCode = NULL, otpExpiresAt = NULL, isVerified = 1, lastLoginAt = NOW() WHERE id = ?");
+            if (!$updateStmt) {
+                http_response_code(500);
+                echo json_encode(["error" => "Database error on update: " . $conn->error]);
+                exit();
+            }
             $updateStmt->bind_param("s", $row['id']);
             $updateStmt->execute();
             $updateStmt->close();
@@ -303,6 +308,11 @@ if (strpos($uri, 'verify-otp') !== false) {
 
             // Fetch wallet
             $wstmt = $conn->prepare("SELECT balance, currency FROM wallets WHERE userId = ?");
+            if (!$wstmt) {
+                http_response_code(500);
+                echo json_encode(["error" => "Database error on wallets: " . $conn->error]);
+                exit();
+            }
             $wstmt->bind_param("s", $row['id']);
             $wstmt->execute();
             $wres = $wstmt->get_result();
