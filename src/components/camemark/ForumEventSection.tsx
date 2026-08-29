@@ -90,12 +90,12 @@ const ForumEventSection = () => {
       const tranzakData = await tranzakRes.json();
       
       if (!tranzakRes.ok) {
-        toast.error("Payment initiation failed. Please try again.");
+        toast.error(tranzakData?.error || tranzakData?.message || "Payment initiation failed. Please try again.");
         setIsSubmitting(false);
         return;
       }
 
-      const targetUrl = tranzakData?.data?.paymentUrl || tranzakData?.data?.links?.paymentAuthUrl;
+      const targetUrl = tranzakData?.data?.paymentUrl || tranzakData?.data?.links?.paymentAuthUrl || tranzakData?.data?.paymentAuthUrl || tranzakData?.links?.paymentAuthUrl || tranzakData?.paymentUrl || tranzakData?.paymentAuthUrl;
       // If Web Redirect, go to Tranzak checkout
       if (paymentMethod === "web" && targetUrl) {
         window.location.href = targetUrl;
