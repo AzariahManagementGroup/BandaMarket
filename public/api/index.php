@@ -193,6 +193,68 @@ if (strpos($uri, 'signin') !== false) {
         exit();
     }
 
+    $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    if (strpos($ip, ',') !== false) {
+        $ip = explode(',', $ip)[0];
+    }
+    
+    // Check IP rate limit (last 5 minutes)
+    $ipStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM login_logs WHERE ipAddress = ? AND status = 'FAILED' AND createdAt > (NOW() - INTERVAL 5 MINUTE)");
+    if ($ipStmt) {
+        $ipStmt->bind_param("s", $ip);
+        $ipStmt->execute();
+        $ipFailures = (int)$ipStmt->get_result()->fetch_assoc()['cnt'];
+        $ipStmt->close();
+    } else {
+        $ipFailures = 0;
+    }
+
+    // Check Account rate limit (last 15 minutes)
+    $accStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM login_logs WHERE email = ? AND status = 'FAILED' AND createdAt > (NOW() - INTERVAL 15 MINUTE)");
+    if ($accStmt) {
+        $accStmt->bind_param("s", $email);
+        $accStmt->execute();
+        $accFailures = (int)$accStmt->get_result()->fetch_assoc()['cnt'];
+        $accStmt->close();
+    } else {
+        $accFailures = 0;
+    }
+
+    // IP block: 10 failures -> lock for 15 mins
+    $ipLockStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM login_logs WHERE ipAddress = ? AND status = 'FAILED' AND createdAt > (NOW() - INTERVAL 15 MINUTE)");
+    if ($ipLockStmt) {
+        $ipLockStmt->bind_param("s", $ip);
+        $ipLockStmt->execute();
+        $ipLockCount = (int)$ipLockStmt->get_result()->fetch_assoc()['cnt'];
+        $ipLockStmt->close();
+        if ($ipLockCount >= 10) {
+            http_response_code(429);
+            echo json_encode(["error" => "Too many failed attempts from this IP. Please try again in 15 minutes."]);
+            exit();
+        }
+    }
+
+    // Account block: 5 failures -> lock for 1 min
+    $accLockStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM login_logs WHERE email = ? AND status = 'FAILED' AND createdAt > (NOW() - INTERVAL 1 MINUTE)");
+    if ($accLockStmt) {
+        $accLockStmt->bind_param("s", $email);
+        $accLockStmt->execute();
+        $accLockCount = (int)$accLockStmt->get_result()->fetch_assoc()['cnt'];
+        $accLockStmt->close();
+        if ($accLockCount >= 5) {
+            http_response_code(429);
+            echo json_encode(["error" => "Too many failed attempts for this account. Please try again in 1 minute."]);
+            exit();
+        }
+    }
+
+    // Progressive delays based on max failures
+    $maxFailures = max($ipFailures, $accFailures);
+    if ($maxFailures == 2) sleep(1);
+    else if ($maxFailures == 3) sleep(2);
+    else if ($maxFailures == 4) sleep(5);
+    else if ($maxFailures >= 5) sleep(15);
+
     $stmt = $conn->prepare("SELECT id, email, passwordHash, fullName, role, preferredCurrency, isVerified, lastLoginAt FROM users WHERE email = ?");
     if (!$stmt) {
         http_response_code(500);
@@ -268,6 +330,29 @@ if (strpos($uri, 'signin') !== false) {
 
             log_user_activity($conn, $row['id'], "login", "User logged into their account");
 
+            // Log successful login attempt
+            $location = 'Unknown Location';
+            if ($ip === '::1' || $ip === '127.0.0.1' || $ip === 'localhost') {
+                $location = 'Localhost';
+            } else {
+                $ctx = stream_context_create(['http' => ['timeout' => 2]]);
+                $json = @file_get_contents("http://ip-api.com/json/{$ip}", false, $ctx);
+                if ($json) {
+                    $geo = json_decode($json, true);
+                    if (isset($geo['status']) && $geo['status'] === 'success') {
+                        $location = $geo['city'] . ', ' . $geo['country'];
+                    }
+                }
+            }
+            
+            $logId = bin2hex(random_bytes(16));
+            $logStmt = $conn->prepare("INSERT INTO login_logs (id, email, ipAddress, location, status) VALUES (?, ?, ?, ?, 'SUCCESS')");
+            if ($logStmt) {
+                $logStmt->bind_param("ssss", $logId, $email, $ip, $location);
+                $logStmt->execute();
+                $logStmt->close();
+            }
+
             http_response_code(200);
             echo json_encode([
                 "message" => "Login successful!",
@@ -283,6 +368,54 @@ if (strpos($uri, 'signin') !== false) {
             ]);
             exit();
         }
+    }
+
+    // Log failed attempt
+    $location = 'Unknown Location';
+    if ($ip === '::1' || $ip === '127.0.0.1' || $ip === 'localhost') {
+        $location = 'Localhost';
+    } else {
+        $ctx = stream_context_create(['http' => ['timeout' => 2]]);
+        $json = @file_get_contents("http://ip-api.com/json/{$ip}", false, $ctx);
+        if ($json) {
+            $geo = json_decode($json, true);
+            if (isset($geo['status']) && $geo['status'] === 'success') {
+                $location = $geo['city'] . ', ' . $geo['country'];
+            }
+        }
+    }
+    
+    $logId = bin2hex(random_bytes(16));
+    $logStmt = $conn->prepare("INSERT INTO login_logs (id, email, ipAddress, location, status) VALUES (?, ?, ?, ?, 'FAILED')");
+    if ($logStmt) {
+        $logStmt->bind_param("ssss", $logId, $email, $ip, $location);
+        $logStmt->execute();
+        $logStmt->close();
+    }
+    
+    // Security email on 3rd failure
+    if ($accFailures + 1 == 3) {
+        $userName = "User";
+        $nameStmt = $conn->prepare("SELECT fullName FROM users WHERE email = ?");
+        if ($nameStmt) {
+            $nameStmt->bind_param("s", $email);
+            $nameStmt->execute();
+            $nameRes = $nameStmt->get_result()->fetch_assoc();
+            if ($nameRes && !empty($nameRes['fullName'])) {
+                $userName = explode(' ', trim($nameRes['fullName']))[0];
+            }
+            $nameStmt->close();
+        }
+
+        $subject = "Security Alert: Failed Login Attempts";
+        $htmlBody = "<h3>Hi {$userName},</h3>
+<p>We noticed 3 failed login attempts to your CameMark account just now.</p>
+<p><strong>IP Address:</strong> {$ip}<br/>
+<strong>Location:</strong> {$location}</p>
+<p>If this was you, you can ignore this email or use the \"Forgot Password\" feature if you need a reset.</p>
+<p>If this wasn't you, someone may be trying to access your account. Please consider resetting your password immediately.</p>";
+
+        send_html_email($email, $subject, $htmlBody, $conn);
     }
 
     http_response_code(401);

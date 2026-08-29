@@ -545,3 +545,13 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-07-22 19:04:24
+
+CREATE TABLE \login_logs\ (
+  \id\ varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  \email\ varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  \ipAddress\ varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  \location\ varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  \status\ varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  \createdAt\ datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (\id\)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
