@@ -433,12 +433,18 @@ function create_inapp_notification($conn, $userId, $title, $message) {
 }
 
 // Helper function to log user activity (what the user does on the platform)
-function log_user_activity($conn, $userId, $action, $details) {
-    $stmt = $conn->prepare("INSERT INTO user_activity_logs (userId, action, details) VALUES (?, ?, ?)");
-    if ($stmt) {
-        $stmt->bind_param("sss", $userId, $action, $details);
-        $stmt->execute();
-        $stmt->close();
+function log_user_activity($conn, $userId, $action, $details = '') {
+    try {
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+        $stmt = $conn->prepare("INSERT INTO user_activity_logs (userId, action, details, ipAddress, userAgent) VALUES (?, ?, ?, ?, ?)");
+        if ($stmt) {
+            $stmt->bind_param("sssss", $userId, $action, $details, $ip, $ua);
+            $stmt->execute();
+            $stmt->close();
+        }
+    } catch (Exception $e) {
+        // Silently ignore activity log errors (e.g., table doesn't exist)
     }
 }
 // JWT Configuration
