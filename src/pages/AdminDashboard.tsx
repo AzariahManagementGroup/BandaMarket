@@ -13,6 +13,7 @@ import RoleManager from "@/components/camemark/admin/RoleManager";
 import AdminForumRegistrations from "@/components/camemark/admin/AdminForumRegistrations";
 import AdminCardsManager from "@/components/camemark/admin/AdminCardsManager";
 import AdminSupportTickets from "@/components/camemark/admin/AdminSupportTickets";
+import LoginLogs from "@/components/camemark/admin/LoginLogs";
 
 
 const AdminDashboard = () => {
@@ -54,6 +55,7 @@ const AdminDashboard = () => {
     { label: "User Management", icon: Users, path: "/users" },
     { label: "Forum Registrations", icon: CheckCircle, path: "/forum-registrations" },
     { label: "Global Activity Logs", icon: LayoutDashboard, path: "/activity-logs" },
+    { label: "Login Logs", icon: Key, path: "/login-logs" },
     { label: "Roles & Permissions", icon: Shield, path: "/roles" },
   ];
 
@@ -148,6 +150,7 @@ const AdminDashboard = () => {
             <Route path="/forum-registrations" element={<AdminForumRegistrations />} />
             <Route path="/roles" element={<RoleManager />} />
             <Route path="/activity-logs" element={<AdminActivityLogs />} />
+            <Route path="/login-logs" element={<LoginLogs />} />
             <Route path="*" element={<AdminOverview />} />
           </Routes>
         </div>

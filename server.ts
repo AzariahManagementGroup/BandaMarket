@@ -160,8 +160,29 @@ app.post("/api/auth/signin", async (req, res) => {
 
     const isValidPassword = user ? await bcrypt.compare(password, user.passwordHash) : false;
 
+    // Helper to fetch location asynchronously
+    const fetchLocationAsync = async (ipAddr: string) => {
+      if (ipAddr === "::1" || ipAddr === "127.0.0.1" || ipAddr === "localhost") return "Localhost";
+      try {
+        const geoRes = await fetch(`http://ip-api.com/json/${ipAddr}`);
+        const geoData = await geoRes.json();
+        if (geoData.status === "success") return `${geoData.city}, ${geoData.country}`;
+      } catch (e) {
+        console.error("Failed to fetch location:", e);
+      }
+      return "Unknown Location";
+    };
+
     if (!user || !isValidPassword) {
-      // Record failure
+      // Record failure in DB (async to not block response)
+      prisma.loginLog.create({
+        data: { email, ipAddress: ip, status: "FAILED" }
+      }).then(async (log) => {
+        const loc = await fetchLocationAsync(ip);
+        await prisma.loginLog.update({ where: { id: log.id }, data: { location: loc } });
+      }).catch(console.error);
+
+      // Record failure in memory
       ipData.count++;
       accData.count++;
       
@@ -184,12 +205,70 @@ app.post("/api/auth/signin", async (req, res) => {
       ipFailures.set(ip, ipData);
       accountFailures.set(email, accData);
 
+      if (user && accData.count === 3) {
+        let location = "Unknown Location";
+        try {
+          if (ip !== "::1" && ip !== "127.0.0.1" && ip !== "localhost") {
+            const geoRes = await fetch(`http://ip-api.com/json/${ip}`);
+            const geoData = await geoRes.json();
+            if (geoData.status === "success") {
+              location = `${geoData.city}, ${geoData.country}`;
+            }
+          } else {
+            location = "Localhost";
+          }
+        } catch (e) {
+          console.error("Failed to fetch location for email:", e);
+        }
+
+        transporter.sendMail({
+          from: `"CameMark Security" <${process.env.SMTP_USER || "podoremetropolis@gmail.com"}>`,
+          to: user.email,
+          replyTo: `"CameMark Support" <support@camemark.com>`,
+          subject: "Security Alert: Multiple Failed Login Attempts",
+          text: `Hi ${user.fullName ? user.fullName.split(' ')[0] : 'User'},
+          
+We noticed 3 failed login attempts to your CameMark account just now.
+
+IP Address: ${ip}
+Location: ${location}
+
+If this was you, you can ignore this email or use the "Forgot Password" feature if you need a reset.
+If this wasn't you, someone may be trying to access your account. Please consider resetting your password immediately.
+
+© ${new Date().getFullYear()} CameMark. All rights reserved.`,
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 8px;">
+              <h2 style="color: #d9534f; text-align: center;">Security Alert</h2>
+              <p>Hi ${user.fullName ? user.fullName.split(' ')[0] : 'User'},</p>
+              <p>We noticed <strong>3 failed login attempts</strong> to your CameMark account just now.</p>
+              <div style="background-color: #fff; padding: 15px; border-left: 4px solid #d9534f; margin: 20px 0;">
+                <p style="margin: 0 0 10px 0;"><strong>IP Address:</strong> ${ip}</p>
+                <p style="margin: 0;"><strong>Location:</strong> ${location}</p>
+              </div>
+              <p>If this was you, you can ignore this email or use the "Forgot Password" feature if you need a reset.</p>
+              <p>If this wasn't you, someone may be trying to access your account. Please consider resetting your password immediately.</p>
+              <br/>
+              <p style="font-size: 12px; color: #888; text-align: center;">&copy; ${new Date().getFullYear()} CameMark. All rights reserved.</p>
+            </div>
+          `,
+        }).catch(err => console.error("Failed to send security alert email:", err));
+      }
+
       return res.status(400).json({ error: "Invalid email or password." });
     }
 
     // Success! Clear failures
     ipFailures.delete(ip);
     accountFailures.delete(email);
+
+    // Record success in DB
+    prisma.loginLog.create({
+      data: { email, ipAddress: ip, status: "SUCCESS" }
+    }).then(async (log) => {
+      const loc = await fetchLocationAsync(ip);
+      await prisma.loginLog.update({ where: { id: log.id }, data: { location: loc } });
+    }).catch(console.error);
 
     const token = jwt.sign({ userId: user.id, role: user.role, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
 
@@ -480,6 +559,33 @@ app.post("/api/reset-password", async (req, res) => {
   } catch (error: any) {
     console.error("Reset password error:", error);
     return res.status(500).json({ error: error.message || "Internal server error" });
+  }
+});
+
+// Admin Login Logs Endpoint
+app.get("/api/admin/login-logs", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, JWT_SECRET) as { role?: string };
+    
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ error: "Forbidden: Admins only" });
+    }
+
+    const logs = await prisma.loginLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 100 // Limit to latest 100 for performance
+    });
+
+    res.json(logs);
+  } catch (error) {
+    console.error("Fetch login logs error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

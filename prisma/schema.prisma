@@ -532,3 +532,14 @@ enum users_status {
   active
   banned
 }
+
+model LoginLog {
+  id        String   @id @default(uuid())
+  email     String
+  ipAddress String
+  location  String?
+  status    String   // "SUCCESS" or "FAILED"
+  createdAt DateTime @default(now())
+  
+  @@map("login_logs")
+}
