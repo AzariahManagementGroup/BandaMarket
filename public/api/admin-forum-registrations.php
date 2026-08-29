@@ -14,11 +14,7 @@ if (!$authHeader || strpos($authHeader, 'Bearer ') !== 0) {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $stmt = $conn->prepare("SELECT * FROM forum_registrations ORDER BY registered_at DESC");
     $stmt->execute();
-    $result = $stmt->get_result();
-    $registrations = [];
-    while ($row = $result->fetch_assoc()) {
-        $registrations[] = $row;
-    }
+    $registrations = fetch_assoc_stmt($stmt);
     $stmt->close();
 
     echo json_encode([

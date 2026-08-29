@@ -566,4 +566,36 @@ function authenticate_request() {
     }
     return null;
 }
+
+/**
+ * Helper to fetch all rows as associative array when mysqlnd (get_result) is not available.
+ */
+function fetch_assoc_stmt($stmt) {
+    $meta = $stmt->result_metadata();
+    if (!$meta) return [];
+
+    $fields = [];
+    while ($field = $meta->fetch_field()) {
+        $fields[] = $field->name;
+    }
+
+    $results = [];
+    $row = [];
+    $bindParams = [];
+    foreach ($fields as $field) {
+        $bindParams[] = &$row[$field];
+    }
+
+    call_user_func_array([$stmt, 'bind_result'], $bindParams);
+
+    while ($stmt->fetch()) {
+        $c = [];
+        foreach ($row as $key => $val) {
+            $c[$key] = $val;
+        }
+        $results[] = $c;
+    }
+
+    return $results;
+}
 ?>

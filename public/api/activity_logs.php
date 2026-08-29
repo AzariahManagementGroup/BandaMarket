@@ -13,11 +13,7 @@ if ($request_method === 'GET') {
     $logs = [];
     $stmt = $conn->prepare("SELECT * FROM admin_activity_logs ORDER BY createdAt DESC LIMIT 100");
     $stmt->execute();
-    $res = $stmt->get_result();
-
-    while ($row = $res->fetch_assoc()) {
-        $logs[] = $row;
-    }
+    $logs = fetch_assoc_stmt($stmt);
     
     echo json_encode(["success" => true, "logs" => $logs]);
     exit();

@@ -26,9 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $wstmt = $conn->prepare("SELECT balance, currency FROM wallets WHERE userId = ?");
         $wstmt->bind_param("s", $userId);
         $wstmt->execute();
-        $wres = $wstmt->get_result();
+        $wres = fetch_assoc_stmt($wstmt);
         $wallets = [];
-        while($wrow = $wres->fetch_assoc()) {
+        foreach ($wres as $wrow) {
             $wallets[] = $wrow;
         }
         $wstmt->close();
@@ -38,9 +38,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($pstmt) {
             $pstmt->bind_param("s", $userId);
             $pstmt->execute();
-            $pres = $pstmt->get_result();
+            $pres = fetch_assoc_stmt($pstmt);
             $products = [];
-            while($prow = $pres->fetch_assoc()) {
+            foreach ($pres as $prow) {
                 if (!empty($prow['imageUrl'])) {
                     $prow['images'] = [$prow['imageUrl']]; // Format to array for frontend
                 } else {
@@ -57,9 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $lstmt = $conn->prepare("SELECT action, details, createdAt, adminId FROM admin_activity_logs WHERE targetUserId = ? ORDER BY createdAt DESC");
         $lstmt->bind_param("s", $userId);
         $lstmt->execute();
-        $lres = $lstmt->get_result();
+        $lres = fetch_assoc_stmt($lstmt);
         $logs = [];
-        while($lrow = $lres->fetch_assoc()) {
+        foreach ($lres as $lrow) {
             $logs[] = $lrow;
         }
         $lstmt->close();
@@ -68,9 +68,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $ulstmt = $conn->prepare("SELECT action, details, createdAt FROM user_activity_logs WHERE userId = ? ORDER BY createdAt DESC");
         $ulstmt->bind_param("s", $userId);
         $ulstmt->execute();
-        $ulres = $ulstmt->get_result();
+        $ulres = fetch_assoc_stmt($ulstmt);
         $userLogs = [];
-        while($ulrow = $ulres->fetch_assoc()) {
+        foreach ($ulres as $ulrow) {
             $userLogs[] = $ulrow;
         }
         $ulstmt->close();
@@ -87,11 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Fetch all users
     $stmt = $conn->prepare("SELECT id, email, fullName as full_name, phone, country, region, city, role, status, warningCount, referralCode, createdAt as created_at FROM users ORDER BY createdAt DESC");
     $stmt->execute();
-    $result = $stmt->get_result();
-    $users = [];
-    while ($row = $result->fetch_assoc()) {
-        $users[] = $row;
-    }
+    $users = fetch_assoc_stmt($stmt);
     
     echo json_encode($users);
     exit();
@@ -175,8 +171,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("SELECT email, fullName FROM users WHERE id = ?");
         $stmt->bind_param("s", $userId);
         $stmt->execute();
-        $res = $stmt->get_result();
-        if ($row = $res->fetch_assoc()) {
+        $res = fetch_assoc_stmt($stmt);
+        if (count($res) > 0) {
+            $row = $res[0];
             $userEmail = $row['email'];
             $userName = $row['fullName'];
             // Since we might not have a reliable SMTP setup right here, we'll simulate or use send_email if available.

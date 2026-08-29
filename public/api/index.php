@@ -601,6 +601,11 @@ if (strpos($uri, 'admin/users') !== false) {
     exit();
 }
 
+if (strpos($uri, 'admin/login-logs') !== false) {
+    require_once __DIR__ . '/activity_logs.php';
+    exit();
+}
+
 if (strpos($uri, 'admin/roles') !== false) {
     require_once __DIR__ . '/admin-roles.php';
     exit();
