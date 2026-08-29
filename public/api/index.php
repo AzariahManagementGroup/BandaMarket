@@ -222,7 +222,9 @@ if (strpos($uri, 'signin') !== false) {
         if ($ipStmt) {
             $ipStmt->bind_param("s", $ip);
             $ipStmt->execute();
-            $ipFailures = (int)$ipStmt->get_result()->fetch_assoc()['cnt'];
+            $ipStmt->bind_result($ipCnt);
+            $ipStmt->fetch();
+            $ipFailures = (int)$ipCnt;
             $ipStmt->close();
         }
 
@@ -231,7 +233,9 @@ if (strpos($uri, 'signin') !== false) {
         if ($accStmt) {
             $accStmt->bind_param("s", $email);
             $accStmt->execute();
-            $accFailures = (int)$accStmt->get_result()->fetch_assoc()['cnt'];
+            $accStmt->bind_result($accCnt);
+            $accStmt->fetch();
+            $accFailures = (int)$accCnt;
             $accStmt->close();
         }
 
@@ -240,7 +244,9 @@ if (strpos($uri, 'signin') !== false) {
         if ($ipLockStmt) {
             $ipLockStmt->bind_param("s", $ip);
             $ipLockStmt->execute();
-            $ipLockCount = (int)$ipLockStmt->get_result()->fetch_assoc()['cnt'];
+            $ipLockStmt->bind_result($ipLockCountRes);
+            $ipLockStmt->fetch();
+            $ipLockCount = (int)$ipLockCountRes;
             $ipLockStmt->close();
             if ($ipLockCount >= 10) {
                 http_response_code(429);
@@ -254,7 +260,9 @@ if (strpos($uri, 'signin') !== false) {
         if ($accLockStmt) {
             $accLockStmt->bind_param("s", $email);
             $accLockStmt->execute();
-            $accLockCount = (int)$accLockStmt->get_result()->fetch_assoc()['cnt'];
+            $accLockStmt->bind_result($accLockCountRes);
+            $accLockStmt->fetch();
+            $accLockCount = (int)$accLockCountRes;
             $accLockStmt->close();
             if ($accLockCount >= 5) {
                 http_response_code(429);
@@ -281,9 +289,20 @@ if (strpos($uri, 'signin') !== false) {
     }
     $stmt->bind_param("s", $email);
     $stmt->execute();
-    $result = $stmt->get_result();
+    $stmt->bind_result($row_id, $row_email, $row_passwordHash, $row_fullName, $row_role, $row_preferredCurrency, $row_isVerified, $row_lastLoginAt);
 
-    if ($row = $result->fetch_assoc()) {
+    if ($stmt->fetch()) {
+        $row = [
+            'id' => $row_id,
+            'email' => $row_email,
+            'passwordHash' => $row_passwordHash,
+            'fullName' => $row_fullName,
+            'role' => $row_role,
+            'preferredCurrency' => $row_preferredCurrency,
+            'isVerified' => $row_isVerified,
+            'lastLoginAt' => $row_lastLoginAt
+        ];
+        $stmt->close();
         if (password_verify($password, $row['passwordHash'])) {
             // Check if OTP is required (not verified, or last login was > 7 days ago)
             $requiresOtp = false;
@@ -342,8 +361,11 @@ if (strpos($uri, 'signin') !== false) {
             }
             $wstmt->bind_param("s", $row['id']);
             $wstmt->execute();
-            $wres = $wstmt->get_result();
-            $walletData = $wres->fetch_assoc() ?: ["balance" => 0.0, "currency" => $row['preferredCurrency']];
+            $wstmt->bind_result($wallet_balance);
+            $walletData = ["balance" => 0.0, "currency" => $row['preferredCurrency']];
+            if ($wstmt->fetch()) {
+                $walletData['balance'] = (float)$wallet_balance;
+            }
             $wstmt->close();
 
             log_user_activity($conn, $row['id'], "login", "User logged into their account");
@@ -388,6 +410,8 @@ if (strpos($uri, 'signin') !== false) {
             ]);
             exit();
         }
+    } else {
+        $stmt->close();
     }
 
     // Log failed attempt
@@ -422,9 +446,9 @@ if (strpos($uri, 'signin') !== false) {
         if ($nameStmt) {
             $nameStmt->bind_param("s", $email);
             $nameStmt->execute();
-            $nameRes = $nameStmt->get_result()->fetch_assoc();
-            if ($nameRes && !empty($nameRes['fullName'])) {
-                $userName = explode(' ', trim($nameRes['fullName']))[0];
+            $nameStmt->bind_result($u_fullName);
+            if ($nameStmt->fetch()) {
+                $userName = explode(' ', trim($u_fullName))[0];
             }
             $nameStmt->close();
         }
@@ -462,9 +486,20 @@ if (strpos($uri, 'verify-otp') !== false) {
     $stmt = $conn->prepare("SELECT id, email, fullName, role, preferredCurrency, otpCode, otpExpiresAt FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
-    $result = $stmt->get_result();
+    $stmt->bind_result($row_id, $row_email, $row_fullName, $row_role, $row_preferredCurrency, $row_otpCode, $row_otpExpiresAt);
 
-    if ($row = $result->fetch_assoc()) {
+    if ($stmt->fetch()) {
+        $row = [
+            'id' => $row_id,
+            'email' => $row_email,
+            'fullName' => $row_fullName,
+            'role' => $row_role,
+            'preferredCurrency' => $row_preferredCurrency,
+            'otpCode' => $row_otpCode,
+            'otpExpiresAt' => $row_otpExpiresAt
+        ];
+        $stmt->close();
+
         $now = date('Y-m-d H:i:s');
         if ($row['otpCode'] === $otp && $row['otpExpiresAt'] > $now) {
             // OTP is valid
@@ -495,8 +530,12 @@ if (strpos($uri, 'verify-otp') !== false) {
             }
             $wstmt->bind_param("s", $row['id']);
             $wstmt->execute();
-            $wres = $wstmt->get_result();
-            $walletData = $wres->fetch_assoc() ?: ["balance" => 0.0, "currency" => $row['preferredCurrency']];
+            $wstmt->bind_result($w_balance, $w_currency);
+            $walletData = ["balance" => 0.0, "currency" => $row['preferredCurrency']];
+            if ($wstmt->fetch()) {
+                $walletData['balance'] = (float)$w_balance;
+                if ($w_currency) $walletData['currency'] = $w_currency;
+            }
             $wstmt->close();
 
             log_user_activity($conn, $row['id'], "login", "User verified OTP and logged in");
