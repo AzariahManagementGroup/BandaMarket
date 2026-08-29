@@ -12,6 +12,11 @@ if (strpos($uri, 'create_login_logs') !== false) {
     exit();
 }
 
+if (strpos($uri, 'update_schema') !== false) {
+    require_once __DIR__ . '/update_schema.php';
+    exit();
+}
+
 if (strpos($uri, 'admin-forum-registrations') !== false) {
     require_once __DIR__ . '/admin-forum-registrations.php';
     exit();
