@@ -157,7 +157,7 @@ if ($request_method === 'GET') {
         $types .= "sss";
     }
 
-    $sql = "SELECT id, title, category, price, currency, rating, '0' as reviewsCount, region, sellerName as seller, imageUrl as img, badge as tag, isBargainable as isBargain, quantity as stock, description, createdAt as created_at FROM products";
+    $sql = "SELECT id, title, category, price, currency, rating, '0' as reviewsCount, region, sellerName as seller, imageUrl as img, badge as tag, isBargainable as isBargain, stock, description, created_at FROM products";
     if (count($where) > 0) {
         $sql .= " WHERE " . implode(" AND ", $where);
     }

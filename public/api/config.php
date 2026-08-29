@@ -59,8 +59,9 @@ function get_db_connection() {
 }
 
 // Automatic Schema Initialization
-@$conn->query("ALTER TABLE users ADD COLUMN isVerified tinyint(1) NOT NULL DEFAULT 0");
-@$conn->query("ALTER TABLE users ADD COLUMN otpCode varchar(191) DEFAULT NULL");
+try {
+    @$conn->query("ALTER TABLE users ADD COLUMN isVerified tinyint(1) NOT NULL DEFAULT 0");
+    @$conn->query("ALTER TABLE users ADD COLUMN otpCode varchar(191) DEFAULT NULL");
 @$conn->query("ALTER TABLE users ADD COLUMN otpExpiresAt datetime DEFAULT NULL");
 @$conn->query("ALTER TABLE users ADD COLUMN lastLoginAt datetime DEFAULT NULL");
 
@@ -287,13 +288,16 @@ if ($rowRoles['count'] == 0) {
 }
 
 // Ensure courses table has certificate template columns (if they don't already exist)
-$checkCol = $conn->query("SHOW COLUMNS FROM courses LIKE 'certParticipationUrl'");
+$checkCol = @$conn->query("SHOW COLUMNS FROM courses LIKE 'certParticipationUrl'");
 if ($checkCol && $checkCol->num_rows === 0) {
-    $conn->query("ALTER TABLE courses ADD COLUMN certParticipationUrl TEXT AFTER videoUrl;");
+    @$conn->query("ALTER TABLE courses ADD COLUMN certParticipationUrl TEXT AFTER videoUrl;");
 }
-$checkCol2 = $conn->query("SHOW COLUMNS FROM courses LIKE 'certCompletionUrl'");
+$checkCol2 = @$conn->query("SHOW COLUMNS FROM courses LIKE 'certCompletionUrl'");
 if ($checkCol2 && $checkCol2->num_rows === 0) {
-    $conn->query("ALTER TABLE courses ADD COLUMN certCompletionUrl TEXT AFTER certParticipationUrl;");
+    @$conn->query("ALTER TABLE courses ADD COLUMN certCompletionUrl TEXT AFTER certParticipationUrl;");
+}
+} catch (Exception $e) {
+    // Ignore schema modification errors on production
 }
 
 // Helper function to generate UUID v4
