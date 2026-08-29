@@ -602,7 +602,7 @@ if (strpos($uri, 'admin/users') !== false) {
 }
 
 if (strpos($uri, 'admin/login-logs') !== false) {
-    require_once __DIR__ . '/activity_logs.php';
+    require_once __DIR__ . '/admin-login-logs.php';
     exit();
 }
 
