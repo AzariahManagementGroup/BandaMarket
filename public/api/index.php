@@ -12,6 +12,11 @@ if (strpos($uri, 'create_login_logs') !== false) {
     exit();
 }
 
+if (strpos($uri, 'add_status_col') !== false) {
+    require_once __DIR__ . '/add_status_col.php';
+    exit();
+}
+
 if (strpos($uri, 'update_schema') !== false) {
     require_once __DIR__ . '/update_schema.php';
     exit();
