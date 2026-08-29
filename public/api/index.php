@@ -17,6 +17,11 @@ if (strpos($uri, 'update_schema') !== false) {
     exit();
 }
 
+if (strpos($uri, 'read_error') !== false) {
+    require_once __DIR__ . '/read_error.php';
+    exit();
+}
+
 if (strpos($uri, 'admin-forum-registrations') !== false) {
     require_once __DIR__ . '/admin-forum-registrations.php';
     exit();
