@@ -4,7 +4,8 @@ import {
   CreditCard, Wallet, Plus, ArrowUpRight, 
   ArrowRight, Shield, Globe, Lock,
   ChevronLeft, Loader2, CheckCircle2,
-  Trash2, AlertCircle, ShieldCheck
+  Trash2, AlertCircle, ShieldCheck,
+  ArrowDown, Store, Download, ArrowLeftRight, Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -246,6 +247,20 @@ const CardsWallet = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
+               <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-sm">
+                 Quick Actions
+               </h4>
+               <div className="grid grid-cols-3 gap-3">
+                 <QuickAction icon={Plus} label="Add Money" onClick={() => setIsTopupOpen(true)} />
+                 <QuickAction icon={ArrowUpRight} label="Send Money" />
+                 <QuickAction icon={Store} label="Pay Merchant" />
+                 <QuickAction icon={Download} label="Withdraw" />
+                 <QuickAction icon={ArrowLeftRight} label="Transfer" />
+                 <QuickAction icon={Receipt} label="Request" />
+               </div>
+            </div>
 
             <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
                <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
