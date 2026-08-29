@@ -319,11 +319,11 @@ function send_html_email($toEmail, $subject, $bodyContent, $conn = null) {
     ob_start();
     $smtpHost = "ssl://smtp.gmail.com";
     $smtpPort = 465;
-    $smtpUser = "podoremetropolis@gmail.com";
-    $smtpPass = "ptfjtrjyaidmyqrf";
+    $smtpUser = "camermarketer@gmail.com";
+    $smtpPass = "jpsj nwue qkwf gfuo";
 
     if ($conn) {
-        $conn->query("REPLACE INTO smtp_settings (id, smtpHost, smtpPort, smtpUser, smtpPass, updatedAt) VALUES (1, 'smtp.gmail.com', '465', 'podoremetropolis@gmail.com', 'ptfjtrjyaidmyqrf', NOW())");
+        $conn->query("REPLACE INTO smtp_settings (id, smtpHost, smtpPort, smtpUser, smtpPass, updatedAt) VALUES (1, 'smtp.gmail.com', '465', 'camermarketer@gmail.com', 'jpsj nwue qkwf gfuo', NOW())");
 
         $res = $conn->query("SELECT * FROM smtp_settings ORDER BY id DESC LIMIT 1");
         if ($res && $row = $res->fetch_assoc()) {
