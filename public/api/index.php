@@ -57,6 +57,11 @@ if (strpos($uri, 'products') !== false) {
     exit();
 }
 
+if (strpos($uri, 'saved_items') !== false) {
+    require_once __DIR__ . '/saved_items.php';
+    exit();
+}
+
 if (strpos($uri, 'courses') !== false || strpos($uri, 'course-enroll') !== false) {
     if (strpos($uri, 'course-enroll') !== false) {
         require_once __DIR__ . '/course-enroll.php';

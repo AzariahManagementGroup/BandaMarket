@@ -19,7 +19,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS products (
     stock INT DEFAULT 100,
     description TEXT,
     sellerId VARCHAR(100) DEFAULT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
 // 2. Automatic Seed Logic if table is empty
@@ -103,22 +103,24 @@ if (intval($countRow['cnt']) === 0) {
     ];
 
     $stmt = $conn->prepare("INSERT IGNORE INTO products (id, title, category, price, rating, region, sellerName, imageUrl, badge, isBargainable, description) VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    foreach ($seedProducts as $p) {
-        $stmt->bind_param("ssdsssssis", 
-            $p['title'], 
-            $p['category'], 
-            $p['price'], 
-            $p['rating'], 
-            $p['region'], 
-            $p['sellerName'], 
-            $p['imageUrl'], 
-            $p['badge'], 
-            $p['isBargainable'], 
-            $p['description']
-        );
-        $stmt->execute();
+    if ($stmt) {
+        foreach ($seedProducts as $p) {
+            $stmt->bind_param("ssdsssssis", 
+                $p['title'], 
+                $p['category'], 
+                $p['price'], 
+                $p['rating'], 
+                $p['region'], 
+                $p['sellerName'], 
+                $p['imageUrl'], 
+                $p['badge'], 
+                $p['isBargainable'], 
+                $p['description']
+            );
+            $stmt->execute();
+        }
+        $stmt->close();
     }
-    $stmt->close();
 }
 
 $request_method = $_SERVER['REQUEST_METHOD'];
@@ -162,6 +164,11 @@ if ($request_method === 'GET') {
     $sql .= " ORDER BY id DESC";
 
     $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        http_response_code(500);
+        echo json_encode(["error" => "Database error: " . $conn->error]);
+        exit();
+    }
     if (!empty($types) && count($params) > 0) {
         $stmt->bind_param($types, ...$params);
     }
@@ -173,7 +180,7 @@ if ($request_method === 'GET') {
         $row['id'] = intval($row['id']);
         $row['price'] = floatval($row['price']);
         $row['isBargain'] = boolval($row['isBargain']);
-        $row['stock'] = intval($row['stock']);
+        $row['stock'] = isset($row['stock']) ? intval($row['stock']) : 100;
         $products[] = $row;
     }
     $stmt->close();

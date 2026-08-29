@@ -13,7 +13,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS bargain_deals (
     region VARCHAR(100) DEFAULT 'Littoral',
     sellerName VARCHAR(255) DEFAULT 'Verified Producer',
     isLive TINYINT(1) DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
 // Removed automatic seed logic for bargain deals per user request.
@@ -78,6 +78,11 @@ if ($request_method === 'POST') {
     }
 
     $stmt = $conn->prepare("INSERT INTO bargains (id, productId, productTitle, sellerId, sellerEmail, buyerName, buyerEmail, buyerPhone, offerPrice, offerQty, currency, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)");
+    if (!$stmt) {
+        http_response_code(500);
+        echo json_encode(["error" => "Database error: " . $conn->error]);
+        exit();
+    }
     $stmt->bind_param("ssssssssdiss", $id, $productId, $productTitle, $sellerId, $sellerEmail, $buyerName, $buyerEmail, $buyerPhone, $offerPrice, $offerQty, $currency, $now);
 
     if ($stmt->execute()) {
