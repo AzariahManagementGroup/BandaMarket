@@ -62,10 +62,21 @@ const ForumEventSection = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...registerForm, paymentStatus: "pending" })
       });
-      const regData = await regRes.json();
+
+      let regData: any = {};
+      try {
+        regData = await regRes.json();
+      } catch (parseErr) {
+        console.error("[Forum] Registration response was not JSON:", parseErr);
+        toast.error("Server error during registration. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log("[Forum] Registration response:", regRes.status, regData);
       
       if (!regRes.ok || !regData.success) {
-        toast.error("Registration failed. Please try again.");
+        toast.error(regData?.error || regData?.message || "Registration failed. Please try again.");
         setIsSubmitting(false);
         return;
       }
@@ -87,7 +98,18 @@ const ForumEventSection = () => {
           returnUrl: window.location.origin + "/payment-success?email=" + encodeURIComponent(registerForm.email)
         })
       });
-      const tranzakData = await tranzakRes.json();
+
+      let tranzakData: any = {};
+      try {
+        tranzakData = await tranzakRes.json();
+      } catch (parseErr) {
+        console.error("[Forum] Tranzak response was not JSON:", parseErr);
+        toast.error("Payment gateway error. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log("[Forum] Tranzak response:", tranzakRes.status, JSON.stringify(tranzakData));
       
       if (!tranzakRes.ok) {
         toast.error(tranzakData?.error || tranzakData?.message || "Payment initiation failed. Please try again.");
@@ -96,10 +118,18 @@ const ForumEventSection = () => {
       }
 
       const targetUrl = tranzakData?.data?.paymentUrl || tranzakData?.data?.links?.paymentAuthUrl || tranzakData?.data?.paymentAuthUrl || tranzakData?.links?.paymentAuthUrl || tranzakData?.paymentUrl || tranzakData?.paymentAuthUrl;
+      console.log("[Forum] Redirect URL:", targetUrl, "| Method:", paymentMethod);
+
       // If Web Redirect, go to Tranzak checkout
-      if (paymentMethod === "web" && targetUrl) {
-        window.location.href = targetUrl;
-        return;
+      if (paymentMethod === "web") {
+        if (targetUrl) {
+          window.location.assign(targetUrl);
+          return;
+        } else {
+          toast.error("Could not get payment URL from gateway. Please try again.");
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       // For MoMo / QR, we assume it's prompted.
@@ -108,9 +138,10 @@ const ForumEventSection = () => {
         window.location.href = `/payment-success?email=${encodeURIComponent(registerForm.email)}`;
       }, 2000);
       setIsRegisterOpen(false);
-    } catch (err) {
-      toast.success(`🎉 Pass details reserved for ${registerForm.name}!`);
-      setIsRegisterOpen(false);
+    } catch (err: any) {
+      console.error("[Forum] Unexpected error in payment flow:", err);
+      toast.error(err?.message || "An unexpected error occurred. Please try again.");
+      setIsSubmitting(false);
     } finally {
       setIsSubmitting(false);
     }
