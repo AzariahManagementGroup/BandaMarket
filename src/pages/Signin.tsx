@@ -111,7 +111,7 @@ const Signin = () => {
     <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center p-6 font-sans relative">
       <Link 
         to="/" 
-        className="absolute top-6 left-6 flex items-center justify-center h-10 w-10 bg-white rounded-full shadow-sm border border-gray-100 text-gray-500 hover:text-emerald-600 transition-colors z-10 sm:hidden"
+        className="absolute top-6 left-6 flex items-center justify-center h-10 w-10 bg-white rounded-full shadow-sm border border-gray-100 text-gray-500 hover:text-emerald-600 transition-colors z-10"
       >
         <ArrowLeft className="h-5 w-5" />
       </Link>
