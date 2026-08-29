@@ -95,9 +95,10 @@ const ForumEventSection = () => {
         return;
       }
 
+      const targetUrl = tranzakData?.data?.paymentUrl || tranzakData?.data?.links?.paymentAuthUrl;
       // If Web Redirect, go to Tranzak checkout
-      if (paymentMethod === "web" && tranzakData?.data?.links?.paymentAuthUrl) {
-        window.location.href = tranzakData.data.links.paymentAuthUrl;
+      if (paymentMethod === "web" && targetUrl) {
+        window.location.href = targetUrl;
         return;
       }
 
