@@ -81,6 +81,16 @@ if (strpos($uri, 'upload') !== false) {
     exit();
 }
 
+if (strpos($uri, 'forgot-password') !== false) {
+    require_once __DIR__ . '/forgot-password.php';
+    exit();
+}
+
+if (strpos($uri, 'reset-password') !== false) {
+    require_once __DIR__ . '/reset-password.php';
+    exit();
+}
+
 // 1. Sign Up Endpoint
 if (strpos($uri, 'signup') !== false) {
     $input = file_get_contents("php://input");

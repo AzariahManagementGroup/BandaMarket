@@ -1,8 +1,5 @@
 <?php
 // Shared Database & Mail Configuration
-ini_set('display_errors', '1');
-error_reporting(E_ALL);
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
@@ -65,8 +62,10 @@ function get_db_connection() {
 try {
     @$conn->query("ALTER TABLE users ADD COLUMN isVerified tinyint(1) NOT NULL DEFAULT 0");
     @$conn->query("ALTER TABLE users ADD COLUMN otpCode varchar(191) DEFAULT NULL");
-@$conn->query("ALTER TABLE users ADD COLUMN otpExpiresAt datetime DEFAULT NULL");
-@$conn->query("ALTER TABLE users ADD COLUMN lastLoginAt datetime DEFAULT NULL");
+    @$conn->query("ALTER TABLE users ADD COLUMN otpExpiresAt datetime DEFAULT NULL");
+    @$conn->query("ALTER TABLE users ADD COLUMN lastLoginAt datetime DEFAULT NULL");
+    @$conn->query("ALTER TABLE users ADD COLUMN resetToken varchar(191) DEFAULT NULL");
+    @$conn->query("ALTER TABLE users ADD COLUMN resetTokenExpiresAt datetime DEFAULT NULL");
 
 $conn->query("CREATE TABLE IF NOT EXISTS courses (
     id VARCHAR(100) PRIMARY KEY,

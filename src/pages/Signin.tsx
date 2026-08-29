@@ -184,7 +184,7 @@ const Signin = () => {
               <div className="space-y-2">
                 <div className="flex justify-between items-center ml-1">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Password</label>
-                  <button type="button" className="text-[10px] font-bold text-emerald-600 hover:underline uppercase tracking-wider">Forgot Password?</button>
+                  <Link to="/forgot-password" className="text-[10px] font-bold text-emerald-600 hover:underline uppercase tracking-wider">Forgot Password?</Link>
                 </div>
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />

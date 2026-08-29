@@ -11,6 +11,9 @@ const Index = lazy(() => import("./pages/Index.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const Signup = lazy(() => import("./pages/Signup.tsx"));
 const Signin = lazy(() => import("./pages/Signin.tsx"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword.tsx"));
+const VerifyOTP = lazy(() => import("./pages/VerifyOTP.tsx"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 const MarketZone = lazy(() => import("./pages/MarketZone.tsx"));
 const BuyerDashboard = lazy(() => import("./pages/BuyerDashboard.tsx"));
 const SellerDashboard = lazy(() => import("./pages/SellerDashboard.tsx"));
@@ -45,6 +48,9 @@ const App = () => (
             <Route path="/academy" element={<AcademyPage />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/signin" element={<Signin />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/verify-otp" element={<VerifyOTP />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/market-zone" element={<MarketZone />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/dashboard" element={<BuyerDashboard />} />

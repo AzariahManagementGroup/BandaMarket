@@ -3,6 +3,17 @@ import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
+import nodemailer from "nodemailer";
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.SMTP_PORT || "465"),
+  secure: true,
+  auth: {
+    user: process.env.SMTP_USER || "podoremetropolis@gmail.com",
+    pass: process.env.SMTP_PASS || "ptfjtrjyaidmyqrf",
+  },
+});
 
 const app = express();
 const prisma = new PrismaClient();
@@ -249,6 +260,135 @@ app.get("/api/referrals", async (req, res) => {
       { id: 2, referred_user_name: "Marie Eto", reward_amount: 20, status: "completed", created_at: new Date().toISOString() }
     ]
   });
+});
+
+// Forgot Password (Live)
+app.post("/api/forgot-password", async (req, res) => {
+  try {
+    const { email: rawEmail } = req.body;
+    const email = rawEmail?.trim().toLowerCase();
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required." });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user) {
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+      await prisma.$executeRaw`UPDATE users SET otpCode = ${otpCode}, otpExpiresAt = ${otpExpiresAt} WHERE id = ${user.id}`;
+      
+      const mailOptions = {
+        from: '"CameMark" <' + (process.env.SMTP_USER || "podoremetropolis@gmail.com") + '>',
+        to: email,
+        subject: "Your CameMark Password Reset Code",
+        html: `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+            <div style="text-align: center; margin-bottom: 32px;">
+              <h2 style="color: #064E3B; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">CameMark</h2>
+            </div>
+            
+            <h3 style="color: #111827; font-size: 20px; margin-top: 0; font-weight: 700;">Reset your password</h3>
+            <p style="color: #4b5563; line-height: 1.6; font-size: 16px; margin-bottom: 24px;">
+              We received a request to reset the password for your CameMark account. Use the secure code below to proceed:
+            </p>
+            
+            <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; padding: 24px; border-radius: 12px; text-align: center; margin: 32px 0;">
+              <span style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #059669; font-family: monospace;">${otpCode}</span>
+            </div>
+            
+            <p style="color: #4b5563; line-height: 1.6; font-size: 15px;">
+              This code will expire in <strong>15 minutes</strong>. For your security, do not share this code with anyone.
+            </p>
+            
+            <p style="color: #9ca3af; line-height: 1.5; font-size: 14px; margin-top: 32px; padding-top: 24px; border-top: 1px solid #f3f4f6;">
+              If you didn't request a password reset, you can safely ignore this email. Your account remains secure.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 24px; color: #9ca3af; font-size: 13px;">
+            &copy; ${new Date().getFullYear()} CameMark Marketplace. All rights reserved.
+          </div>
+        </div>
+        `,
+      };
+      
+      await transporter.sendMail(mailOptions);
+      console.log(`[LIVE DEV] Sent password reset OTP to ${email}`);
+    }
+
+    // Always return 200
+    return res.status(200).json({ message: "If an account with that email exists, we have sent a password reset code." });
+  } catch (error: any) {
+    console.error("Forgot password error:", error);
+    return res.status(500).json({ error: error.message || "Internal server error" });
+  }
+});
+
+// Reset Password (Live)
+// STEP 2: Verify OTP and issue reset token
+app.post("/api/verify-reset-otp", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ error: "Email and OTP are required." });
+    }
+
+    const users: any[] = await prisma.$queryRaw`SELECT id, otpCode, otpExpiresAt FROM users WHERE email = ${email}`;
+    const user = users[0];
+
+    if (!user || user.otpCode !== otp || new Date(user.otpExpiresAt) < new Date()) {
+      return res.status(400).json({ error: "Invalid or expired reset code." });
+    }
+
+    // Generate a secure reset token valid for 15 minutes
+    const resetToken = jwt.sign(
+      { userId: user.id, email, purpose: 'password_reset' },
+      JWT_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    return res.status(200).json({ 
+      message: "OTP verified successfully.",
+      resetToken 
+    });
+  } catch (error) {
+    console.error("Verify OTP error:", error);
+    return res.status(500).json({ error: "An unexpected error occurred." });
+  }
+});
+
+// STEP 3: Reset Password using reset token
+app.post("/api/reset-password", async (req, res) => {
+  try {
+    const { resetToken, newPassword } = req.body;
+
+    if (!resetToken || !newPassword) {
+      return res.status(400).json({ error: "Reset token and new password are required." });
+    }
+
+    try {
+      const decoded = jwt.verify(resetToken, JWT_SECRET) as { userId: number, email: string, purpose: string };
+      
+      if (decoded.purpose !== 'password_reset') {
+        throw new Error("Invalid token purpose");
+      }
+
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      
+      await prisma.$executeRaw`UPDATE users SET passwordHash = ${passwordHash}, otpCode = NULL, otpExpiresAt = NULL WHERE id = ${decoded.userId}`;
+      
+      return res.status(200).json({ message: "Password has been successfully reset!" });
+    } catch (jwtError) {
+      return res.status(400).json({ error: "Invalid or expired reset session. Please request a new code." });
+    }
+  } catch (error: any) {
+    console.error("Reset password error:", error);
+    return res.status(500).json({ error: error.message || "Internal server error" });
+  }
 });
 
 app.listen(PORT, () => {
