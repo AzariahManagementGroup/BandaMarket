@@ -502,7 +502,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES ('28775d7c-fe6a-4e75-bd2c-162bfe8ed271','taiwodele88@gmail.com','$2b$10$p3LOmjMPT4y4h9e1uOEpsOMxJG7alP4.mlkm2n6K3tuJVpie8lydC','taiwo taiwo','+2349054755699','Nigeria','Abuja','Abuja','buyer','','en','NGN',NULL,'not_submitted','2026-07-22 07:42:50.503','2026-07-22 07:42:50.503',NULL,NULL,NULL,NULL);
+INSERT INTO `users` VALUES ('28775d7c-fe6a-4e75-bd2c-162bfe8ed271','taiwodele88@gmail.com','$2b$10$p3LOmjMPT4y4h9e1uOEpsOMxJG7alP4.mlkm2n6K3tuJVpie8lydC','taiwo taiwo','+2349054755699','Nigeria','Abuja','Abuja','buyer','','en','NGN',NULL,'not_submitted','2026-07-22 07:42:50.503','2026-07-22 07:42:50.503',NULL,NULL,NULL,NULL,0);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
