@@ -21,7 +21,7 @@ const AdminDashboard = () => {
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -68,19 +68,30 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden relative">
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/50 z-40" 
+          onClick={() => setSidebarOpen(false)} 
+        />
+      )}
+
       {/* Sidebar */}
       <aside 
         className={`${
-          isSidebarOpen ? "w-64" : "w-20"
-        } border-r border-border bg-card transition-all duration-300 flex flex-col z-50`}
+          isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64 md:translate-x-0 md:w-20"
+        } fixed md:relative inset-y-0 left-0 border-r border-border bg-card transition-all duration-300 flex flex-col z-50`}
       >
         <div className="p-6 flex items-center justify-between">
           <Link to="/" className={`font-extrabold text-primary ${!isSidebarOpen && "hidden"}`}>
             CAMEMARK ADMIN
           </Link>
-          <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-1.5 hover:bg-muted rounded-md transition-colors">
+          <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-1.5 hover:bg-muted rounded-md transition-colors hidden md:block">
             {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+          <button onClick={() => setSidebarOpen(false)} className="p-1.5 hover:bg-muted rounded-md transition-colors md:hidden">
+            <X className="h-5 w-5" />
           </button>
         </div>
 
@@ -98,7 +109,7 @@ const AdminDashboard = () => {
                 }`}
               >
                 <item.icon className="h-5 w-5 shrink-0" />
-                {isSidebarOpen && <span>{item.label}</span>}
+                {(isSidebarOpen || window.innerWidth < 768) && <span>{item.label}</span>}
               </Link>
             );
           })}
@@ -115,17 +126,25 @@ const AdminDashboard = () => {
             }}
           >
             <LogOut className="h-5 w-5" />
-            {isSidebarOpen && <span>Logout</span>}
+            {(isSidebarOpen || window.innerWidth < 768) && <span>Logout</span>}
           </Button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <header className="h-16 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-40 px-8 flex items-center justify-between">
-          <h2 className="font-bold text-lg">
-            {navItems.find(i => `/admin${i.path}` === location.pathname)?.label || "Super Admin Panel"}
-          </h2>
+      <main className="flex-1 overflow-y-auto w-full">
+        <header className="h-16 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setSidebarOpen(true)} 
+              className="p-1.5 hover:bg-muted rounded-md transition-colors md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <h2 className="font-bold text-lg truncate max-w-[200px] md:max-w-none">
+              {navItems.find(i => `/admin${i.path}` === location.pathname)?.label || "Super Admin Panel"}
+            </h2>
+          </div>
           <div className="flex items-center gap-4">
             <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800 font-extrabold text-xs border border-emerald-300">
               SA
@@ -133,7 +152,7 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        <div className="p-8">
+        <div className="p-4 md:p-8 w-full max-w-full overflow-x-hidden">
           <Routes>
             <Route path="/" element={<AdminOverview />} />
             <Route path="/referrals" element={<AdminReferralSettings />} />
