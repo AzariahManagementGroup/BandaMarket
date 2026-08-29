@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, Lock, Loader2, KeyRound, ShieldAlert, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Loader2, KeyRound, ShieldAlert, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -108,9 +108,16 @@ const Signin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-6 font-sans">
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center p-6 font-sans relative">
+      <Link 
+        to="/" 
+        className="absolute top-6 left-6 flex items-center justify-center h-10 w-10 bg-white rounded-full shadow-sm border border-gray-100 text-gray-500 hover:text-emerald-600 transition-colors z-10 sm:hidden"
+      >
+        <ArrowLeft className="h-5 w-5" />
+      </Link>
+      
       <div className="w-full max-w-md animate-fade-in">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 mt-8 sm:mt-0">
           <Link to="/">
             <img src={logo} alt="CameMark" className="h-12 w-auto mx-auto mb-6 animate-float" />
           </Link>

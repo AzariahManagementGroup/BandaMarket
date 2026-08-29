@@ -419,6 +419,169 @@ if ($action === 'report-issue') {
     }
 }
 
+// 11. Send Money
+if ($action === 'send-money') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $input = json_decode(file_get_contents("php://input"), true);
+        $amount = floatval($input['amount'] ?? 0);
+        $recipientStr = $input['recipient'] ?? '';
+
+        if ($amount <= 0 || empty($recipientStr)) {
+            http_response_code(400);
+            echo json_encode(["error" => "Invalid amount or recipient"]);
+            exit();
+        }
+
+        // Find recipient
+        $stmt = $conn->prepare("SELECT id, email, fullName FROM users WHERE email = ? OR phone = ?");
+        $stmt->bind_param("ss", $recipientStr, $recipientStr);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $recipientUser = $res->fetch_assoc();
+        $stmt->close();
+        
+        if (!$recipientUser) {
+            http_response_code(404);
+            echo json_encode(["error" => "Recipient not found on the platform"]);
+            exit();
+        }
+        
+        // Find sender details
+        $stmt = $conn->prepare("SELECT email, fullName FROM users WHERE id = ?");
+        $stmt->bind_param("s", $userId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $senderUser = $res->fetch_assoc();
+        $stmt->close();
+
+        // Check wallet balance
+        $stmt = $conn->prepare("SELECT id, balance, currency FROM wallets WHERE userId = ?");
+        $stmt->bind_param("s", $userId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $wallet = $res->fetch_assoc();
+        $stmt->close();
+
+        if ($wallet && $wallet['balance'] >= $amount) {
+            // Deduct sender
+            $stmt = $conn->prepare("UPDATE wallets SET balance = balance - ? WHERE id = ?");
+            $stmt->bind_param("ds", $amount, $wallet['id']);
+            $stmt->execute();
+            $stmt->close();
+            
+            // Add to recipient wallet
+            $stmt = $conn->prepare("SELECT id, balance FROM wallets WHERE userId = ?");
+            $stmt->bind_param("s", $recipientUser['id']);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $recipientWallet = $res->fetch_assoc();
+            $stmt->close();
+            
+            if ($recipientWallet) {
+                $stmt = $conn->prepare("UPDATE wallets SET balance = balance + ? WHERE id = ?");
+                $stmt->bind_param("ds", $amount, $recipientWallet['id']);
+                $stmt->execute();
+                $stmt->close();
+            } else {
+                $recWalletId = generate_uuid();
+                $stmt = $conn->prepare("INSERT INTO wallets (id, userId, balance, currency) VALUES (?, ?, ?, ?)");
+                $stmt->bind_param("ssds", $recWalletId, $recipientUser['id'], $amount, $wallet['currency']);
+                $stmt->execute();
+                $stmt->close();
+            }
+
+            // Log transactions
+            $ref = "TRF-" . time();
+            
+            // Ensure transactions table exists and log it
+            $conn->query("CREATE TABLE IF NOT EXISTS transactions (
+                id VARCHAR(100) PRIMARY KEY,
+                userId VARCHAR(100) NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                currency VARCHAR(10) DEFAULT 'XAF',
+                type VARCHAR(50),
+                status VARCHAR(50),
+                merchant VARCHAR(255),
+                reference VARCHAR(255),
+                createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+            
+            // Sender log
+            $txId1 = generate_uuid();
+            $type1 = "transfer_out";
+            $status = "completed";
+            $negAmount = -$amount;
+            $desc1 = "Transfer to " . $recipientUser['fullName'];
+            $stmt = $conn->prepare("INSERT INTO transactions (id, userId, amount, currency, type, status, merchant, reference) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("ssdsssss", $txId1, $userId, $negAmount, $wallet['currency'], $type1, $status, $desc1, $ref);
+            $stmt->execute();
+            $stmt->close();
+            
+            // Recipient log
+            $txId2 = generate_uuid();
+            $type2 = "transfer_in";
+            $desc2 = "Transfer from " . $senderUser['fullName'];
+            $stmt = $conn->prepare("INSERT INTO transactions (id, userId, amount, currency, type, status, merchant, reference) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("ssdsssss", $txId2, $recipientUser['id'], $amount, $wallet['currency'], $type2, $status, $desc2, $ref);
+            $stmt->execute();
+            $stmt->close();
+            
+            // Notifications
+            $notifTitleOut = "Funds Sent";
+            $notifMsgOut = "You successfully sent " . $wallet['currency'] . " " . $amount . " to " . $recipientUser['fullName'] . ".";
+            $notifId1 = generate_uuid();
+            $stmt = $conn->prepare("INSERT INTO notifications (id, userId, title, message) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param("ssss", $notifId1, $userId, $notifTitleOut, $notifMsgOut);
+            $stmt->execute();
+            $stmt->close();
+            
+            $notifTitleIn = "Funds Received";
+            $notifMsgIn = "You have received " . $wallet['currency'] . " " . $amount . " from " . $senderUser['fullName'] . ".";
+            $notifId2 = generate_uuid();
+            $stmt = $conn->prepare("INSERT INTO notifications (id, userId, title, message) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param("ssss", $notifId2, $recipientUser['id'], $notifTitleIn, $notifMsgIn);
+            $stmt->execute();
+            $stmt->close();
+            
+            // Emails
+            if (!empty($senderUser['email'])) {
+                send_invoice_email($senderUser['email'], $senderUser['fullName'], $amount, $wallet['currency'], $desc1, "transfer", $ref, $conn);
+            }
+            if (!empty($recipientUser['email'])) {
+                send_invoice_email($recipientUser['email'], $recipientUser['fullName'], $amount, $wallet['currency'], $desc2, "deposit", $ref, $conn);
+            }
+
+            echo json_encode(["success" => true, "message" => "Money sent successfully."]);
+        } else {
+            http_response_code(400);
+            echo json_encode(["error" => "Insufficient wallet balance."]);
+        }
+        exit();
+    }
+}
+
+// 12. Lookup User
+if ($action === 'lookup-user') {
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $identifier = $_GET['identifier'] ?? '';
+        
+        $stmt = $conn->prepare("SELECT id, email, fullName FROM users WHERE email = ? OR phone = ?");
+        $stmt->bind_param("ss", $identifier, $identifier);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $userObj = $res->fetch_assoc();
+        $stmt->close();
+        
+        if ($userObj) {
+            echo json_encode(["success" => true, "user" => $userObj]);
+        } else {
+            http_response_code(404);
+            echo json_encode(["error" => "User not found"]);
+        }
+        exit();
+    }
+}
+
 // If no matched action
 http_response_code(404);
 echo json_encode(["error" => "Endpoint not found"]);

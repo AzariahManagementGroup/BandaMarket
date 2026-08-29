@@ -81,7 +81,7 @@ const RoleManager = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 flex gap-4 items-start">
+      <div className="hidden md:flex bg-primary/5 border border-primary/10 rounded-2xl p-6 gap-4 items-start">
         <Info className="h-6 w-6 text-primary shrink-0 mt-1" />
         <div>
           <h4 className="font-bold text-primary">About Permissions</h4>

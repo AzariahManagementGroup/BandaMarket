@@ -35,6 +35,11 @@ const CardsWallet = () => {
   const [topupMethod, setTopupMethod] = useState("web");
   const [topupPhone, setTopupPhone] = useState("");
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  const [isSendMoneyOpen, setIsSendMoneyOpen] = useState(false);
+  const [isPayMerchantOpen, setIsPayMerchantOpen] = useState(false);
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [isTransferOpen, setIsTransferOpen] = useState(false);
+  const [isRequestMoneyOpen, setIsRequestMoneyOpen] = useState(false);
 
   useEffect(() => {
     document.title = "Cards & Wallet | CaMark";
@@ -111,7 +116,15 @@ const CardsWallet = () => {
         })
       });
 
-      const tranzakData = await tranzakRes.json();
+      let tranzakData;
+      try {
+        tranzakData = await tranzakRes.json();
+      } catch (parseError) {
+        toast.error("Backend error: Endpoint not found or invalid response.");
+        setLoading(false);
+        return;
+      }
+
       if (!tranzakRes.ok) {
          toast.error(tranzakData.error || "Payment initialization failed");
          setLoading(false);
@@ -140,8 +153,8 @@ const CardsWallet = () => {
       } else {
         toast.error("Failed to process topup.");
       }
-    } catch (e) {
-      toast.error("Network error.");
+    } catch (e: any) {
+      toast.error(e.message || "Network error.");
     }
     setLoading(false);
   };
@@ -177,12 +190,20 @@ const CardsWallet = () => {
           method: paymentMethod,
           amount: pendingCardFee,
           currencyCode: wallet?.currency || "XAF",
-          description: `Card Issuance (${pendingCardType})`,
+          description: `Create ${pendingCardType} card`,
           mobileWalletNumber: phone
         })
       });
 
-      const tranzakData = await tranzakRes.json();
+      let tranzakData;
+      try {
+        tranzakData = await tranzakRes.json();
+      } catch (parseError) {
+        toast.error("Backend error: Endpoint not found or invalid response.");
+        setLoading(false);
+        return;
+      }
+
       if (!tranzakRes.ok) {
          toast.error(tranzakData.error || "Payment initialization failed");
          setLoading(false);
@@ -190,11 +211,6 @@ const CardsWallet = () => {
       }
 
       const token = localStorage.getItem("camemark_token");
-      const cardNumber = "5592 " + Math.floor(Math.random() * 8999 + 1000) + " " + Math.floor(Math.random() * 8999 + 1000) + " " + Math.floor(Math.random() * 8999 + 1000);
-      const randomCvv = Math.floor(Math.random() * 899 + 100).toString();
-      const currentYear = new Date().getFullYear() % 100;
-      const randomExpiry = Math.floor(Math.random() * 12 + 1).toString().padStart(2, '0') + "/" + (currentYear + Math.floor(Math.random() * 4 + 1)).toString();
-      
       const res = await fetch(getApiUrl("/api/user-data?action=cards"), {
         method: "POST",
         headers: {
@@ -279,11 +295,11 @@ const CardsWallet = () => {
                </h4>
                <div className="grid grid-cols-3 gap-3">
                  <QuickAction icon={Plus} label="Add Money" onClick={() => setIsTopupOpen(true)} />
-                 <QuickAction icon={ArrowUpRight} label="Send Money" onClick={() => toast.info("Send Money feature is coming soon!")} />
-                 <QuickAction icon={Store} label="Pay Merchant" onClick={() => toast.info("Pay Merchant via QR is coming soon!")} />
-                 <QuickAction icon={Download} label="Withdraw" onClick={() => toast.info("Withdraw to bank/momo is coming soon!")} />
-                 <QuickAction icon={ArrowLeftRight} label="Transfer" onClick={() => toast.info("Wallet transfer feature is coming soon!")} />
-                 <QuickAction icon={Receipt} label="Request" onClick={() => toast.info("Request Payment feature is coming soon!")} />
+                 <QuickAction icon={ArrowUpRight} label="Send Money" onClick={() => setIsSendMoneyOpen(true)} />
+                 <QuickAction icon={Store} label="Pay Merchant" onClick={() => setIsPayMerchantOpen(true)} />
+                 <QuickAction icon={Download} label="Withdraw" onClick={() => setIsWithdrawOpen(true)} />
+                 <QuickAction icon={ArrowLeftRight} label="Transfer" onClick={() => setIsTransferOpen(true)} />
+                 <QuickAction icon={Receipt} label="Request" onClick={() => setIsRequestMoneyOpen(true)} />
                </div>
             </div>
 
@@ -730,7 +746,284 @@ const CardsWallet = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <GenericActionModal 
+        isOpen={isSendMoneyOpen} 
+        onClose={() => setIsSendMoneyOpen(false)} 
+        title="Send Money" 
+        description="Send funds instantly to another CaMark user or mobile wallet."
+        actionLabel="Send Funds"
+        wallet={wallet}
+        fields={[
+          { name: "recipient", label: "Recipient (Phone/Email)", placeholder: "+237 6xx xxx xxx or user@email.com", type: "text" },
+          { name: "amount", label: "Amount", placeholder: "0.00", type: "number" }
+        ]}
+      />
+
+      <GenericActionModal 
+        isOpen={isPayMerchantOpen} 
+        onClose={() => setIsPayMerchantOpen(false)} 
+        title="Pay Merchant" 
+        description="Pay for goods or services directly to a verified merchant."
+        actionLabel="Pay Now"
+        wallet={wallet}
+        fields={[
+          { name: "merchantId", label: "Merchant ID", placeholder: "e.g., M-10293", type: "text" },
+          { name: "amount", label: "Amount", placeholder: "0.00", type: "number" }
+        ]}
+      />
+
+      <GenericActionModal 
+        isOpen={isWithdrawOpen} 
+        onClose={() => setIsWithdrawOpen(false)} 
+        title="Withdraw Funds" 
+        description="Withdraw your wallet balance to Mobile Money or Bank Account."
+        actionLabel="Withdraw"
+        wallet={wallet}
+        fields={[
+          { name: "destination", label: "Mobile Money Number or IBAN", placeholder: "+237 6xx xxx xxx", type: "text" },
+          { name: "amount", label: "Amount", placeholder: "0.00", type: "number" }
+        ]}
+      />
+
+      <GenericActionModal 
+        isOpen={isTransferOpen} 
+        onClose={() => setIsTransferOpen(false)} 
+        title="Transfer Funds" 
+        description="Move money between your Wallet and your CaMark Cards."
+        actionLabel="Transfer"
+        wallet={wallet}
+        fields={[
+          { name: "destination", label: "Destination (Select Card)", placeholder: "Virtual Card (**** 5678)", type: "text" },
+          { name: "amount", label: "Amount", placeholder: "0.00", type: "number" }
+        ]}
+      />
+
+      <GenericActionModal 
+        isOpen={isRequestMoneyOpen} 
+        onClose={() => setIsRequestMoneyOpen(false)} 
+        title="Request Payment" 
+        description="Send a payment request link to a client or friend."
+        actionLabel="Send Request"
+        wallet={wallet}
+        fields={[
+          { name: "recipient", label: "Payer's Phone or Email", placeholder: "user@email.com", type: "text" },
+          { name: "amount", label: "Amount Requested", placeholder: "0.00", type: "number" },
+          { name: "note", label: "Note (Optional)", placeholder: "For freelance work...", type: "text" }
+        ]}
+      />
     </div>
+  );
+};
+
+const GenericActionModal = ({ isOpen, onClose, title, description, actionLabel, fields, wallet }: any) => {
+  const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("web");
+  const [momoPhone, setMomoPhone] = useState("");
+  const [recipientResult, setRecipientResult] = useState<any>(null);
+  const [recipientLoading, setRecipientLoading] = useState(false);
+  
+  const handleRecipientBlur = async (e: any) => {
+    if (title !== "Send Money") return;
+    const val = e.target.value;
+    if (!val) {
+      setRecipientResult(null);
+      return;
+    }
+    
+    setRecipientLoading(true);
+    setRecipientResult(null);
+    try {
+      const token = localStorage.getItem("camemark_token");
+      const res = await fetch(getApiUrl(`/api/user-data?action=lookup-user&identifier=${encodeURIComponent(val)}`), {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.user) {
+        setRecipientResult({ success: true, name: data.user.fullName || data.user.name });
+      } else {
+        setRecipientResult({ success: false, message: "User not found" });
+      }
+    } catch {
+      setRecipientResult({ success: false, message: "Error looking up user" });
+    }
+    setRecipientLoading(false);
+  };
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    
+    if (title === "Send Money" && recipientResult && !recipientResult.success) {
+       toast.error("Cannot send money to an invalid user.");
+       return;
+    }
+    
+    setLoading(true);
+    
+    // Extract amount from form if present
+    const amountStr = e.target.amount?.value || "0";
+    const amount = parseFloat(amountStr);
+
+    // Get user details for invoice email
+    let userName = "Valued Customer";
+    let userEmail = "";
+    try {
+      const u = JSON.parse(localStorage.getItem("camemark_user") || "{}");
+      userName = u.fullName || u.name || "Valued Customer";
+      userEmail = u.email || "";
+    } catch {}
+
+    try {
+      // If the user is sending money, we want to deduct from their wallet balance directly.
+      if (title === "Send Money") {
+         const token = localStorage.getItem("camemark_token");
+         const recipientStr = e.target.recipient?.value || "";
+         
+         const sendRes = await fetch(getApiUrl("/api/user-data?action=send-money"), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+               amount,
+               recipient: recipientStr,
+               recipientName: recipientResult?.name
+            })
+         });
+
+         const sendData = await sendRes.json();
+         if (!sendRes.ok) {
+            toast.error(sendData.error || "Failed to send money.");
+            setLoading(false);
+            return;
+         }
+
+         toast.success(`Successfully sent ${wallet?.currency || "XAF"} ${amount.toLocaleString()} to ${recipientResult?.name || recipientStr}`);
+         setLoading(false);
+         onClose();
+         window.location.reload(); // Quick refresh to update balances
+         return;
+      }
+
+      const tranzakRes = await fetch(getApiUrl("/api/tranzak-payment"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: paymentMethod,
+          amount: amount,
+          currencyCode: wallet?.currency || "XAF",
+          description: title,
+          mobileWalletNumber: paymentMethod === 'momo' ? momoPhone : undefined,
+          userEmail: userEmail,
+          userName: userName,
+        })
+      });
+
+      let tranzakData;
+      try {
+        tranzakData = await tranzakRes.json();
+      } catch (parseError) {
+        toast.error("Backend error: Endpoint not found or invalid response.");
+        setLoading(false);
+        return;
+      }
+
+      if (!tranzakRes.ok) {
+         toast.error(tranzakData.error || "Payment initialization failed");
+         setLoading(false);
+         return;
+      }
+
+      toast.success(`${title} initialized successfully!`);
+      onClose();
+
+      if (paymentMethod === "web" && tranzakData?.data?.paymentUrl) {
+         window.location.href = tranzakData.data.paymentUrl;
+      } else if (paymentMethod === "momo") {
+         toast.success("Please check your phone to authorize the Mobile Money payment.");
+      } else if (paymentMethod === "qr") {
+         toast.success("Payment initiated via QR. Please scan to complete.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Network error.");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[450px] bg-white rounded-3xl p-8">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-black text-center">{title}</DialogTitle>
+          <DialogDescription className="text-center text-xs text-gray-500">{description}</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          {fields.map((field: any, idx: number) => (
+             <div key={idx} className="space-y-2">
+               <Label className="text-xs font-bold uppercase text-gray-400">{field.label}</Label>
+               <Input 
+                 name={field.name} 
+                 required={field.name !== 'note'} 
+                 type={field.type} 
+                 placeholder={field.placeholder} 
+                 className="rounded-xl border-gray-200" 
+                 onBlur={field.name === 'recipient' ? handleRecipientBlur : undefined}
+               />
+               {field.name === 'recipient' && title === "Send Money" && (
+                 <div className="text-[10px] mt-1">
+                   {recipientLoading ? (
+                     <span className="text-gray-400">Looking up user...</span>
+                   ) : recipientResult ? (
+                     recipientResult.success ? (
+                       <span className="text-emerald-600 font-bold">✓ User found: {recipientResult.name}</span>
+                     ) : (
+                       <span className="text-red-500 font-bold">✕ {recipientResult.message}</span>
+                     )
+                   ) : null}
+                 </div>
+               )}
+             </div>
+          ))}
+
+          {title !== "Send Money" && (
+            <div className="space-y-1 pt-2">
+              <Label className="text-xs font-bold text-gray-500 uppercase">Processing Channel</Label>
+              <select 
+                className="w-full h-11 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              >
+                <option value="web">Web Redirect (Visa/Mastercard/MoMo via Tranzak)</option>
+                <option value="momo">Mobile Money Direct Prompt (MTN/Orange)</option>
+                <option value="qr">In-Store QR Code</option>
+              </select>
+            </div>
+          )}
+
+          {title !== "Send Money" && paymentMethod === 'momo' && (
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-gray-500 uppercase">
+                Mobile Money Number
+              </Label>
+              <Input 
+                type="text"
+                required
+                placeholder="+237 6xx xxx xxx"
+                value={momoPhone}
+                onChange={(e) => setMomoPhone(e.target.value)}
+                className="h-11 rounded-xl bg-gray-50 px-3 text-xs font-mono font-bold border border-gray-200"
+              />
+              <p className="text-[10px] text-gray-400 mt-1">A payment prompt USSD push will be sent to your mobile phone.</p>
+            </div>
+          )}
+
+          <Button type="submit" disabled={loading} className="w-full h-12 bg-[#064E3B] hover:bg-emerald-950 text-white rounded-xl font-bold shadow-lg shadow-emerald-900/20 mt-4">
+            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : actionLabel}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

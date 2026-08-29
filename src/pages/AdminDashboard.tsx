@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link, Routes, Route } from "react-router-dom";
-import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap, Gift, RefreshCw, Cloud, Wallet, AlertCircle } from "lucide-react";
+import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap, Gift, RefreshCw, Cloud, Wallet, AlertCircle, ArrowLeftRight } from "lucide-react";
 
 import { getApiUrl } from "@/config";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,7 @@ const AdminDashboard = () => {
     { label: "Forum Registrations", icon: CheckCircle, path: "/forum-registrations" },
     { label: "Global Activity Logs", icon: LayoutDashboard, path: "/activity-logs" },
     { label: "Login Logs", icon: Key, path: "/login-logs" },
+    { label: "Transactions", icon: ArrowLeftRight, path: "/transactions" },
     { label: "Roles & Permissions", icon: Shield, path: "/roles" },
   ];
 
@@ -170,6 +171,7 @@ const AdminDashboard = () => {
             <Route path="/roles" element={<RoleManager />} />
             <Route path="/activity-logs" element={<AdminActivityLogs />} />
             <Route path="/login-logs" element={<LoginLogs />} />
+            <Route path="/transactions" element={<AdminTransactions />} />
             <Route path="*" element={<AdminOverview />} />
           </Routes>
         </div>
@@ -1644,3 +1646,208 @@ const AdminActivityLogs = () => {
 };
 
 export default AdminDashboard;
+
+const AdminTransactions = () => {
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [timeFilter, setTimeFilter] = useState("all-time");
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(getApiUrl("/api/admin/transactions"));
+        let data;
+        try { data = await res.json(); } catch { data = null; }
+        if (data?.success && Array.isArray(data.transactions)) {
+          setTransactions(data.transactions);
+        } else {
+          setTransactions([]);
+        }
+      } catch {
+        setTransactions([]);
+      }
+      setLoading(false);
+    };
+    fetchTransactions();
+  }, []);
+
+  const statusColor: Record<string, string> = {
+    completed: "bg-emerald-100 text-emerald-800",
+    pending:   "bg-amber-100 text-amber-800",
+    failed:    "bg-red-100 text-red-800",
+    cancelled: "bg-gray-100 text-gray-600",
+  };
+
+  const typeColor: Record<string, string> = {
+    deposit:    "text-emerald-600",
+    withdrawal: "text-red-500",
+    transfer:   "text-blue-600",
+    payment:    "text-purple-600",
+    refund:     "text-amber-600",
+  };
+
+  // Filter by time first
+  const timeFilteredTransactions = transactions.filter(t => {
+    if (timeFilter === "all-time") return true;
+    if (!t.createdAt) return true;
+    
+    const date = new Date(t.createdAt);
+    const now = new Date();
+    
+    if (timeFilter === "today") {
+      return date.toDateString() === now.toDateString();
+    }
+    if (timeFilter === "weekly") {
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return date >= oneWeekAgo;
+    }
+    if (timeFilter === "monthly") {
+      const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      return date >= oneMonthAgo;
+    }
+    if (timeFilter === "yearly") {
+      const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+      return date >= oneYearAgo;
+    }
+    return true;
+  });
+
+  const filtered = timeFilteredTransactions.filter(t => {
+    const matchFilter = filter === "all" || t.type === filter || t.status === filter;
+    const matchSearch = !search || 
+      t.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+      t.email?.toLowerCase().includes(search.toLowerCase()) ||
+      t.description?.toLowerCase().includes(search.toLowerCase()) ||
+      t.reference?.toLowerCase().includes(search.toLowerCase());
+    return matchFilter && matchSearch;
+  });
+
+  const totals = {
+    volume: timeFilteredTransactions.reduce((s, t) => s + parseFloat(t.amount || 0), 0),
+    completed: timeFilteredTransactions.filter(t => t.status === "completed").length,
+    pending: timeFilteredTransactions.filter(t => t.status === "pending").length,
+    failed: timeFilteredTransactions.filter(t => t.status === "failed").length,
+  };
+
+  return (
+    <div className="space-y-6 max-w-7xl">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4">
+        <div>
+          <h3 className="text-2xl font-extrabold text-foreground tracking-tight">Transaction Monitor</h3>
+          <p className="text-xs text-muted-foreground mt-1">Real-time view of all payment and wallet transactions across the platform.</p>
+        </div>
+        <select 
+          value={timeFilter} 
+          onChange={(e) => setTimeFilter(e.target.value)}
+          className="h-10 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm"
+        >
+          <option value="today">Today</option>
+          <option value="weekly">This Week</option>
+          <option value="monthly">This Month</option>
+          <option value="yearly">This Year</option>
+          <option value="all-time">All Time</option>
+        </select>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Total Volume", value: `${totals.volume.toLocaleString()} XAF`, color: "bg-blue-50 text-blue-700" },
+          { label: "Completed", value: totals.completed, color: "bg-emerald-50 text-emerald-700" },
+          { label: "Pending", value: totals.pending, color: "bg-amber-50 text-amber-700" },
+          { label: "Failed", value: totals.failed, color: "bg-red-50 text-red-700" },
+        ].map(stat => (
+          <div key={stat.label} className={`rounded-2xl p-4 border ${stat.color} border-current/10`}>
+            <p className="text-xs font-bold uppercase opacity-60">{stat.label}</p>
+            <p className="text-2xl font-black mt-1">{stat.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <Input
+          placeholder="Search by user, email, description..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="h-10 rounded-xl text-xs max-w-xs"
+        />
+        {["all","deposit","withdrawal","transfer","payment","completed","pending","failed"].map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${filter === f ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:bg-muted-foreground/20"}`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full min-w-[700px] text-xs">
+            <thead>
+              <tr className="bg-muted/50 border-b border-border">
+                <th className="px-4 py-3 text-left font-black text-muted-foreground uppercase">User</th>
+                <th className="px-4 py-3 text-left font-black text-muted-foreground uppercase">Type</th>
+                <th className="px-4 py-3 text-left font-black text-muted-foreground uppercase">Amount</th>
+                <th className="px-4 py-3 text-left font-black text-muted-foreground uppercase">Description</th>
+                <th className="px-4 py-3 text-left font-black text-muted-foreground uppercase">Status</th>
+                <th className="px-4 py-3 text-left font-black text-muted-foreground uppercase">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && (
+                <tr>
+                  <td colSpan={6} className="text-center py-12 text-muted-foreground">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      Loading transactions...
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {!loading && filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="text-center py-12 text-muted-foreground italic">
+                    No transactions found for the selected filter.
+                  </td>
+                </tr>
+              )}
+              {!loading && filtered.map((t, i) => (
+                <tr key={t.id} className={`border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}>
+                  <td className="px-4 py-3">
+                    <p className="font-bold text-foreground">{t.fullName || "—"}</p>
+                    <p className="text-muted-foreground">{t.email || "—"}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`font-black capitalize ${typeColor[t.type] || "text-foreground"}`}>{t.type}</span>
+                  </td>
+                  <td className="px-4 py-3 font-bold text-foreground">
+                    {parseFloat(t.amount).toLocaleString()} {t.currency}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground max-w-[200px] truncate">
+                    {t.description || t.reference || "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded-full font-black capitalize ${statusColor[t.status] || "bg-gray-100 text-gray-600"}`}>
+                      {t.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                    {new Date(t.createdAt).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+

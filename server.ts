@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import fs from "fs";
+import path from "path";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
@@ -586,6 +588,674 @@ app.get("/api/admin/login-logs", async (req, res) => {
   } catch (error) {
     console.error("Fetch login logs error:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── SANDBOX MOCK: user-data (wallets, cards, etc.) ───────────────────────────
+app.get("/api/user-data", async (req, res) => {
+  const action = req.query.action as string;
+  const authHeader = req.headers.authorization || "";
+  let userId = "demo-user";
+  try {
+    const token = authHeader.split(" ")[1];
+    if (token) {
+      const decoded = jwt.verify(token, JWT_SECRET) as { sub?: string };
+      userId = decoded.sub || "demo-user";
+    }
+  } catch {}
+
+  if (action === "wallets") {
+    // Try real DB first, fall back to mock
+    try {
+      const wallet = await prisma.wallet.findFirst({ where: { userId } });
+      if (wallet) return res.json({ wallet });
+    } catch {}
+    return res.json({
+      wallet: { id: "wallet-mock-001", userId, balance: 12500.00, currency: "XAF", updatedAt: new Date().toISOString() }
+    });
+  }
+
+  if (action === "cards") {
+    try {
+      // Try real DB
+      const cards = await (prisma as any).card?.findMany({ where: { userId } });
+      if (cards && cards.length) return res.json({ cards });
+    } catch {}
+    return res.json({ cards: [] });
+  }
+
+  if (action === "profile") {
+    try {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, fullName: true, role: true, phone: true, country: true, region: true, city: true, preferredCurrency: true, avatarUrl: true, kycStatus: true } });
+      if (user) return res.json({ user });
+    } catch {}
+    return res.json({ user: null });
+  }
+
+  if (action === "lookup-user") {
+    if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+    const identifier = req.query.identifier as string;
+    try {
+      const user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: identifier },
+            { phone: identifier }
+          ]
+        },
+        select: { id: true, email: true, fullName: true, name: true }
+      });
+      if (user) {
+        return res.json({ success: true, user });
+      } else {
+        return res.status(404).json({ error: "User not found" });
+      }
+    } catch {
+      return res.status(500).json({ error: "Server error" });
+    }
+  }
+
+  if (action === "send-money") {
+    if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+    const { amount, recipient } = req.body;
+    
+    try {
+      // Find sender
+      const senderWallet = await prisma.wallet.findFirst({ where: { userId }, include: { user: true } });
+      const senderUser = senderWallet?.user || await prisma.user.findUnique({ where: { id: userId } });
+      
+      // Find recipient
+      const recipientUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: recipient },
+            { phone: recipient }
+          ]
+        }
+      });
+      
+      if (!recipientUser) {
+        return res.status(404).json({ error: "Recipient not found." });
+      }
+
+      if (senderWallet) {
+        if (senderWallet.balance < amount) {
+          return res.status(400).json({ error: "Insufficient wallet balance." });
+        }
+        
+        // Deduct sender
+        await prisma.wallet.update({
+          where: { id: senderWallet.id },
+          data: { balance: senderWallet.balance - amount }
+        });
+        
+        // Add to recipient wallet
+        const recipientWallet = await prisma.wallet.findFirst({ where: { userId: recipientUser.id } });
+        if (recipientWallet) {
+          await prisma.wallet.update({
+             where: { id: recipientWallet.id },
+             data: { balance: recipientWallet.balance + amount }
+          });
+        } else {
+          // Create wallet if doesn't exist
+          await prisma.wallet.create({
+             data: { userId: recipientUser.id, balance: amount, currency: senderWallet.currency }
+          });
+        }
+        
+        // Create transaction logs
+        const ref = `TRF-${Date.now()}`;
+        // Sender log
+        await prisma.transaction.create({
+          data: {
+            userId,
+            amount: -amount,
+            currency: senderWallet.currency,
+            type: "transfer_out",
+            status: "completed",
+            merchant: `Transfer to ${recipientUser.fullName || recipientUser.name}`,
+            reference: ref
+          }
+        });
+        // Recipient log
+        await prisma.transaction.create({
+          data: {
+            userId: recipientUser.id,
+            amount: amount,
+            currency: senderWallet.currency,
+            type: "transfer_in",
+            status: "completed",
+            merchant: `Transfer from ${senderUser?.fullName || senderUser?.name || 'User'}`,
+            reference: ref
+          }
+        });
+        
+        // Sender Notification
+        await prisma.notification.create({
+          data: {
+             userId,
+             title: "Funds Sent",
+             message: `You successfully sent ${senderWallet.currency} ${amount} to ${recipientUser.fullName || recipientUser.name}.`
+          }
+        });
+        
+        // Recipient Notification
+        await prisma.notification.create({
+          data: {
+             userId: recipientUser.id,
+             title: "Funds Received",
+             message: `You have received ${senderWallet.currency} ${amount} from ${senderUser?.fullName || senderUser?.name || 'a user'}.`
+          }
+        });
+
+        // Email to sender
+        if (senderUser?.email) {
+           sendInvoiceEmail(senderUser.email, senderUser.fullName || senderUser.name || "User", amount, senderWallet.currency, `Transfer to ${recipientUser.fullName || recipientUser.name}`, "transfer", ref);
+        }
+        
+        // Email to recipient
+        if (recipientUser.email) {
+           sendInvoiceEmail(recipientUser.email, recipientUser.fullName || recipientUser.name || "User", amount, senderWallet.currency, `Received from ${senderUser?.fullName || senderUser?.name || 'User'}`, "deposit", ref);
+        }
+        
+        return res.json({ success: true, message: "Money sent successfully." });
+      }
+    } catch (e) {
+       console.error("Local Send Money Error:", e);
+    }
+    
+    // Sandbox fallback if no real DB hit
+    return res.json({ success: true, message: "[SANDBOX] Money sent successfully." });
+  }
+
+  return res.status(404).json({ error: "Unknown action" });
+});
+
+// ─── TRANZAK PAYMENT FLOW (Live / Sandbox) ──────────────────────────────────
+import crypto from "crypto";
+
+// ... [we'll append the route before the tranzak endpoint] ...
+
+app.post("/api/forum-register", async (req, res) => {
+  try {
+    const { name, email, phone, organization, address, city, country, postalCode, category, paymentStatus, gender } = req.body;
+    
+    let amount = "30,000 XAF";
+    if (category?.includes("50,000")) amount = "50,000 XAF";
+    if (category?.includes("100,000")) amount = "100,000 XAF";
+    if (category?.includes("500,000")) amount = "500,000 XAF";
+
+    if (!name || !email || !phone) {
+      return res.status(400).json({ success: false, message: "Name, email, and phone are required" });
+    }
+
+    const id = crypto.randomUUID();
+    const status = paymentStatus || 'pending';
+    
+    // First ensure the column exists (handling gender gracefully if not present in schema)
+    try {
+      await prisma.$executeRaw`ALTER TABLE forum_registrations ADD COLUMN gender VARCHAR(20) DEFAULT ''`;
+    } catch (e) {
+      // Column might already exist
+    }
+
+    await prisma.$executeRaw`
+      INSERT INTO forum_registrations 
+      (id, name, email, phone, organization, address, city, country, postalCode, category, payment_status, amount_paid, gender) 
+      VALUES (${id}, ${name}, ${email}, ${phone}, ${organization || ''}, ${address || ''}, ${city || ''}, ${country || 'Cameroon'}, ${postalCode || ''}, ${category || 'Standard'}, ${status}, ${amount}, ${gender || ''})
+    `;
+
+    return res.status(201).json({ success: true, message: "Registration successful", registrationId: id });
+  } catch (error) {
+    console.error("Forum Register Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to save registration", error: String(error) });
+  }
+});
+
+app.get("/api/admin-forum-registrations", async (req, res) => {
+  try {
+    const registrations: any[] = await prisma.$queryRaw`SELECT * FROM forum_registrations ORDER BY registered_at DESC`;
+    return res.json({ success: true, registrations });
+  } catch (error) {
+    console.error("Failed to fetch forum registrations:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch registrations", error: String(error) });
+  }
+});
+
+app.post("/api/forum-success", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Email is required" });
+  }
+  
+  try {
+    const records: any[] = await prisma.$queryRaw`SELECT * FROM forum_registrations WHERE email = ${email} ORDER BY registered_at DESC LIMIT 1`;
+    if (records.length === 0) {
+      return res.status(404).json({ success: false, message: "Registration not found" });
+    }
+    
+    const registration = records[0];
+    
+    if (registration.payment_status !== 'completed') {
+      await prisma.$executeRaw`UPDATE forum_registrations SET payment_status = 'completed' WHERE id = ${registration.id}`;
+      
+      const adminEmail = process.env.SMTP_USER || "podoremetropolis@gmail.com";
+      const ticketHtml = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <h2 style="color: #064E3B; text-align: center;">CameMark Forum Ticket</h2>
+          <p>Hi ${registration.name},</p>
+          <p>Thank you for registering for the CameMark Forum! Your payment was successful and your pass is confirmed.</p>
+          
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p><strong>Name:</strong> ${registration.name}</p>
+            <p><strong>Email:</strong> ${registration.email}</p>
+            <p><strong>Phone:</strong> ${registration.phone}</p>
+            <p><strong>Pass Type:</strong> ${registration.category}</p>
+            <p><strong>Amount Paid:</strong> ${registration.amount_paid}</p>
+            <p><strong>Registration ID:</strong> ${registration.id}</p>
+          </div>
+          
+          <p>Please present this ticket at the event entrance.</p>
+          <p>Best regards,<br>The CameMark Team</p>
+        </div>
+      `;
+
+      try {
+        await transporter.sendMail({
+          from: `"CameMark Forum" <${adminEmail}>`,
+          to: email,
+          bcc: adminEmail,
+          subject: `CameMark Forum Pass Confirmation - ${registration.name}`,
+          html: ticketHtml,
+        });
+        console.log(`[FORUM TICKET] Sent to ${email}`);
+      } catch (err) {
+        console.warn(`[FORUM TICKET] Email failed:`, err);
+      }
+    }
+    
+    return res.json({ success: true, ticket: registration });
+  } catch (err) {
+    console.error("Forum Success Error:", err);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+app.post("/api/tranzak-payment", async (req, res) => {
+  const { method, amount, currencyCode, description, userEmail, userName, mobileWalletNumber, returnUrl, reference: customRef } = req.body;
+  const reference = customRef || ("TXN-" + Math.random().toString(36).substring(2, 10).toUpperCase());
+  console.log(`[TRANZAK] Method: ${method}, Amount: ${amount} ${currencyCode}, Ref: ${reference}`);
+
+  // ── Build invoice HTML ────────────────────────────────────────────────────
+  const methodLabel: Record<string, string> = {
+    web:  "💳 Web Redirect (Visa/Mastercard/MoMo via Tranzak)",
+    momo: "📱 Mobile Money (MTN/Orange MoMo)",
+    qr:   "📷 QR Code Payment",
+  };
+  const date      = new Date().toLocaleString("en-GB", { timeZone: "Africa/Douala", dateStyle: "full", timeStyle: "short" });
+  const firstName = (userName || "Customer").split(" ")[0];
+
+  const invoiceHtml = `
+  <html><head><style>
+    body{font-family:'Segoe UI',sans-serif;background:#f4f6f8;margin:0;padding:20px}
+    .card{max-width:560px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,.07)}
+    .header{background:#064e3b;padding:28px;text-align:center;color:#fff}
+    .header h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.5px}
+    .content{padding:32px;color:#334155;line-height:1.7}
+    table{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+    td{padding:11px 14px}
+    .label{color:#64748b;font-weight:700;background:#f8fafc}
+    .amount-row td{background:#ecfdf5;font-size:18px;font-weight:900;color:#059669;padding:16px 14px}
+    .status span{background:#d97706;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700}
+    .footer{background:#f8fafc;padding:18px;text-align:center;font-size:12px;color:#94a3b8}
+  </style></head>
+  <body><div class='card'>
+    <div class='header'><h1>CameMark 🇨🇲 — Payment Invoice</h1></div>
+    <div class='content'>
+      <p>Dear <strong>${firstName}</strong>,</p>
+      <p>Your transaction has been <strong>initiated</strong> on CameMark. Here is your invoice:</p>
+      <table>
+        <tr><td class='label'>TRANSACTION REF</td><td style='font-family:monospace;color:#1e293b'>${reference}</td></tr>
+        <tr><td class='label'>DESCRIPTION</td><td>${description || "Payment"}</td></tr>
+        <tr><td class='label'>PAYMENT METHOD</td><td>${methodLabel[method] || method}</td></tr>
+        <tr><td class='label'>DATE</td><td>${date}</td></tr>
+        <tr class='amount-row'><td>AMOUNT</td><td>${Number(amount).toLocaleString()} ${currencyCode || "XAF"}</td></tr>
+        <tr><td class='label'>STATUS</td><td class='status'><span>Initiated</span></td></tr>
+      </table>
+      <p style='color:#64748b;font-size:13px'>If you did not initiate this transaction, contact <a href='mailto:support@camemark.com'>support@camemark.com</a> immediately.</p>
+      <p>Thank you for using <strong>CameMark</strong> 🇨🇲</p>
+    </div>
+    <div class='footer'>&copy; ${new Date().getFullYear()} CameMark. All rights reserved.</div>
+  </div></body></html>`;
+
+  const sendInvoice = async () => {
+    if (userEmail) {
+      try {
+        await transporter.sendMail({
+          from: `"CameMark Marketplace" <${process.env.SMTP_USER || "podoremetropolis@gmail.com"}>`,
+          to: userEmail,
+          bcc: process.env.SMTP_USER || "podoremetropolis@gmail.com",
+          subject: `CameMark Payment Invoice — ${reference}`,
+          html: invoiceHtml,
+        });
+        console.log(`[INVOICE] Email sent to ${userEmail} for ref ${reference}`);
+      } catch (emailErr) {
+        console.warn(`[INVOICE] Email failed (non-fatal):`, emailErr);
+      }
+    }
+  };
+
+  // Read Tranzak settings
+  let appId = "";
+  let appKey = "";
+  let isSandbox = true;
+  
+  try {
+    const settingsPath = path.join(process.cwd(), 'public', 'api', 'payment_settings.json');
+    if (fs.existsSync(settingsPath)) {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      if (settings.payment) {
+        appId = settings.payment.tranzakAppId || "";
+        appKey = settings.payment.tranzakAppKey || "";
+        isSandbox = settings.payment.environment === "sandbox";
+      }
+    }
+  } catch (err) {
+    console.error("Failed to read payment_settings.json:", err);
+  }
+
+  // Fallback to Sandbox Mock if no real keys provided
+  if (!appId || !appKey || appId === "YOUR_LIVE_APP_ID") {
+    console.log("[TRANZAK] Using Mock Sandbox mode (no valid API keys found)");
+    await sendInvoice();
+    if (method === "web") {
+      const targetUrl = returnUrl ? `${returnUrl}?mock_payment=success&ref=${reference}` : `/cards-wallet?mock_payment=success&ref=${reference}`;
+      return res.json({
+        success: true, sandbox: true, reference,
+        data: { links: { paymentAuthUrl: targetUrl }, requestId: reference }
+      });
+    }
+    return res.json({
+      success: true, sandbox: true, reference,
+      message: `[SANDBOX] ${method === "momo" ? "MoMo USSD push" : "QR payment"} initiated. No real charge.`
+    });
+  }
+
+  // Real Tranzak API Flow
+  console.log(`[TRANZAK] Executing Real Request (${isSandbox ? 'Sandbox' : 'Live'})`);
+  const baseUrl = isSandbox ? "https://sandbox.dsapi.tranzak.me" : "https://dsapi.tranzak.me";
+
+  try {
+    const authRes = await fetch(`${baseUrl}/auth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appId, appKey })
+    });
+    
+    if (!authRes.ok) {
+      console.error("Tranzak Auth Failed:", await authRes.text());
+      return res.status(500).json({ error: "Failed to authenticate with Tranzak" });
+    }
+    
+    const authData = await authRes.json();
+    const token = authData.data?.token;
+
+    const requestBody: any = {
+      amount,
+      currencyCode: currencyCode || "XAF",
+      description: description || "Payment",
+      mchTransactionRef: reference,
+      payerNote: "Payment via CameMark"
+    };
+
+    let endpoint = "/xp021/v1/request/create";
+    if (method === "momo" && mobileWalletNumber) {
+      endpoint = "/xp021/v1/request/create-mobile-wallet-charge";
+      requestBody.mobileWalletNumber = mobileWalletNumber;
+    } else if (method === "qr") {
+      endpoint = "/xp021/v1/request/create-in-store-charge";
+    } else {
+      requestBody.returnUrl = returnUrl || "http://localhost:8080/cards-wallet?mock_payment=success";
+    }
+
+    const paymentRes = await fetch(`${baseUrl}${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (paymentRes.ok) {
+      await sendInvoice();
+      const decoded = await paymentRes.json();
+      console.log("Tranzak Payment Response:", decoded);
+      decoded.reference = reference;
+      return res.json(decoded);
+    } else {
+      const errData = await paymentRes.json();
+      console.error("Payment initiation failed, Tranzak response:", errData);
+      return res.status(500).json({ error: "Payment initiation failed", details: errData });
+    }
+  } catch (apiError) {
+    console.error("Tranzak API Error:", apiError);
+    return res.status(500).json({ error: "Internal payment processing error" });
+  }
+});
+
+app.get("/api/admin/transactions", async (_req, res) => {
+  try {
+    const txs: any[] = await prisma.$queryRaw`
+      SELECT t.*, u.fullName, u.name, u.email 
+      FROM transactions t 
+      JOIN users u ON t.userId = u.id 
+      ORDER BY t.createdAt DESC
+    `;
+    
+    const formatted = txs.map(t => ({
+      id: t.id,
+      userId: t.userId,
+      fullName: t.fullName || t.name || "Unknown",
+      email: t.email || "Unknown",
+      type: t.type,
+      amount: Math.abs(parseFloat(t.amount || 0)), // Admin panel might want positive amounts displayed
+      currency: t.currency,
+      status: t.status,
+      description: t.description || t.merchant || "",
+      reference: t.reference,
+      createdAt: t.createdAt
+    }));
+    
+    res.json({ success: true, transactions: formatted });
+  } catch (error) {
+    console.error("Failed to fetch admin transactions:", error);
+    res.json({ success: false, transactions: [] });
+  }
+});
+
+app.get("/api/admin/roles", async (_req, res) => {
+  try {
+    const roles = await prisma.roles_permissions.findMany({
+      orderBy: { id: 'asc' }
+    });
+    const formatted = roles.map(r => ({
+      ...r,
+      modules: typeof r.modules === 'string' ? JSON.parse(r.modules) : r.modules
+    }));
+    res.json(formatted);
+  } catch (error) {
+    console.error("Failed to fetch roles:", error);
+    res.status(500).json({ error: "Failed to fetch roles" });
+  }
+});
+
+app.put("/api/admin/roles", async (req, res) => {
+  try {
+    const { roleId, modules } = req.body;
+    if (!roleId) return res.status(400).json({ error: "Role ID is required" });
+    
+    let updatedModules = Array.isArray(modules) ? modules : [];
+    
+    const existing = await prisma.roles_permissions.findUnique({ where: { id: roleId } });
+    if (existing?.role === 'super_admin' && !updatedModules.includes("all")) {
+      updatedModules.push("all");
+    }
+    
+    await prisma.roles_permissions.update({
+      where: { id: roleId },
+      data: { modules: JSON.stringify(updatedModules), updatedAt: new Date() }
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Failed to update role:", error);
+    res.status(500).json({ error: "Failed to update role" });
+  }
+});
+
+// ─── ADMIN TICKETS ───────────────────────────────────────────────────────────
+app.all("/api/admin-tickets", async (req, res) => {
+  const action = req.query.action;
+  
+  if (action === "list" && req.method === "GET") {
+    try {
+      const tickets = await prisma.$queryRaw`
+        SELECT st.*, u.fullName as userName, u.email as userEmail, c.card_number 
+        FROM support_tickets st
+        LEFT JOIN users u ON st.userId COLLATE utf8mb4_unicode_ci = u.id
+        LEFT JOIN cards c ON st.cardId COLLATE utf8mb4_unicode_ci = c.id
+        ORDER BY st.createdAt DESC
+      `;
+      return res.json(tickets);
+    } catch (error) {
+      console.error("Failed to fetch tickets:", error);
+      return res.status(500).json({ error: "Failed to fetch tickets" });
+    }
+  }
+  
+  if (action === "respond" && req.method === "POST") {
+    try {
+      const { ticketId, adminResponse } = req.body;
+      if (!ticketId || !adminResponse) {
+        return res.status(400).json({ error: "Ticket ID and Response are required" });
+      }
+      
+      await prisma.$executeRaw`
+        UPDATE support_tickets 
+        SET adminResponse = ${adminResponse}, status = 'resolved' 
+        WHERE id = ${ticketId}
+      `;
+      
+      // Get user info to send notification (local mock just creates notification)
+      const ticketRows: any[] = await prisma.$queryRaw`
+        SELECT u.id, u.email, u.fullName as name, st.subject 
+        FROM support_tickets st 
+        JOIN users u ON st.userId COLLATE utf8mb4_unicode_ci = u.id 
+        WHERE st.id = ${ticketId}
+      `;
+      
+      if (ticketRows.length > 0) {
+        const row = ticketRows[0];
+        
+        await prisma.notifications.create({
+          data: {
+            id: `notif-${Date.now()}`,
+            userId: row.id,
+            title: "Ticket Resolved",
+            message: `Your ticket '${row.subject}' has been resolved. Please check your email for the admin response.`,
+          }
+        });
+      }
+      
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to update ticket:", error);
+      return res.status(500).json({ error: "Failed to update ticket" });
+    }
+  }
+  
+  return res.status(404).json({ error: "Endpoint not found" });
+});
+
+// ─── POPUP BANNER ────────────────────────────────────────────────────────────
+app.get("/api/popup-banner", (req, res) => {
+  res.json({
+    success: true,
+    banner: {
+      enabled: 1,
+      imageUrl: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
+      title: "Cameroon E-Commerce Forum 2026",
+      linkUrl: "/#forum-2026"
+    }
+  });
+});
+
+// ─── TRANZAK WEBHOOK ─────────────────────────────────────────────────────────
+app.post("/api/tranzak-webhook", async (req, res) => {
+  try {
+    const { eventType, resource } = req.body;
+    
+    if (eventType === "REQUEST.COMPLETED" && resource && resource.status === "SUCCESSFUL") {
+      const registrationId = resource.mchTransactionRef;
+      console.log(`[WEBHOOK] Received successful payment for ref: ${registrationId}`);
+      
+      // Update DB
+      await prisma.$executeRaw`
+        UPDATE forum_registrations
+        SET payment_status = 'completed'
+        WHERE id = ${registrationId}
+      `;
+      
+      // Try to fetch registration and send email
+      const rows: any[] = await prisma.$queryRaw`
+        SELECT * FROM forum_registrations WHERE id = ${registrationId}
+      `;
+      
+      if (rows.length > 0) {
+        const registration = rows[0];
+        const adminEmail = process.env.SMTP_USER || "podoremetropolis@gmail.com";
+        const email = registration.email;
+        
+        const ticketHtml = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+            <h2 style="color: #064e3b; text-align: center;">CameMark Forum 2026 - Official Ticket</h2>
+            <p>Hello ${registration.name},</p>
+            <p>Your payment was successful! Your registration is now confirmed. Below are your ticket details:</p>
+            
+            <div style="background: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0;">
+              <p><strong>Name:</strong> ${registration.name}</p>
+              <p><strong>Email:</strong> ${registration.email}</p>
+              <p><strong>Phone:</strong> ${registration.phone}</p>
+              <p><strong>Pass Type:</strong> ${registration.category}</p>
+              <p><strong>Amount Paid:</strong> ${registration.amount_paid}</p>
+              <p><strong>Registration ID:</strong> ${registration.id}</p>
+            </div>
+            
+            <p>Please present this ticket at the event entrance.</p>
+            <p>Best regards,<br>The CameMark Team</p>
+          </div>
+        `;
+
+        try {
+          await transporter.sendMail({
+            from: `"CameMark Forum" <${adminEmail}>`,
+            to: email,
+            bcc: adminEmail,
+            subject: `CameMark Forum Pass Confirmation - ${registration.name}`,
+            html: ticketHtml,
+          });
+          console.log(`[FORUM TICKET] Webhook sent ticket to ${email}`);
+        } catch (err) {
+          console.warn(`[FORUM TICKET] Webhook Email failed:`, err);
+        }
+      }
+    }
+    
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("Webhook Error:", err);
+    return res.status(500).json({ error: "Webhook processing failed" });
   }
 });
 

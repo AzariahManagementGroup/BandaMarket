@@ -19,6 +19,7 @@ const ForumEventSection = () => {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [registerForm, setRegisterForm] = useState({
     name: "",
+    gender: "",
     email: "",
     phone: "",
     organization: "",
@@ -54,7 +55,24 @@ const ForumEventSection = () => {
       if (registerForm.category.includes("100,000")) amount = 100000;
       if (registerForm.category.includes("500,000")) amount = 500000;
 
-      // 2. Initiate Tranzak Payment
+      // 2. Register first to get registration ID
+      toast.info("Registering your details...");
+      const regRes = await fetch(getApiUrl("/api/forum-register"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...registerForm, paymentStatus: "pending" })
+      });
+      const regData = await regRes.json();
+      
+      if (!regRes.ok || !regData.success) {
+        toast.error("Registration failed. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const registrationId = regData.registrationId;
+
+      // 3. Initiate Tranzak Payment
       toast.info("Initiating secure payment...");
       const tranzakRes = await fetch(getApiUrl("/api/tranzak-payment"), {
         method: "POST",
@@ -65,7 +83,8 @@ const ForumEventSection = () => {
           currencyCode: "XAF",
           description: `Forum Registration - ${registerForm.category}`,
           mobileWalletNumber: momoNumber,
-          returnUrl: window.location.origin + "/payment-success"
+          reference: registrationId,
+          returnUrl: window.location.origin + "/payment-success?email=" + encodeURIComponent(registerForm.email)
         })
       });
       const tranzakData = await tranzakRes.json();
@@ -77,34 +96,16 @@ const ForumEventSection = () => {
       }
 
       // If Web Redirect, go to Tranzak checkout
-      if (paymentMethod === "web" && tranzakData?.data?.paymentUrl) {
-        // We will register them first in DB as 'pending' then redirect, or just redirect.
-        // For simplicity, we register then redirect.
-        await fetch(getApiUrl("/api/forum-register"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...registerForm, paymentStatus: "pending" })
-        });
-        window.location.href = tranzakData.data.paymentUrl;
+      if (paymentMethod === "web" && tranzakData?.data?.links?.paymentAuthUrl) {
+        window.location.href = tranzakData.data.links.paymentAuthUrl;
         return;
       }
 
-      // For MoMo / QR, we assume it's prompted. We register them.
-      const res = await fetch(getApiUrl("/api/forum-register"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...registerForm, paymentStatus: "pending" })
-      });
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        toast.success(`🎉 Registration confirmed for ${registerForm.name}! Check your phone to complete payment.`);
-        setTimeout(() => {
-          window.location.href = "/payment-success";
-        }, 2000);
-      } else {
-        toast.success(`🎉 Registration confirmed! Please complete payment.`);
-      }
+      // For MoMo / QR, we assume it's prompted.
+      toast.success(`🎉 Registration confirmed for ${registerForm.name}! Check your phone to complete payment.`);
+      setTimeout(() => {
+        window.location.href = `/payment-success?email=${encodeURIComponent(registerForm.email)}`;
+      }, 2000);
       setIsRegisterOpen(false);
     } catch (err) {
       toast.success(`🎉 Pass details reserved for ${registerForm.name}!`);
@@ -353,16 +354,31 @@ const ForumEventSection = () => {
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase">Email Address</label>
-              <input 
-                type="email"
-                required
-                placeholder="jp.mbida@company.cm"
-                className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
-                value={registerForm.email}
-                onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Email Address</label>
+                <input 
+                  type="email"
+                  required
+                  placeholder="jp.mbida@company.cm"
+                  className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
+                  value={registerForm.email}
+                  onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Gender</label>
+                <select 
+                  className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
+                  value={registerForm.gender}
+                  onChange={(e) => setRegisterForm({ ...registerForm, gender: e.target.value })}
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

@@ -616,6 +616,16 @@ if (strpos($uri, 'admin/roles') !== false) {
     exit();
 }
 
+if (strpos($uri, 'admin/transactions') !== false) {
+    require_once __DIR__ . '/admin-transactions.php';
+    exit();
+}
+
+if (strpos($uri, 'create_transactions_table') !== false) {
+    require_once __DIR__ . '/create_transactions_table.php';
+    exit();
+}
+
 http_response_code(404);
 echo json_encode(["error" => "Endpoint not found."]);
 ?>

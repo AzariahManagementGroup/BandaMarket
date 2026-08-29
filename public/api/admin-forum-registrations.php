@@ -12,7 +12,7 @@ if (!$authHeader || strpos($authHeader, 'Bearer ') !== 0) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $stmt = $conn->prepare("SELECT * FROM forum_registrations ORDER BY createdAt DESC");
+    $stmt = $conn->prepare("SELECT * FROM forum_registrations ORDER BY registered_at DESC");
     $stmt->execute();
     $registrations = fetch_assoc_stmt($stmt);
     $stmt->close();

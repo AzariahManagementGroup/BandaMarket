@@ -1,1 +1,1 @@
-<?php file_put_contents('debug.log', print_r(, true) . print_r(getallheaders(), true)); ?>
+<?php file_put_contents('debug.log', print_r($_REQUEST, true) . print_r(function_exists('getallheaders') ? getallheaders() : [], true)); ?>
