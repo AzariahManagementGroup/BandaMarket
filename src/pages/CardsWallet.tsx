@@ -32,6 +32,8 @@ const CardsWallet = () => {
   const [cards, setCards] = useState<any[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [isTopupOpen, setIsTopupOpen] = useState(false);
+  const [topupMethod, setTopupMethod] = useState("web");
+  const [topupPhone, setTopupPhone] = useState("");
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
 
   useEffect(() => {
@@ -92,33 +94,56 @@ const CardsWallet = () => {
   const handleTopup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const amount = (e.currentTarget as any).amount.value;
+    const amountStr = (e.currentTarget as any).amount.value;
+    const amount = parseFloat(amountStr);
     const token = localStorage.getItem("camemark_token");
     
-    toast.info("Simulating Secure Payment Gateway...");
-    setTimeout(async () => {
-      try {
-        const res = await fetch(getApiUrl("/api/user-data?action=wallets"), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({ amount: parseFloat(amount) })
-        });
-        
-        if (res.ok) {
-          toast.success(`Successfully topped up ${wallet?.currency} ${amount}`);
-          setIsTopupOpen(false);
-          fetchData();
-        } else {
-          toast.error("Failed to process topup.");
-        }
-      } catch (e) {
-        toast.error("Network error.");
+    try {
+      const tranzakRes = await fetch(getApiUrl("/api/tranzak-payment"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: topupMethod,
+          amount: amount,
+          currencyCode: wallet?.currency || "XAF",
+          description: `Wallet Top-Up`,
+          mobileWalletNumber: topupPhone
+        })
+      });
+
+      const tranzakData = await tranzakRes.json();
+      if (!tranzakRes.ok) {
+         toast.error(tranzakData.error || "Payment initialization failed");
+         setLoading(false);
+         return;
       }
-      setLoading(false);
-    }, 2000);
+
+      const res = await fetch(getApiUrl("/api/user-data?action=wallets"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ amount })
+      });
+      
+      if (res.ok) {
+        setIsTopupOpen(false);
+        fetchData();
+
+        if (topupMethod === "web" && tranzakData?.data?.paymentUrl) {
+           toast.success("Redirecting to secure payment gateway...");
+           window.location.href = tranzakData.data.paymentUrl;
+        } else if (topupMethod === "momo") {
+           toast.success("Please check your phone to authorize the Mobile Money payment.");
+        }
+      } else {
+        toast.error("Failed to process topup.");
+      }
+    } catch (e) {
+      toast.error("Network error.");
+    }
+    setLoading(false);
   };
 
   const [isPaymentGatewayOpen, setIsPaymentGatewayOpen] = useState(false);
@@ -497,13 +522,42 @@ const CardsWallet = () => {
             </div>
             
             <div className="space-y-3">
-              <Label className="text-xs font-bold uppercase text-gray-400">Select Simulator Payment Method</Label>
+              <Label className="text-xs font-bold uppercase text-gray-400">Select Payment Method</Label>
               <div className="grid grid-cols-2 gap-2">
-                {['Mastercard', 'Visa', 'Momo', 'PayPal'].map(m => (
-                  <button type="button" key={m} className="p-3 border rounded-xl text-xs font-bold hover:border-emerald-500 hover:bg-emerald-50 transition-all">{m}</button>
+                {[
+                  { id: 'web', label: 'Mastercard' },
+                  { id: 'web', label: 'Visa' },
+                  { id: 'momo', label: 'Momo' },
+                  { id: 'web', label: 'PayPal' }
+                ].map((m, i) => (
+                  <button 
+                    type="button" 
+                    key={i} 
+                    onClick={() => setTopupMethod(m.id)}
+                    className={`p-3 border rounded-xl text-xs font-bold transition-all ${topupMethod === m.id ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'hover:border-emerald-500 hover:bg-emerald-50'}`}
+                  >
+                    {m.label}
+                  </button>
                 ))}
               </div>
             </div>
+
+            {topupMethod === 'momo' && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                <Label className="text-xs font-bold text-gray-500 uppercase">
+                  Mobile Money Number
+                </Label>
+                <Input 
+                  type="text"
+                  required
+                  placeholder="+237 6xx xxx xxx"
+                  value={topupPhone}
+                  onChange={(e) => setTopupPhone(e.target.value)}
+                  className="h-14 rounded-xl bg-gray-50 px-3 text-sm font-mono font-bold border border-gray-200"
+                />
+                <p className="text-[10px] text-gray-400">A payment prompt will be sent to your mobile phone.</p>
+              </div>
+            )}
 
             <Button type="submit" className="w-full h-14 bg-[#064E3B] hover:bg-emerald-950 text-white rounded-2xl font-bold shadow-xl shadow-emerald-900/20" disabled={loading}>
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Authorize Payment"}
