@@ -20,14 +20,24 @@ $db_user = 'root';
 $db_pass = '';
 $db_name = 'camemark_db';
 
-$conn = @new mysqli($db_host, $db_user, $db_pass, $db_name);
-
-if ($conn->connect_error) {
-    // Fallback to production credentials
-    $conn = new mysqli('localhost', 'worlvjwl_camemark_dbuser', 'camemark_dbuser$1', 'worlvjwl_camemark_db');
+$conn = null;
+try {
+    $conn = @new mysqli($db_host, $db_user, $db_pass, $db_name);
     if ($conn->connect_error) {
+        throw new Exception($conn->connect_error);
+    }
+} catch (Exception $e) {
+    // Fallback to production credentials
+    try {
+        $conn = @new mysqli('localhost', 'worlvjwl_camemark_dbuser', 'camemark_dbuser$1', 'worlvjwl_camemark_db');
+        if ($conn->connect_error) {
+            http_response_code(500);
+            echo json_encode(["error" => "Database connection failed: " . $conn->connect_error]);
+            exit();
+        }
+    } catch (Exception $e2) {
         http_response_code(500);
-        echo json_encode(["error" => "Database connection failed: " . $conn->connect_error]);
+        echo json_encode(["error" => "Database connection failed: " . $e2->getMessage()]);
         exit();
     }
 }
