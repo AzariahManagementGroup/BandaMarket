@@ -309,6 +309,30 @@ if ($action === 'farmers') {
 // 8. Admin Stats
 if ($action === 'admin-stats') {
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $filter = $_GET['filter'] ?? 'all';
+        
+        $whereClause = "1=1";
+        $whereClauseUsers = "1=1";
+        $whereClauseForum = "1=1";
+        
+        if ($filter === 'today') {
+            $whereClause = " DATE(createdAt) = CURDATE()";
+            $whereClauseUsers = " DATE(createdAt) = CURDATE()";
+            $whereClauseForum = " DATE(registered_at) = CURDATE()";
+        } elseif ($filter === 'weekly') {
+            $whereClause = " YEARWEEK(createdAt, 1) = YEARWEEK(CURDATE(), 1)";
+            $whereClauseUsers = " YEARWEEK(createdAt, 1) = YEARWEEK(CURDATE(), 1)";
+            $whereClauseForum = " YEARWEEK(registered_at, 1) = YEARWEEK(CURDATE(), 1)";
+        } elseif ($filter === 'monthly') {
+            $whereClause = " MONTH(createdAt) = MONTH(CURDATE()) AND YEAR(createdAt) = YEAR(CURDATE())";
+            $whereClauseUsers = " MONTH(createdAt) = MONTH(CURDATE()) AND YEAR(createdAt) = YEAR(CURDATE())";
+            $whereClauseForum = " MONTH(registered_at) = MONTH(CURDATE()) AND YEAR(registered_at) = YEAR(CURDATE())";
+        } elseif ($filter === 'yearly') {
+            $whereClause = " YEAR(createdAt) = YEAR(CURDATE())";
+            $whereClauseUsers = " YEAR(createdAt) = YEAR(CURDATE())";
+            $whereClauseForum = " YEAR(registered_at) = YEAR(CURDATE())";
+        }
+        
         $usersCount = 0;
         $sellersCount = 0;
         $totalSales = 0;
@@ -317,26 +341,31 @@ if ($action === 'admin-stats') {
         $productsListed = 0;
         $supportTickets = 0;
         $revenue = 0;
+        $forumRegistrationsCount = 0;
 
         // Users
-        $res = $conn->query("SELECT COUNT(*) FROM users");
+        $res = $conn->query("SELECT COUNT(*) FROM users WHERE $whereClauseUsers");
         if($res) { $row = $res->fetch_array(); $usersCount = $row[0]; }
 
         // Sellers
-        $res = $conn->query("SELECT COUNT(*) FROM users WHERE role='seller'");
+        $res = $conn->query("SELECT COUNT(*) FROM users WHERE role='seller' AND $whereClauseUsers");
         if($res) { $row = $res->fetch_array(); $sellersCount = $row[0]; }
 
         // Orders
-        $res = $conn->query("SELECT COUNT(*), SUM(totalPrice) FROM orders");
+        $res = $conn->query("SELECT COUNT(*), SUM(totalPrice) FROM orders WHERE $whereClause");
         if($res) { $row = $res->fetch_array(); $totalOrders = $row[0]; $revenue = $row[1] ?? 0; $totalSales = $revenue; }
 
         // Products
-        $res = $conn->query("SELECT COUNT(*) FROM products");
+        $res = $conn->query("SELECT COUNT(*) FROM products WHERE $whereClause");
         if($res) { $row = $res->fetch_array(); $productsListed = $row[0]; }
 
         // Pending KYC
         $res = $conn->query("SELECT COUNT(*) FROM kyc_verifications WHERE status='pending'");
         if($res) { $row = $res->fetch_array(); $pendingCount = $row[0]; }
+        
+        // Forum Registrations
+        $res = $conn->query("SELECT COUNT(*) FROM forum_registrations WHERE $whereClauseForum");
+        if($res) { $row = $res->fetch_array(); $forumRegistrationsCount = $row[0]; }
 
         echo json_encode([
             "usersCount" => $usersCount,
@@ -346,7 +375,8 @@ if ($action === 'admin-stats') {
             "totalOrders" => $totalOrders,
             "productsListed" => $productsListed,
             "supportTickets" => $supportTickets,
-            "revenue" => $revenue
+            "revenue" => $revenue,
+            "forumRegistrations" => $forumRegistrationsCount
         ]);
         exit();
     }

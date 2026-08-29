@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
@@ -12,8 +12,8 @@ const transporter = nodemailer.createTransport({
   port: parseInt(process.env.SMTP_PORT || "465"),
   secure: true,
   auth: {
-    user: process.env.SMTP_USER || "podoremetropolis@gmail.com",
-    pass: process.env.SMTP_PASS || "ptfjtrjyaidmyqrf",
+    user: process.env.SMTP_USER || "camermarketer@gmail.com",
+    pass: process.env.SMTP_PASS || "jpsj nwue qkwf gfuo",
   },
 });
 
@@ -768,6 +768,74 @@ app.get("/api/user-data", async (req, res) => {
     return res.json({ success: true, message: "[SANDBOX] Money sent successfully." });
   }
 
+  if (action === "admin-stats") {
+    const filter = req.query.filter as string;
+    let whereClause: any = {};
+    let whereClauseUsers: any = {};
+    let whereClauseForum: any = {};
+
+    const now = new Date();
+    if (filter === "today") {
+      const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+      whereClause = { createdAt: { gte: startOfDay } };
+      whereClauseUsers = { createdAt: { gte: startOfDay } };
+      whereClauseForum = { registered_at: { gte: startOfDay } };
+    } else if (filter === "weekly") {
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      whereClause = { createdAt: { gte: startOfWeek } };
+      whereClauseUsers = { createdAt: { gte: startOfWeek } };
+      whereClauseForum = { registered_at: { gte: startOfWeek } };
+    } else if (filter === "monthly") {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      whereClause = { createdAt: { gte: startOfMonth } };
+      whereClauseUsers = { createdAt: { gte: startOfMonth } };
+      whereClauseForum = { registered_at: { gte: startOfMonth } };
+    } else if (filter === "yearly") {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      whereClause = { createdAt: { gte: startOfYear } };
+      whereClauseUsers = { createdAt: { gte: startOfYear } };
+      whereClauseForum = { registered_at: { gte: startOfYear } };
+    }
+
+    try {
+      const usersCount = await (prisma as any).user?.count({ where: whereClauseUsers }) || await (prisma as any).users?.count({ where: whereClauseUsers }) || 0;
+      const sellersCount = await (prisma as any).user?.count({ where: { ...whereClauseUsers, role: "seller" } }) || await (prisma as any).users?.count({ where: { ...whereClauseUsers, role: "seller" } }) || 0;
+      const totalOrders = await (prisma as any).order?.count({ where: whereClause }) || await (prisma as any).orders?.count({ where: whereClause }) || 0;
+      
+      const orders = await (prisma as any).order?.findMany({ where: whereClause }) || await (prisma as any).orders?.findMany({ where: whereClause }) || [];
+      const revenue = orders.reduce((sum: number, order: any) => sum + (parseFloat(order.totalPrice?.toString() || "0")), 0);
+      
+      const productsListed = await (prisma as any).products?.count({ where: whereClause }) || await (prisma as any).product?.count({ where: whereClause }) || 0;
+      const pendingCount = await (prisma as any).KycVerification?.count({ where: { status: "pending" } }).catch(() => 0) || await (prisma as any).kyc_verifications?.count({ where: { status: "pending" } }).catch(() => 0) || 0;
+      
+      const forumRegistrations = await prisma.$queryRaw<any[]>`
+        SELECT COUNT(*) as count FROM forum_registrations 
+        ${filter === 'today' ? Prisma.sql`WHERE DATE(registered_at) = CURDATE()` : 
+          filter === 'weekly' ? Prisma.sql`WHERE YEARWEEK(registered_at, 1) = YEARWEEK(CURDATE(), 1)` : 
+          filter === 'monthly' ? Prisma.sql`WHERE MONTH(registered_at) = MONTH(CURDATE()) AND YEAR(registered_at) = YEAR(CURDATE())` : 
+          filter === 'yearly' ? Prisma.sql`WHERE YEAR(registered_at) = YEAR(CURDATE())` : 
+          Prisma.empty}
+      `.catch(() => [{ count: 0n }]);
+
+      return res.json({
+        usersCount,
+        sellersCount,
+        totalOrders,
+        totalSales: revenue,
+        revenue,
+        productsListed,
+        pendingCount,
+        supportTickets: 0,
+        forumRegistrations: Number(forumRegistrations?.[0]?.count || 0)
+      });
+    } catch (e) {
+      console.error("Error fetching admin stats:", e);
+      return res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  }
+
   return res.status(404).json({ error: "Unknown action" });
 });
 
@@ -839,39 +907,7 @@ app.post("/api/forum-success", async (req, res) => {
     if (registration.payment_status !== 'completed') {
       await prisma.$executeRaw`UPDATE forum_registrations SET payment_status = 'completed' WHERE id = ${registration.id}`;
       
-      const adminEmail = process.env.SMTP_USER || "podoremetropolis@gmail.com";
-      const ticketHtml = `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #064E3B; text-align: center;">CameMark Forum Ticket</h2>
-          <p>Hi ${registration.name},</p>
-          <p>Thank you for registering for the CameMark Forum! Your payment was successful and your pass is confirmed.</p>
-          
-          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Name:</strong> ${registration.name}</p>
-            <p><strong>Email:</strong> ${registration.email}</p>
-            <p><strong>Phone:</strong> ${registration.phone}</p>
-            <p><strong>Pass Type:</strong> ${registration.category}</p>
-            <p><strong>Amount Paid:</strong> ${registration.amount_paid}</p>
-            <p><strong>Registration ID:</strong> ${registration.id}</p>
-          </div>
-          
-          <p>Please present this ticket at the event entrance.</p>
-          <p>Best regards,<br>The CameMark Team</p>
-        </div>
-      `;
-
-      try {
-        await transporter.sendMail({
-          from: `"CameMark Forum" <${adminEmail}>`,
-          to: email,
-          bcc: adminEmail,
-          subject: `CameMark Forum Pass Confirmation - ${registration.name}`,
-          html: ticketHtml,
-        });
-        console.log(`[FORUM TICKET] Sent to ${email}`);
-      } catch (err) {
-        console.warn(`[FORUM TICKET] Email failed:`, err);
-      }
+      // Email logic has been removed and is now handled exclusively by the webhook (/api/tranzak-webhook)
     }
     
     return res.json({ success: true, ticket: registration });
@@ -932,9 +968,9 @@ app.post("/api/tranzak-payment", async (req, res) => {
     if (userEmail) {
       try {
         await transporter.sendMail({
-          from: `"CameMark Marketplace" <${process.env.SMTP_USER || "podoremetropolis@gmail.com"}>`,
+          from: `"CameMark Marketplace" <${process.env.SMTP_USER || "camermarketer@gmail.com"}>`,
           to: userEmail,
-          bcc: process.env.SMTP_USER || "podoremetropolis@gmail.com",
+          bcc: process.env.SMTP_USER || "camermarketer@gmail.com",
           subject: `CameMark Payment Invoice — ${reference}`,
           html: invoiceHtml,
         });
@@ -1047,16 +1083,38 @@ app.post("/api/tranzak-payment", async (req, res) => {
 app.get("/api/admin/transactions", async (_req, res) => {
   try {
     const txs: any[] = await prisma.$queryRaw`
-      SELECT t.*, u.fullName, u.name, u.email 
+      SELECT t.*, u.fullName, u.email 
       FROM transactions t 
-      JOIN users u ON t.userId = u.id 
+      JOIN users u ON t.userId COLLATE utf8mb4_unicode_ci = u.id 
       ORDER BY t.createdAt DESC
     `;
+    
+    let forumPayments: any[] = [];
+    try {
+      forumPayments = await prisma.$queryRaw`
+        SELECT 
+          id,
+          'guest' as userId,
+          name as fullName,
+          email,
+          'payment' as type,
+          amount_paid as amount,
+          'XAF' as currency,
+          payment_status as status,
+          CONCAT('Forum 2026: ', category) as description,
+          id as reference,
+          registered_at as createdAt
+        FROM forum_registrations
+        ORDER BY registered_at DESC
+      `;
+    } catch (e) {
+      console.warn("Could not fetch forum registrations for transactions view", e);
+    }
     
     const formatted = txs.map(t => ({
       id: t.id,
       userId: t.userId,
-      fullName: t.fullName || t.name || "Unknown",
+      fullName: t.fullName || "Unknown",
       email: t.email || "Unknown",
       type: t.type,
       amount: Math.abs(parseFloat(t.amount || 0)), // Admin panel might want positive amounts displayed
@@ -1067,12 +1125,31 @@ app.get("/api/admin/transactions", async (_req, res) => {
       createdAt: t.createdAt
     }));
     
-    res.json({ success: true, transactions: formatted });
+    const formattedForum = forumPayments.map(f => ({
+      id: f.id,
+      userId: f.userId,
+      fullName: f.fullName,
+      email: f.email,
+      type: f.type,
+      amount: Math.abs(parseFloat((f.amount || "0").replace(/[^0-9.-]+/g,"")) || 0),
+      currency: f.currency,
+      status: f.status,
+      description: f.description,
+      reference: f.reference,
+      createdAt: f.createdAt
+    }));
+    
+    const combined = [...formatted, ...formattedForum].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    
+    res.json({ success: true, transactions: combined });
   } catch (error) {
     console.error("Failed to fetch admin transactions:", error);
     res.json({ success: false, transactions: [] });
   }
 });
+
 
 app.get("/api/admin/roles", async (_req, res) => {
   try {
@@ -1214,7 +1291,7 @@ app.post("/api/tranzak-webhook", async (req, res) => {
       
       if (rows.length > 0) {
         const registration = rows[0];
-        const adminEmail = process.env.SMTP_USER || "podoremetropolis@gmail.com";
+        const adminEmail = process.env.SMTP_USER || "camermarketer@gmail.com";
         const email = registration.email;
         
         const ticketHtml = `

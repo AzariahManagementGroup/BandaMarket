@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link, Routes, Route } from "react-router-dom";
-import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap, Gift, RefreshCw, Cloud, Wallet, AlertCircle, ArrowLeftRight } from "lucide-react";
+import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap, Gift, RefreshCw, Cloud, Wallet, AlertCircle, ArrowLeftRight, Home } from "lucide-react";
 
 import { getApiUrl } from "@/config";
 import { Button } from "@/components/ui/button";
@@ -147,6 +147,11 @@ const AdminDashboard = () => {
             </h2>
           </div>
           <div className="flex items-center gap-4">
+            <Link to="/">
+              <Button variant="ghost" size="icon" className="md:hidden text-muted-foreground hover:text-primary">
+                <Home className="h-5 w-5" />
+              </Button>
+            </Link>
             <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800 font-extrabold text-xs border border-emerald-300">
               SA
             </div>
@@ -181,6 +186,7 @@ const AdminDashboard = () => {
 };
 
 const AdminOverview = () => {
+  const [timeFilter, setTimeFilter] = useState("all");
   const [stats, setStats] = useState({
     totalUsers: { value: "0", change: "+0%" },
     activeSellers: { value: "0", change: "+0%" },
@@ -190,6 +196,7 @@ const AdminOverview = () => {
     productsListed: { value: "0", change: "+0%" },
     supportTickets: { value: "0", change: "0" },
     revenue: { value: "0 XAF", change: "+0%" },
+    forumRegistrations: { value: "0", change: "0" },
   });
 
   useEffect(() => {
@@ -202,12 +209,13 @@ const AdminOverview = () => {
       let productsListed = 0;
       let supportTickets = 0;
       let revenue = 0;
+      let forumRegistrations = 0;
 
       try {
         const token = localStorage.getItem("camemark_token");
         const headers = token ? { "Authorization": `Bearer ${token}` } : undefined;
         
-        const res = await fetch(getApiUrl("/api/user-data?action=admin-stats"), { headers });
+        const res = await fetch(getApiUrl(`/api/user-data?action=admin-stats&filter=${timeFilter}`), { headers });
         if (res.ok) {
           const data = await res.json();
           usersCount = data.usersCount || 0;
@@ -218,6 +226,7 @@ const AdminOverview = () => {
           productsListed = data.productsListed || 0;
           supportTickets = data.supportTickets || 0;
           revenue = data.revenue || 0;
+          forumRegistrations = data.forumRegistrations || 0;
         }
       } catch (err) {
         console.error("Failed to fetch admin stats:", err);
@@ -232,32 +241,50 @@ const AdminOverview = () => {
         productsListed: { value: (productsListed || 0).toLocaleString(), change: "+15%" },
         supportTickets: { value: (supportTickets || 0).toString(), change: "-5" },
         revenue: { value: `${(revenue / 1000000).toFixed(1)}M XAF`, change: "+20%" },
+        forumRegistrations: { value: (forumRegistrations || 0).toLocaleString(), change: "+0%" },
       });
     };
 
     fetchStats();
-  }, []);
+  }, [timeFilter]);
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-      {[
-        { label: "Total Users", ...stats.totalUsers },
-        { label: "Active Sellers", ...stats.activeSellers },
-        { label: "Marketplace Sales", ...stats.sales },
-        { label: "Pending Approvals", ...stats.pending },
-        { label: "Total Orders", ...stats.totalOrders },
-        { label: "Products Listed", ...stats.productsListed },
-        { label: "Support Tickets", ...stats.supportTickets },
-        { label: "Total Revenue", ...stats.revenue },
-      ].map((stat) => (
-        <div key={stat.label} className="p-6 rounded-2xl bg-card border border-border shadow-sm hover-lift flex flex-col justify-between">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
-          <p className="text-2xl font-extrabold text-foreground mt-2">{stat.value}</p>
-          <p className={`text-xs mt-2 font-medium ${stat.change.startsWith("+") ? "text-emerald-500" : stat.change.startsWith("-") ? "text-amber-500" : "text-muted-foreground"}`}>
-            {stat.change} from last month
-          </p>
-        </div>
-      ))}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-bold tracking-tight">Dashboard Overview</h3>
+        <select 
+          className="bg-card border border-border rounded-md px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+          value={timeFilter}
+          onChange={(e) => setTimeFilter(e.target.value)}
+        >
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="weekly">This Week</option>
+          <option value="monthly">This Month</option>
+          <option value="yearly">This Year</option>
+        </select>
+      </div>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {[
+          { label: "Forum Registrations", ...stats.forumRegistrations },
+          { label: "Total Users", ...stats.totalUsers },
+          { label: "Active Sellers", ...stats.activeSellers },
+          { label: "Marketplace Sales", ...stats.sales },
+          { label: "Pending Approvals", ...stats.pending },
+          { label: "Total Orders", ...stats.totalOrders },
+          { label: "Products Listed", ...stats.productsListed },
+          { label: "Support Tickets", ...stats.supportTickets },
+          { label: "Total Revenue", ...stats.revenue },
+        ].map((stat) => (
+          <div key={stat.label} className="p-6 rounded-2xl bg-card border border-border shadow-sm hover-lift flex flex-col justify-between">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
+            <p className="text-2xl font-extrabold text-foreground mt-2">{stat.value}</p>
+            <p className={`text-xs mt-2 font-medium ${stat.change.startsWith("+") ? "text-emerald-500" : stat.change.startsWith("-") ? "text-amber-500" : "text-muted-foreground"}`}>
+              {stat.change} from last month
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
