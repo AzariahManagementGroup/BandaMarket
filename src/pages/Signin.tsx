@@ -138,6 +138,8 @@ const Signin = () => {
                   <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />
                   <Input 
                     type="text" 
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="123456" 
                     maxLength={6}
                     required 

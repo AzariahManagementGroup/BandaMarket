@@ -310,6 +310,8 @@ const Signup = () => {
                   <Label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">6-Digit Security Code</Label>
                   <Input 
                     type="text" 
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="123456" 
                     maxLength={6}
                     required 
