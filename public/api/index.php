@@ -134,11 +134,12 @@ if (strpos($uri, 'signup') !== false) {
         $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
-        $result = $stmt->get_result();
+        $stmt->store_result();
 
-        if ($result->num_rows > 0) {
+        if ($stmt->num_rows > 0) {
             http_response_code(400);
             echo json_encode(["error" => "User with this email already exists."]);
+            $stmt->close();
             exit();
         }
         $stmt->close();
