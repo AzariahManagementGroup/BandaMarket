@@ -1305,7 +1305,7 @@ const BuyerDashboard = () => {
       )}
       {/* Mobile Menu Sidebar */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-        <SheetContent side="left" className="p-0 bg-white border-r-0 w-72">
+        <SheetContent side="left" className="p-0 bg-white border-r-0 w-72 flex flex-col">
           <SheetHeader className="p-6 bg-[#064E3B] text-white text-left">
             <div className="flex items-center gap-2 mb-2">
               <img src={logo} alt="CameMark" className="h-8 w-auto brightness-0 invert" />
@@ -1316,7 +1316,7 @@ const BuyerDashboard = () => {
             </SheetDescription>
           </SheetHeader>
           
-          <nav className="p-4 space-y-1">
+          <nav className="p-4 space-y-1 flex-1 overflow-y-auto custom-scrollbar">
             {navItems.map((item) => (
               <button
                 key={item.label}
