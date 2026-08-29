@@ -52,12 +52,31 @@ $loginLogsSql = "CREATE TABLE IF NOT EXISTS `login_logs` (
   `status` enum('SUCCESS','FAILED') NOT NULL,
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
 if ($conn->query($loginLogsSql)) {
     $results[] = "Login_logs table checked/created";
 } else {
-    $results[] = "Error with login_logs table: " . $conn->error;
+    $results[] = "Error creating login_logs table: " . $conn->error;
+}
+
+// 5. Ensure user_activity_logs table exists
+$activityLogsSql = "CREATE TABLE IF NOT EXISTS `user_activity_logs` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `userId` varchar(36) NOT NULL,
+  `action` varchar(100) NOT NULL,
+  `details` text,
+  `ipAddress` varchar(45) DEFAULT NULL,
+  `userAgent` varchar(255) DEFAULT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `userId` (`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+if ($conn->query($activityLogsSql)) {
+    $results[] = "user_activity_logs table checked/created";
+} else {
+    $results[] = "Error creating user_activity_logs table: " . $conn->error;
 }
 
 echo json_encode(["status" => "success", "results" => $results]);
