@@ -151,7 +151,7 @@ if (strpos($uri, 'signup') !== false) {
             log_user_activity($conn, $userId, "signup", "User registered an account");
 
             // Generate OTP
-            $otpCode = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $otpCode = (string) mt_rand(100000, 999999);
             $otpExpiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
             
             // Save OTP
@@ -219,7 +219,7 @@ if (strpos($uri, 'signin') !== false) {
 
             if ($requiresOtp) {
                 // Generate OTP
-                $otpCode = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+                $otpCode = (string) mt_rand(100000, 999999);
                 $otpExpiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
                 
                 // Save OTP
