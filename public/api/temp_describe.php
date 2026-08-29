@@ -1,11 +1,16 @@
 <?php
-$mysqli = new mysqli('localhost', 'root', '', 'camemark_db');
-$res = $mysqli->query('DESCRIBE users');
-if ($res) {
-    while ($row = $res->fetch_assoc()) {
-        echo $row['Field'] . "\n";
+require_once __DIR__ . '/config.php';
+$res = $conn->query("DESCRIBE users");
+while($row = $res->fetch_assoc()) {
+    echo $row['Field'] . ", ";
+}
+echo "\n---\n";
+$res2 = $conn->query("DESCRIBE forum_registrations");
+if($res2) {
+    while($row = $res2->fetch_assoc()) {
+        echo $row['Field'] . ", ";
     }
 } else {
-    echo "Error: " . $mysqli->error;
+    echo "forum_registrations does not exist";
 }
 ?>
