@@ -75,14 +75,82 @@ app.post("/api/auth/signup", async (req, res) => {
   }
 });
 
+// Define RateLimiter structures
+interface RateLimitData {
+  count: number;
+  firstFailedAt: number;
+  lockUntil: number | null;
+}
+
+const ipFailures = new Map<string, RateLimitData>();
+const accountFailures = new Map<string, RateLimitData>();
+
+// Cleanup stale records every 5 mins
+setInterval(() => {
+  const now = Date.now();
+  const cleanupMap = (map: Map<string, RateLimitData>, timeoutMs: number) => {
+    for (const [key, data] of map.entries()) {
+      if ((!data.lockUntil || data.lockUntil < now) && (now - data.firstFailedAt > timeoutMs)) {
+        map.delete(key);
+      }
+    }
+  };
+  cleanupMap(ipFailures, 5 * 60 * 1000); // IP window is 5 mins
+  cleanupMap(accountFailures, 15 * 60 * 1000); // Account window is 15 mins
+}, 5 * 60 * 1000);
+
+const getProgressiveDelay = (failCount: number): number => {
+  if (failCount <= 1) return 0;
+  if (failCount === 2) return 1000;
+  if (failCount === 3) return 2000;
+  if (failCount === 4) return 5000;
+  return 15000;
+};
+
 // Signin route
 app.post("/api/auth/signin", async (req, res) => {
   try {
     const { email: rawEmail, password } = req.body;
     const email = rawEmail?.trim().toLowerCase();
+    
+    // Use x-forwarded-for if behind a proxy, otherwise remoteAddress
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.socket.remoteAddress || 'unknown';
 
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required." });
+    }
+
+    const now = Date.now();
+    const ipData = ipFailures.get(ip) || { count: 0, firstFailedAt: now, lockUntil: null };
+    const accData = accountFailures.get(email) || { count: 0, firstFailedAt: now, lockUntil: null };
+
+    // Reset counts if window has passed and no active lock
+    if (now - ipData.firstFailedAt > 5 * 60 * 1000 && (!ipData.lockUntil || ipData.lockUntil < now)) {
+      ipData.count = 0;
+      ipData.firstFailedAt = now;
+      ipData.lockUntil = null;
+    }
+    if (now - accData.firstFailedAt > 15 * 60 * 1000 && (!accData.lockUntil || accData.lockUntil < now)) {
+      accData.count = 0;
+      accData.firstFailedAt = now;
+      accData.lockUntil = null;
+    }
+
+    // Check Locks
+    if (ipData.lockUntil && ipData.lockUntil > now) {
+      const minutesLeft = Math.ceil((ipData.lockUntil - now) / 60000);
+      return res.status(429).json({ error: `Too many login attempts from this IP. Please try again in ${minutesLeft} minute(s).` });
+    }
+    if (accData.lockUntil && accData.lockUntil > now) {
+      const minutesLeft = Math.ceil((accData.lockUntil - now) / 60000);
+      return res.status(429).json({ error: `Too many login attempts for this account. Please try again in ${minutesLeft} minute(s).` });
+    }
+
+    // Apply Progressive Delay
+    const maxCount = Math.max(ipData.count, accData.count);
+    const delayMs = getProgressiveDelay(maxCount);
+    if (delayMs > 0) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
     }
 
     const user = await prisma.user.findUnique({
@@ -90,14 +158,38 @@ app.post("/api/auth/signin", async (req, res) => {
       include: { wallet: true },
     });
 
-    if (!user) {
+    const isValidPassword = user ? await bcrypt.compare(password, user.passwordHash) : false;
+
+    if (!user || !isValidPassword) {
+      // Record failure
+      ipData.count++;
+      accData.count++;
+      
+      // Update IP Lock (10 fails in 5 mins -> 15 min lock)
+      if (ipData.count >= 10) {
+        ipData.lockUntil = now + 15 * 60 * 1000;
+      }
+      
+      // Update Account Lock
+      if (accData.count >= 10) {
+        accData.lockUntil = now + 15 * 60 * 1000;
+      } else if (accData.count >= 5 && accData.count < 10) {
+        // Only trigger the 1-min lock exactly at 5, or if it expired we might trigger it again, 
+        // but wait, if it hits 5, we lock for 1 min.
+        // If they fail again (6), it will lock for 1 min again unless we only lock at exactly 5.
+        // Let's just lock for 1 min every time between 5 and 9 to be safe.
+        accData.lockUntil = now + 1 * 60 * 1000;
+      }
+
+      ipFailures.set(ip, ipData);
+      accountFailures.set(email, accData);
+
       return res.status(400).json({ error: "Invalid email or password." });
     }
 
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-    if (!isValidPassword) {
-      return res.status(400).json({ error: "Invalid email or password." });
-    }
+    // Success! Clear failures
+    ipFailures.delete(ip);
+    accountFailures.delete(email);
 
     const token = jwt.sign({ userId: user.id, role: user.role, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
 
