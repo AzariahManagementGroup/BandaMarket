@@ -2,6 +2,11 @@
 // Unified Clean Router for /api Endpoint Routing
 require_once __DIR__ . '/config.php';
 
+if (strpos($uri, 'create_admin') !== false) {
+    require_once __DIR__ . '/create_admin.php';
+    exit();
+}
+
 if (strpos($uri, 'create_login_logs') !== false) {
     require_once __DIR__ . '/create_login_logs.php';
     exit();
