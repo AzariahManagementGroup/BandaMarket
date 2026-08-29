@@ -2,6 +2,17 @@
 // API Endpoint for Products Database Management
 require_once __DIR__ . '/config.php';
 
+// Drop table if it exists so we can recreate it with the correct schema
+try {
+    $c = $conn->query("SELECT COUNT(*) as cnt FROM products");
+    if ($c) {
+        $r = $c->fetch_assoc();
+        if (intval($r['cnt']) === 0) {
+            $conn->query("DROP TABLE products");
+        }
+    }
+} catch (Exception $e) {}
+
 // 1. Automatic Schema Initialization for products
 $conn->query("CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,

@@ -27,6 +27,7 @@ try {
     if ($conn->connect_error) {
         throw new Exception($conn->connect_error);
     }
+    $conn->set_charset('utf8mb4');
 } catch (Exception $e) {
     // Fallback to production credentials
     try {
@@ -36,6 +37,7 @@ try {
             echo json_encode(["error" => "Database connection failed: " . $conn->connect_error]);
             exit();
         }
+        $conn->set_charset('utf8mb4');
     } catch (Exception $e2) {
         http_response_code(500);
         echo json_encode(["error" => "Database connection failed: " . $e2->getMessage()]);

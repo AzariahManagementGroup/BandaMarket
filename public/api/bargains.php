@@ -22,35 +22,45 @@ $request_method = $_SERVER['REQUEST_METHOD'];
 
 // GET Request: Fetch Bargain Deals and Submitted Bargains from Database
 if ($request_method === 'GET') {
-    // A. Fetch featured bargain deals
-    $dealsRes = $conn->query("SELECT id, title, price, originalPrice as oldPrice, discountPercent as off, imageUrl as img, region, sellerName as seller FROM bargain_deals WHERE isLive = 1 ORDER BY id DESC");
-    $deals = [];
-    if ($dealsRes) {
-        while ($row = $dealsRes->fetch_assoc()) {
-            $row['id'] = intval($row['id']);
-            $row['price'] = floatval($row['price']);
-            $row['oldPrice'] = floatval($row['oldPrice']);
-            $row['formattedPrice'] = "FCFA " . number_format($row['price']);
-            $row['formattedOldPrice'] = "FCFA " . number_format($row['oldPrice']);
-            $deals[] = $row;
+    try {
+        // A. Fetch featured bargain deals
+        $dealsRes = $conn->query("SELECT id, title, price, originalPrice as oldPrice, discountPercent as off, imageUrl as img, region, sellerName as seller FROM bargain_deals WHERE isLive = 1 ORDER BY id DESC");
+        $deals = [];
+        if ($dealsRes) {
+            while ($row = $dealsRes->fetch_assoc()) {
+                $row['id'] = intval($row['id']);
+                $row['price'] = floatval($row['price']);
+                $row['oldPrice'] = floatval($row['oldPrice']);
+                $row['formattedPrice'] = "FCFA " . number_format($row['price']);
+                $row['formattedOldPrice'] = "FCFA " . number_format($row['oldPrice']);
+                $deals[] = $row;
+            }
         }
-    }
 
-    // B. Fetch submitted user bargains
-    $userBargainsRes = $conn->query("SELECT * FROM bargains ORDER BY createdAt DESC LIMIT 20");
-    $userBargains = [];
-    if ($userBargainsRes) {
-        while ($brow = $userBargainsRes->fetch_assoc()) {
-            $userBargains[] = $brow;
+        // B. Fetch submitted user bargains
+        $userBargainsRes = $conn->query("SELECT * FROM bargains ORDER BY createdAt DESC LIMIT 20");
+        $userBargains = [];
+        if ($userBargainsRes) {
+            while ($brow = $userBargainsRes->fetch_assoc()) {
+                $userBargains[] = $brow;
+            }
         }
-    }
 
-    echo json_encode([
-        "success" => true,
-        "deals" => $deals,
-        "bargains" => $userBargains
-    ]);
-    exit();
+        $out = json_encode([
+            "success" => true,
+            "deals" => $deals,
+            "bargains" => $userBargains
+        ]);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception("JSON Encode Error: " . json_last_error_msg());
+        }
+        echo $out;
+        exit();
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(["error" => "Bargains GET failed: " . $e->getMessage()]);
+        exit();
+    }
 }
 
 // POST Request: Submit new user bargain negotiation
