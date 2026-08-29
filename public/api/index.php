@@ -193,67 +193,70 @@ if (strpos($uri, 'signin') !== false) {
         exit();
     }
 
-    $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    if (strpos($ip, ',') !== false) {
-        $ip = explode(',', $ip)[0];
-    }
+    $ipFailures = 0;
+    $accFailures = 0;
     
-    // Check IP rate limit (last 5 minutes)
-    $ipStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM login_logs WHERE ipAddress = ? AND status = 'FAILED' AND createdAt > (NOW() - INTERVAL 5 MINUTE)");
-    if ($ipStmt) {
-        $ipStmt->bind_param("s", $ip);
-        $ipStmt->execute();
-        $ipFailures = (int)$ipStmt->get_result()->fetch_assoc()['cnt'];
-        $ipStmt->close();
-    } else {
-        $ipFailures = 0;
-    }
-
-    // Check Account rate limit (last 15 minutes)
-    $accStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM login_logs WHERE email = ? AND status = 'FAILED' AND createdAt > (NOW() - INTERVAL 15 MINUTE)");
-    if ($accStmt) {
-        $accStmt->bind_param("s", $email);
-        $accStmt->execute();
-        $accFailures = (int)$accStmt->get_result()->fetch_assoc()['cnt'];
-        $accStmt->close();
-    } else {
-        $accFailures = 0;
-    }
-
-    // IP block: 10 failures -> lock for 15 mins
-    $ipLockStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM login_logs WHERE ipAddress = ? AND status = 'FAILED' AND createdAt > (NOW() - INTERVAL 15 MINUTE)");
-    if ($ipLockStmt) {
-        $ipLockStmt->bind_param("s", $ip);
-        $ipLockStmt->execute();
-        $ipLockCount = (int)$ipLockStmt->get_result()->fetch_assoc()['cnt'];
-        $ipLockStmt->close();
-        if ($ipLockCount >= 10) {
-            http_response_code(429);
-            echo json_encode(["error" => "Too many failed attempts from this IP. Please try again in 15 minutes."]);
-            exit();
+    try {
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        if (strpos($ip, ',') !== false) {
+            $ip = explode(',', $ip)[0];
         }
-    }
-
-    // Account block: 5 failures -> lock for 1 min
-    $accLockStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM login_logs WHERE email = ? AND status = 'FAILED' AND createdAt > (NOW() - INTERVAL 1 MINUTE)");
-    if ($accLockStmt) {
-        $accLockStmt->bind_param("s", $email);
-        $accLockStmt->execute();
-        $accLockCount = (int)$accLockStmt->get_result()->fetch_assoc()['cnt'];
-        $accLockStmt->close();
-        if ($accLockCount >= 5) {
-            http_response_code(429);
-            echo json_encode(["error" => "Too many failed attempts for this account. Please try again in 1 minute."]);
-            exit();
+        
+        // Check IP rate limit (last 5 minutes)
+        $ipStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM login_logs WHERE ipAddress = ? AND status = 'FAILED' AND createdAt > (NOW() - INTERVAL 5 MINUTE)");
+        if ($ipStmt) {
+            $ipStmt->bind_param("s", $ip);
+            $ipStmt->execute();
+            $ipFailures = (int)$ipStmt->get_result()->fetch_assoc()['cnt'];
+            $ipStmt->close();
         }
-    }
 
-    // Progressive delays based on max failures
-    $maxFailures = max($ipFailures, $accFailures);
-    if ($maxFailures == 2) sleep(1);
-    else if ($maxFailures == 3) sleep(2);
-    else if ($maxFailures == 4) sleep(5);
-    else if ($maxFailures >= 5) sleep(15);
+        // Check Account rate limit (last 15 minutes)
+        $accStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM login_logs WHERE email = ? AND status = 'FAILED' AND createdAt > (NOW() - INTERVAL 15 MINUTE)");
+        if ($accStmt) {
+            $accStmt->bind_param("s", $email);
+            $accStmt->execute();
+            $accFailures = (int)$accStmt->get_result()->fetch_assoc()['cnt'];
+            $accStmt->close();
+        }
+
+        // IP block: 10 failures -> lock for 15 mins
+        $ipLockStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM login_logs WHERE ipAddress = ? AND status = 'FAILED' AND createdAt > (NOW() - INTERVAL 15 MINUTE)");
+        if ($ipLockStmt) {
+            $ipLockStmt->bind_param("s", $ip);
+            $ipLockStmt->execute();
+            $ipLockCount = (int)$ipLockStmt->get_result()->fetch_assoc()['cnt'];
+            $ipLockStmt->close();
+            if ($ipLockCount >= 10) {
+                http_response_code(429);
+                echo json_encode(["error" => "Too many failed attempts from this IP. Please try again in 15 minutes."]);
+                exit();
+            }
+        }
+
+        // Account block: 5 failures -> lock for 1 min
+        $accLockStmt = $conn->prepare("SELECT COUNT(*) as cnt FROM login_logs WHERE email = ? AND status = 'FAILED' AND createdAt > (NOW() - INTERVAL 1 MINUTE)");
+        if ($accLockStmt) {
+            $accLockStmt->bind_param("s", $email);
+            $accLockStmt->execute();
+            $accLockCount = (int)$accLockStmt->get_result()->fetch_assoc()['cnt'];
+            $accLockStmt->close();
+            if ($accLockCount >= 5) {
+                http_response_code(429);
+                echo json_encode(["error" => "Too many failed attempts for this account. Please try again in 1 minute."]);
+                exit();
+            }
+        }
+
+        // Progressive delays based on max failures
+        $maxFailures = max($ipFailures, $accFailures);
+        if ($maxFailures == 2) sleep(1);
+        else if ($maxFailures == 3) sleep(2);
+        else if ($maxFailures == 4) sleep(5);
+        else if ($maxFailures >= 5) sleep(15);
+    } catch (Exception $e) {
+        // Table login_logs might not exist, silently ignore
+    }
 
     $stmt = $conn->prepare("SELECT id, email, passwordHash, fullName, role, preferredCurrency, isVerified, lastLoginAt FROM users WHERE email = ?");
     if (!$stmt) {
@@ -345,13 +348,15 @@ if (strpos($uri, 'signin') !== false) {
                 }
             }
             
-            $logId = bin2hex(random_bytes(16));
-            $logStmt = $conn->prepare("INSERT INTO login_logs (id, email, ipAddress, location, status) VALUES (?, ?, ?, ?, 'SUCCESS')");
-            if ($logStmt) {
-                $logStmt->bind_param("ssss", $logId, $email, $ip, $location);
-                $logStmt->execute();
-                $logStmt->close();
-            }
+            try {
+                $logId = bin2hex(random_bytes(16));
+                $logStmt = $conn->prepare("INSERT INTO login_logs (id, email, ipAddress, location, status) VALUES (?, ?, ?, ?, 'SUCCESS')");
+                if ($logStmt) {
+                    $logStmt->bind_param("ssss", $logId, $email, $ip, $location);
+                    $logStmt->execute();
+                    $logStmt->close();
+                }
+            } catch (Exception $e) {}
 
             http_response_code(200);
             echo json_encode([
@@ -385,13 +390,15 @@ if (strpos($uri, 'signin') !== false) {
         }
     }
     
-    $logId = bin2hex(random_bytes(16));
-    $logStmt = $conn->prepare("INSERT INTO login_logs (id, email, ipAddress, location, status) VALUES (?, ?, ?, ?, 'FAILED')");
-    if ($logStmt) {
-        $logStmt->bind_param("ssss", $logId, $email, $ip, $location);
-        $logStmt->execute();
-        $logStmt->close();
-    }
+    try {
+        $logId = bin2hex(random_bytes(16));
+        $logStmt = $conn->prepare("INSERT INTO login_logs (id, email, ipAddress, location, status) VALUES (?, ?, ?, ?, 'FAILED')");
+        if ($logStmt) {
+            $logStmt->bind_param("ssss", $logId, $email, $ip, $location);
+            $logStmt->execute();
+            $logStmt->close();
+        }
+    } catch (Exception $e) {}
     
     // Security email on 3rd failure
     if ($accFailures + 1 == 3) {
