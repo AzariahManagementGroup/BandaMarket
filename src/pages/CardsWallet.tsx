@@ -5,7 +5,7 @@ import {
   ArrowRight, Shield, Globe, Lock,
   ChevronLeft, Loader2, CheckCircle2,
   Trash2, AlertCircle, ShieldCheck,
-  ArrowDown, Store, Download, ArrowLeftRight, Receipt
+  ArrowDown, Store, Download, ArrowLeftRight, Receipt, Headphones
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -254,11 +254,11 @@ const CardsWallet = () => {
                </h4>
                <div className="grid grid-cols-3 gap-3">
                  <QuickAction icon={Plus} label="Add Money" onClick={() => setIsTopupOpen(true)} />
-                 <QuickAction icon={ArrowUpRight} label="Send Money" />
-                 <QuickAction icon={Store} label="Pay Merchant" />
-                 <QuickAction icon={Download} label="Withdraw" />
-                 <QuickAction icon={ArrowLeftRight} label="Transfer" />
-                 <QuickAction icon={Receipt} label="Request" />
+                 <QuickAction icon={ArrowUpRight} label="Send Money" onClick={() => toast.info("Send Money feature is coming soon!")} />
+                 <QuickAction icon={Store} label="Pay Merchant" onClick={() => toast.info("Pay Merchant via QR is coming soon!")} />
+                 <QuickAction icon={Download} label="Withdraw" onClick={() => toast.info("Withdraw to bank/momo is coming soon!")} />
+                 <QuickAction icon={ArrowLeftRight} label="Transfer" onClick={() => toast.info("Wallet transfer feature is coming soon!")} />
+                 <QuickAction icon={Receipt} label="Request" onClick={() => toast.info("Request Payment feature is coming soon!")} />
                </div>
             </div>
 
@@ -437,6 +437,49 @@ const CardsWallet = () => {
                  }} />
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Promotional Banners */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto px-6 mb-12">
+        <div className="bg-gradient-to-br from-[#064E3B] to-emerald-900 rounded-3xl p-6 text-white flex flex-col justify-between relative overflow-hidden min-h-[12rem]">
+          <div className="relative z-10 w-3/4">
+            <h3 className="font-black text-lg mb-2">Send Money Across Cameroon</h3>
+            <p className="text-[10px] text-emerald-100/80 mb-4 leading-relaxed">Send instantly to mobile money, bank accounts, or other CaMark wallet users.</p>
+            <Button onClick={() => toast.info("Send Money is coming soon!")} className="bg-[#EAB308] hover:bg-yellow-500 text-yellow-950 font-bold rounded-xl h-9 text-xs px-4">
+              Send Money Now <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
+          {/* Decorative elements */}
+          <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-emerald-800 rounded-full blur-2xl opacity-50"></div>
+          <ArrowUpRight className="absolute right-4 bottom-4 h-16 w-16 text-emerald-800 opacity-30" />
+        </div>
+
+        <div className="bg-[#022C22] rounded-3xl p-6 text-white flex flex-col justify-between relative overflow-hidden min-h-[12rem]">
+          <div className="relative z-10 w-3/4">
+            <h3 className="font-black text-lg mb-2">Shop with Confidence</h3>
+            <p className="text-[10px] text-emerald-100/80 mb-4 leading-relaxed">Pay securely with your CamRency Wallet or CaMark Card across the marketplace.</p>
+            <Button onClick={() => navigate("/market-zone")} className="bg-white hover:bg-gray-100 text-emerald-900 font-bold rounded-xl h-9 text-xs px-4">
+              Start Shopping <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
+          <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-emerald-900 rounded-full blur-2xl opacity-50"></div>
+          <Store className="absolute right-4 bottom-4 h-16 w-16 text-emerald-900 opacity-30" />
+        </div>
+
+        <div className="bg-[#064E3B] rounded-3xl p-6 text-white flex flex-col justify-between relative overflow-hidden min-h-[12rem]">
+          <div className="relative z-10 w-3/4">
+            <h3 className="font-black text-lg mb-2">Buyer Support</h3>
+            <p className="text-[10px] text-emerald-100/80 mb-4 leading-relaxed">Need help with your wallet or transactions? Our support team is here for you.</p>
+            <Button onClick={() => toast.info("Support Center is coming soon!")} className="bg-white hover:bg-gray-100 text-emerald-900 font-bold rounded-xl h-9 text-xs px-4">
+              Get Help <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
+          <div className="absolute right-6 top-1/2 -translate-y-1/2">
+             <div className="h-16 w-16 bg-emerald-800/50 rounded-full flex items-center justify-center">
+                <Headphones className="h-8 w-8 text-white opacity-90" />
+             </div>
           </div>
         </div>
       </div>
