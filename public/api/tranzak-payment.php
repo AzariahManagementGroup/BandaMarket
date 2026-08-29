@@ -132,7 +132,7 @@ if (empty($appId) || empty($appKey)) {
 }
 
 // ─── Live / Real Tranzak flow ─────────────────────────────────────────────────
-$baseUrl = $isSandbox ? "https://sandbox.tranzak.me" : "https://api.tranzak.me";
+$baseUrl = $isSandbox ? "https://sandbox.dsapi.tranzak.me" : "https://dsapi.tranzak.me";
 
 function getTranzakToken($baseUrl, $appId, $appKey) {
     $ch = curl_init($baseUrl . "/auth/token");
@@ -158,10 +158,11 @@ if (!$token) {
 }
 
 $requestBody = [
-    "amount"      => $amount,
-    "currencyCode"=> $currency,
-    "description" => $description,
-    "payerNote"   => "Payment via CameMark"
+    "amount"            => $amount,
+    "currencyCode"      => $currency,
+    "description"       => $description,
+    "mchTransactionRef" => $reference,
+    "payerNote"         => "Payment via CameMark"
 ];
 
 $endpoint = "/xp021/v1/request/create";
