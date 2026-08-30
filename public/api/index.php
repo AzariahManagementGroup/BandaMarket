@@ -1,5 +1,34 @@
 <?php
 // Unified Clean Router for /api Endpoint Routing
+
+// ---- PRE-CONFIG DIAGNOSTIC (runs before config.php) ----
+$_raw_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+if (strpos($_raw_uri, 'raw-diag') !== false) {
+    header("Content-Type: application/json");
+    header("Access-Control-Allow-Origin: *");
+    $d = [];
+    $d['php_version'] = PHP_VERSION;
+    $d['mysqli'] = extension_loaded('mysqli');
+    $d['curl'] = extension_loaded('curl');
+    $d['memory_limit'] = ini_get('memory_limit');
+    $d['max_execution_time'] = ini_get('max_execution_time');
+    // try raw DB
+    $c = @new mysqli('localhost', 'worlvjwl_camemark_dbuser', 'camemark_dbuser$1', 'worlvjwl_camemark_db');
+    $d['db'] = $c->connect_error ? 'FAIL: '.$c->connect_error : 'OK';
+    if (!$c->connect_error) {
+        $t = $c->query("SHOW TABLES LIKE 'forum_registrations'");
+        $d['forum_table'] = ($t && $t->num_rows > 0) ? 'EXISTS' : 'MISSING';
+        $c->close();
+    }
+    // test if config.php has a fatal error by checking its syntax output
+    $configPath = __DIR__ . '/config.php';
+    $d['config_exists'] = file_exists($configPath);
+    $d['config_size'] = file_exists($configPath) ? filesize($configPath) : 0;
+    echo json_encode($d, JSON_PRETTY_PRINT);
+    exit();
+}
+// ---- END PRE-CONFIG DIAGNOSTIC ----
+
 require_once __DIR__ . '/config.php';
 
 if (strpos($uri, 'create_admin') !== false) {
