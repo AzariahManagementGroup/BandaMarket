@@ -17,11 +17,16 @@ const allCountries = Country.getAllCountries();
 const ForumEventSection = () => {
   const [activeDay, setActiveDay] = useState(1);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const getPhoneCode = (isoCode: string) => {
+    const c = Country.getCountryByCode(isoCode);
+    return c?.phonecode ? "+" + c.phonecode.replace(/\+/g, "") : "";
+  };
+
   const [registerForm, setRegisterForm] = useState({
     name: "",
     gender: "",
     email: "",
-    phone: "",
+    phone: "+237 ",
     organization: "",
     address: "",
     city: "",
@@ -416,14 +421,24 @@ const ForumEventSection = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-500 uppercase">Phone / WhatsApp</label>
-                <input 
-                  type="text"
-                  required
-                  placeholder="+237 6xx xxx xxx"
-                  className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
-                  value={registerForm.phone}
-                  onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
-                />
+                <div className="flex items-center gap-2 h-10 rounded-xl bg-gray-50 border border-gray-200 px-3 overflow-hidden">
+                  <span className="text-xs font-bold text-green-700 whitespace-nowrap shrink-0">
+                    {getPhoneCode(registerForm.country) || "+???"}
+                  </span>
+                  <span className="text-gray-300 text-sm">|</span>
+                  <input 
+                    type="tel"
+                    required
+                    placeholder="6xx xxx xxx"
+                    className="flex-1 bg-transparent text-xs outline-none min-w-0"
+                    value={registerForm.phone.replace(/^\+\d+\s*/, "")}
+                    onChange={(e) => {
+                      const code = getPhoneCode(registerForm.country);
+                      const local = e.target.value.replace(/^\+\d+\s*/, "");
+                      setRegisterForm({ ...registerForm, phone: code ? code + " " + local : local });
+                    }}
+                  />
+                </div>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-500 uppercase">Organization</label>
@@ -453,7 +468,16 @@ const ForumEventSection = () => {
                 <select 
                   className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
                   value={registerForm.country}
-                  onChange={(e) => setRegisterForm({ ...registerForm, country: e.target.value, city: "" })}
+                  onChange={(e) => {
+                    const code = getPhoneCode(e.target.value);
+                    const currentLocal = registerForm.phone.replace(/^\+\d+\s*/, "");
+                    setRegisterForm({ 
+                      ...registerForm, 
+                      country: e.target.value, 
+                      city: "",
+                      phone: code ? code + " " + currentLocal : currentLocal
+                    });
+                  }}
                 >
                   <option value="">Select Country</option>
                   {allCountries.map((c) => (
