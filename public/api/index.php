@@ -13,35 +13,26 @@ if (strpos($_raw_uri, 'raw-diag') !== false) {
     $d['memory_limit'] = ini_get('memory_limit');
     $d['max_execution_time'] = ini_get('max_execution_time');
     // try raw DB
-    $c = @new mysqli('localhost', 'worlvjwl_camemark_dbuser', 'camemark_dbuser$1', 'worlvjwl_camemark_db');
-    $d['db'] = $c->connect_error ? 'FAIL: '.$c->connect_error : 'OK';
-    if (!$c->connect_error) {
-        $c->set_charset('utf8mb4');
-        // Check table
-        $t = $c->query("SHOW TABLES LIKE 'forum_registrations'");
-        $d['forum_table'] = ($t && $t->num_rows > 0) ? 'EXISTS' : 'MISSING';
-        
-        // Check for table locks
-        $locks = $c->query("SHOW OPEN TABLES WHERE In_use > 0");
-        $d['locked_tables'] = [];
-        if ($locks) { while ($row = $locks->fetch_assoc()) { $d['locked_tables'][] = $row; } }
-        
-        // Check process list for long-running queries
-        $pl = $c->query("SHOW PROCESSLIST");
-        $d['processlist'] = [];
-        if ($pl) { while ($row = $pl->fetch_assoc()) { if ($row['Time'] > 5) $d['processlist'][] = $row; } }
+    try {
+        $c = @new mysqli('localhost', 'worlvjwl_camemark_dbuser', 'camemark_dbuser$1', 'worlvjwl_camemark_db');
+        $d['db'] = $c->connect_error ? 'FAIL: '.$c->connect_error : 'OK';
+        if (!$c->connect_error) {
+            $c->set_charset('utf8mb4');
+            $t = $c->query("SHOW TABLES LIKE 'forum_registrations'");
+            $d['forum_table'] = ($t && $t->num_rows > 0) ? 'EXISTS' : 'MISSING';
 
-        // Try a direct INSERT with 3s timeout
-        $c->query("SET SESSION wait_timeout=3");
-        $c->query("SET SESSION lock_wait_timeout=3");
-        $tid = 'diag-'.time();
-        $ok = @$c->query("INSERT INTO forum_registrations (id, name, email, phone, category, payment_status, amount_paid) VALUES ('$tid','Diag','diag@diag.com','670000000','Standard','pending','30,000 XAF')");
-        $d['direct_insert'] = $ok ? 'OK' : ('FAIL: '.$c->error);
-        if ($ok) { $c->query("DELETE FROM forum_registrations WHERE id='$tid'"); }
+            // Try a direct INSERT with short lock timeout
+            @$c->query("SET SESSION lock_wait_timeout=3");
+            $tid = 'diag-'.time();
+            $ok = @$c->query("INSERT INTO forum_registrations (id, name, email, phone, category, payment_status, amount_paid) VALUES ('$tid','Diag','diag@diag.com','670000000','Standard','pending','30,000 XAF')");
+            $d['direct_insert'] = $ok ? 'OK' : ('FAIL: '.$c->error);
+            if ($ok) { @$c->query("DELETE FROM forum_registrations WHERE id='$tid'"); }
 
-        $c->close();
+            $c->close();
+        }
+    } catch (Throwable $e) {
+        $d['db_error'] = $e->getMessage();
     }
-    // test if config.php has a fatal error by checking its syntax output
     $configPath = __DIR__ . '/config.php';
     $d['config_exists'] = file_exists($configPath);
     $d['config_size'] = file_exists($configPath) ? filesize($configPath) : 0;
