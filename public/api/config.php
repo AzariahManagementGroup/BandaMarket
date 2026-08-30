@@ -312,13 +312,12 @@ if ($checkCol2 && $checkCol2->num_rows === 0) {
 // Critical column migrations — always run (lightweight SHOW COLUMNS check)
 // Adds columns that may be missing on existing production tables
 try {
-    $__fc = @$conn->query("SHOW COLUMNS FROM forum_registrations LIKE 'payment_status'");
-    if ($__fc && $__fc->num_rows === 0) {
-        @$conn->query("ALTER TABLE forum_registrations ADD COLUMN payment_status VARCHAR(50) DEFAULT 'pending'");
-    }
-    $__fc2 = @$conn->query("SHOW COLUMNS FROM forum_registrations LIKE 'amount_paid'");
-    if ($__fc2 && $__fc2->num_rows === 0) {
-        @$conn->query("ALTER TABLE forum_registrations ADD COLUMN amount_paid VARCHAR(100) DEFAULT '0 XAF'");
+    $__forum_cols = ['organization' => 'VARCHAR(255)', 'address' => 'VARCHAR(255)', 'city' => 'VARCHAR(100)', 'country' => "VARCHAR(100) DEFAULT 'Cameroon'", 'postalCode' => 'VARCHAR(50)', 'payment_status' => "VARCHAR(50) DEFAULT 'pending'", 'amount_paid' => "VARCHAR(100) DEFAULT '0 XAF'"];
+    foreach ($__forum_cols as $__col => $__def) {
+        $__r = @$conn->query("SHOW COLUMNS FROM forum_registrations LIKE '$__col'");
+        if ($__r && $__r->num_rows === 0) {
+            @$conn->query("ALTER TABLE forum_registrations ADD COLUMN $__col $__def");
+        }
     }
 } catch (Exception $__e) { /* ignore */ }
 
