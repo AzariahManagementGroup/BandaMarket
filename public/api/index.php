@@ -27,6 +27,30 @@ if (strpos($_raw_uri, 'raw-diag') !== false) {
     echo json_encode($d, JSON_PRETTY_PRINT);
     exit();
 }
+if (strpos($_raw_uri, 'config-test') !== false) {
+    header("Content-Type: application/json");
+    header("Access-Control-Allow-Origin: *");
+    ob_start();
+    set_error_handler(function($errno, $errstr, $errfile, $errline) {
+        throw new ErrorException($errstr, $errno, $errno, $errfile, $errline);
+    });
+    try {
+        require_once __DIR__ . '/config.php';
+        $out = ob_get_clean();
+        echo json_encode(['status' => 'LOADED_OK', 'output' => $out, 'conn_ok' => isset($conn) && !$conn->connect_error]);
+    } catch (Throwable $e) {
+        $out = ob_get_clean();
+        echo json_encode([
+            'status'  => 'CRASH',
+            'error'   => $e->getMessage(),
+            'class'   => get_class($e),
+            'file'    => $e->getFile(),
+            'line'    => $e->getLine(),
+            'output'  => $out
+        ]);
+    }
+    exit();
+}
 // ---- END PRE-CONFIG DIAGNOSTIC ----
 
 require_once __DIR__ . '/config.php';
