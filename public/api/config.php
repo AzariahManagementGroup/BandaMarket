@@ -58,7 +58,13 @@ function get_db_connection() {
     }
 }
 
-// Automatic Schema Initialization
+// Automatic Schema Initialization - only run when explicitly triggered or first boot
+// Running 200+ queries on every request causes lock contention on shared hosting
+$_run_schema = (isset($_GET['init']) && $_GET['init'] === '1') || 
+               (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], 'update_schema') !== false) ||
+               (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], 'execute_alter') !== false);
+
+if ($_run_schema) {
 try {
     @$conn->query("ALTER TABLE users ADD COLUMN isVerified tinyint(1) NOT NULL DEFAULT 0");
     @$conn->query("ALTER TABLE users ADD COLUMN otpCode varchar(191) DEFAULT NULL");
@@ -301,6 +307,7 @@ if ($checkCol2 && $checkCol2->num_rows === 0) {
 } catch (Exception $e) {
     // Ignore schema modification errors on production
 }
+} // end if ($_run_schema)
 
 // Helper function to generate UUID v4
 function generate_uuid() {
