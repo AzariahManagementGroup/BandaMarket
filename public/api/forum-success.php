@@ -60,16 +60,26 @@ try {
         $amount = htmlspecialchars($ticket['amount_paid'] ?: '30,000 XAF');
         $shortId = strtoupper(substr($regId, 0, 8));
 
+        // Generate QR Code URL using Google Chart API
+        $qrValue = "CAMEMARK-FORUM-2025|ID:{$regId}|NAME:{$name}|EMAIL:{$ticket['email']}|CAT:{$category}";
+        $qrImageUrl = "https://chart.googleapis.com/chart?chs=180x180&cht=qr&chl=" . urlencode($qrValue) . "&chco=064e3b";
+
         $body = "
-        <h2 style='color:#064e3b;margin-top:0;'>🎟️ Your Forum Pass is Confirmed!</h2>
-        <p>Dear <strong>{$name}</strong>, your payment has been received and your CameMark Forum pass is ready.</p>
+        <div style='text-align:center;'>
+            <h2 style='color:#064e3b;margin-top:0;'>🎟️ Your Forum Pass is Confirmed!</h2>
+            <p>Dear <strong>{$name}</strong>, your payment has been received and your CameMark Forum pass is ready.</p>
+        </div>
         
-        <div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin:20px 0;'>
+        <div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin:20px auto;max-width:400px;text-align:center;'>
             <div style='border-bottom:2px dashed #bbf7d0;padding-bottom:14px;margin-bottom:14px;'>
                 <h3 style='margin:0;color:#065f46;font-size:16px;letter-spacing:1px;text-transform:uppercase;'>CameMark Forum Pass</h3>
                 <p style='margin:4px 0 0;color:#6b7280;font-size:12px;letter-spacing:2px;text-transform:uppercase;'>{$category}</p>
             </div>
-            <table style='width:100%;font-size:13px;color:#334155;'>
+            
+            <img src='{$qrImageUrl}' alt='Ticket QR Code' style='display:block;margin:15px auto;border-radius:10px;border:2px solid #d1fae5;' width='150' height='150' />
+            <p style='font-size:10px;color:#9ca3af;margin:5px 0 15px;letter-spacing:1px;text-transform:uppercase;'>Scan at Entrance</p>
+
+            <table style='width:100%;font-size:13px;color:#334155;text-align:left;'>
                 <tr><td style='color:#6b7280;padding:4px 0;'>Name</td><td style='font-weight:700;text-align:right;'>{$name}</td></tr>
                 <tr><td style='color:#6b7280;padding:4px 0;'>Email</td><td style='text-align:right;'>" . htmlspecialchars($email) . "</td></tr>
                 <tr><td style='color:#6b7280;padding:4px 0;'>Phone</td><td style='text-align:right;'>{$phone}</td></tr>
@@ -79,8 +89,8 @@ try {
             </table>
         </div>
 
-        <div style='background:#fffbeb;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0;'>
-            <p style='margin:0;font-size:13px;color:#92400e;'>📅 <strong>Event Date:</strong> October 3–5, 2025 &nbsp;|&nbsp; 📍 <strong>Venue:</strong> Yaoundé, Cameroon</p>
+        <div style='background:#fffbeb;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:0 8px 8px 0;margin:16px auto;max-width:400px;text-align:center;'>
+            <p style='margin:0;font-size:13px;color:#92400e;'>📅 <strong>Event Date:</strong> Oct 3–5, 2025 &nbsp;|&nbsp; 📍 <strong>Venue:</strong> Yaoundé, CM</p>
         </div>
 
         <p style='font-size:13px;color:#64748b;'>Please save this email — it serves as your admission pass. Present it at the venue entrance.</p>
