@@ -2,7 +2,8 @@ import { useState } from "react";
 import { 
   Calendar, MapPin, Users, Award, DollarSign, Building2, 
   ArrowRight, CheckCircle2, ChevronRight, Download, Globe, 
-  Sparkles, FileText, Briefcase, Target, ShieldCheck, Zap
+  Sparkles, FileText, Briefcase, Target, ShieldCheck, Zap,
+  CreditCard, Smartphone, QrCode
 } from "lucide-react";
 import { Country, City } from "country-state-city";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ const ForumEventSection = () => {
   const [paymentMethod, setPaymentMethod] = useState("web");
   const [momoNumber, setMomoNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [qrModal, setQrModal] = useState<{ url: string; ref: string; email: string } | null>(null);
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,9 +125,10 @@ const ForumEventSection = () => {
       }
 
       const targetUrl = tranzakData?.data?.paymentUrl || tranzakData?.data?.links?.paymentAuthUrl || tranzakData?.data?.paymentAuthUrl || tranzakData?.links?.paymentAuthUrl || tranzakData?.paymentUrl || tranzakData?.paymentAuthUrl;
-      console.log("[Forum] Redirect URL:", targetUrl, "| Method:", paymentMethod);
+      const qrImageUrl = tranzakData?.data?.qrCodeUrl || tranzakData?.data?.links?.qrCodeUrl || tranzakData?.qrCodeUrl;
+      console.log("[Forum] Redirect URL:", targetUrl, "QR:", qrImageUrl, "| Method:", paymentMethod);
 
-      // If Web Redirect, go to Tranzak checkout
+      // Web redirect → go to Tranzak checkout
       if (paymentMethod === "web") {
         if (targetUrl) {
           window.location.assign(targetUrl);
@@ -137,11 +140,20 @@ const ForumEventSection = () => {
         }
       }
 
-      // For MoMo / QR, we assume it's prompted.
-      toast.success(`🎉 Registration confirmed for ${registerForm.name}! Check your phone to complete payment.`);
+      // QR code → show QR modal
+      if (paymentMethod === "qr") {
+        setIsRegisterOpen(false);
+        setQrModal({ url: qrImageUrl || targetUrl || "", ref: tranzakData?.reference || registrationId, email: registerForm.email });
+        toast.info("Scan the QR code with your Tranzak app to complete payment.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // MoMo → phone push initiated
+      toast.success(`📱 USSD push sent to ${momoNumber}! Approve payment on your phone.`);
       setTimeout(() => {
         window.location.href = `/payment-success?email=${encodeURIComponent(registerForm.email)}`;
-      }, 2000);
+      }, 3000);
       setIsRegisterOpen(false);
     } catch (err: any) {
       console.error("[Forum] Unexpected error in payment flow:", err);
@@ -534,30 +546,53 @@ const ForumEventSection = () => {
               </select>
             </div>
 
-            <div className="space-y-1 pt-2 border-t border-gray-100">
+            <div className="space-y-2 pt-2 border-t border-gray-100">
               <label className="text-xs font-bold text-gray-500 uppercase">Payment Method</label>
-              <select 
-                className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-              >
-                <option value="web">Web Redirect (Visa/Mastercard/MoMo via Tranzak)</option>
-                <option value="momo">Mobile Money Direct Prompt (MTN/Orange)</option>
-                <option value="qr">In-Store QR Code</option>
-              </select>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: "web", icon: <CreditCard className="w-4 h-4" />, label: "Card / Web", sub: "Visa, MasterCard, MoMo" },
+                  { id: "momo", icon: <Smartphone className="w-4 h-4" />, label: "Mobile Money", sub: "MTN / Orange direct" },
+                  { id: "qr", icon: <QrCode className="w-4 h-4" />, label: "QR Code", sub: "Scan & pay" },
+                ].map(({ id, icon, label, sub }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setPaymentMethod(id)}
+                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-center transition-all ${
+                      paymentMethod === id
+                        ? "border-emerald-600 bg-emerald-50 text-emerald-800"
+                        : "border-gray-200 bg-gray-50 text-gray-600 hover:border-emerald-300"
+                    }`}
+                  >
+                    <span className={paymentMethod === id ? "text-emerald-700" : "text-gray-500"}>{icon}</span>
+                    <span className="text-xs font-bold leading-tight">{label}</span>
+                    <span className="text-[10px] text-gray-400 leading-tight">{sub}</span>
+                  </button>
+                ))}
+              </div>
+
+              {paymentMethod === "qr" && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+                  📷 <strong>QR Code:</strong> After clicking "Pay", you'll receive a QR code to scan at the event desk or via the Tranzak app.
+                </div>
+              )}
             </div>
 
             {paymentMethod === "momo" && (
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-500 uppercase">Mobile Money Number</label>
-                <input 
-                  type="text"
-                  required
-                  placeholder="e.g. 67XXXXXXX"
-                  className="w-full h-10 rounded-xl bg-gray-50 px-3 text-xs border border-gray-200"
-                  value={momoNumber}
-                  onChange={(e) => setMomoNumber(e.target.value)}
-                />
+                <div className="flex items-center gap-2 h-10 rounded-xl bg-gray-50 border border-gray-200 px-3">
+                  <Smartphone className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g. 670 000 000 (MTN/Orange)"
+                    className="flex-1 bg-transparent text-xs outline-none"
+                    value={momoNumber}
+                    onChange={(e) => setMomoNumber(e.target.value)}
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 px-1">Enter your MTN MoMo or Orange Money number. A USSD push will be sent to your phone.</p>
               </div>
             )}
 
@@ -567,6 +602,60 @@ const ForumEventSection = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* QR Code Payment Modal */}
+      {qrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center space-y-4">
+            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+              <QrCode className="w-6 h-6 text-emerald-700" />
+            </div>
+            <div>
+              <h3 className="text-lg font-extrabold text-gray-900">Scan to Pay</h3>
+              <p className="text-xs text-gray-500 mt-1">Use your Tranzak app or mobile camera to scan this QR code</p>
+            </div>
+
+            <div className="flex justify-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+              {qrModal.url ? (
+                <img src={qrModal.url} alt="Payment QR Code" className="w-48 h-48 object-contain" />
+              ) : (
+                <div className="w-48 h-48 bg-white flex items-center justify-center border rounded-lg">
+                  <QrCode className="w-24 h-24 text-emerald-700 opacity-50" />
+                  <p className="text-xs text-gray-500 absolute mt-28">QR loading...</p>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-emerald-50 rounded-xl p-3 text-xs text-emerald-800 text-left space-y-1">
+              <p className="font-bold">How to pay:</p>
+              <p>1. Open your <strong>Tranzak</strong> or mobile money app</p>
+              <p>2. Tap <strong>Scan QR</strong> and point camera here</p>
+              <p>3. Confirm the amount and approve</p>
+            </div>
+
+            <p className="text-[10px] text-gray-400 font-mono">Ref: {qrModal.ref}</p>
+
+            <div className="flex gap-2 pt-1">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl h-10 text-xs"
+                onClick={() => setQrModal(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 rounded-xl h-10 text-xs bg-emerald-700 hover:bg-emerald-800 text-white font-bold"
+                onClick={() => {
+                  setQrModal(null);
+                  window.location.href = `/payment-success?email=${encodeURIComponent(qrModal.email)}`;
+                }}
+              >
+                I've Paid ✓
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
