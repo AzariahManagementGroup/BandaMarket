@@ -309,6 +309,19 @@ if ($checkCol2 && $checkCol2->num_rows === 0) {
 }
 } // end if ($_run_schema)
 
+// Critical column migrations — always run (lightweight SHOW COLUMNS check)
+// Adds columns that may be missing on existing production tables
+try {
+    $__fc = @$conn->query("SHOW COLUMNS FROM forum_registrations LIKE 'payment_status'");
+    if ($__fc && $__fc->num_rows === 0) {
+        @$conn->query("ALTER TABLE forum_registrations ADD COLUMN payment_status VARCHAR(50) DEFAULT 'pending'");
+    }
+    $__fc2 = @$conn->query("SHOW COLUMNS FROM forum_registrations LIKE 'amount_paid'");
+    if ($__fc2 && $__fc2->num_rows === 0) {
+        @$conn->query("ALTER TABLE forum_registrations ADD COLUMN amount_paid VARCHAR(100) DEFAULT '0 XAF'");
+    }
+} catch (Exception $__e) { /* ignore */ }
+
 // Helper function to generate UUID v4
 function generate_uuid() {
     return sprintf(
