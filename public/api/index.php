@@ -102,6 +102,11 @@ if (strpos($uri, 'debug-forum') !== false) {
     exit();
 }
 
+if (strpos($uri, 'forum-success') !== false) {
+    require_once __DIR__ . '/forum-success.php';
+    exit();
+}
+
 if (strpos($uri, 'forum-register') !== false) {
     require_once __DIR__ . '/forum-register.php';
     exit();
