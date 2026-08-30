@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getApiUrl } from "@/config";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 
 const allCountries = Country.getAllCountries();
 
@@ -606,45 +607,42 @@ const ForumEventSection = () => {
       {/* QR Code Payment Modal */}
       {qrModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center space-y-4">
-            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
-              <QrCode className="w-6 h-6 text-emerald-700" />
+          <div className="bg-white rounded-2xl shadow-2xl max-w-[280px] w-full p-5 text-center space-y-3 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+              <QrCode className="w-5 h-5 text-emerald-700" />
             </div>
             <div>
-              <h3 className="text-lg font-extrabold text-gray-900">Scan to Pay</h3>
-              <p className="text-xs text-gray-500 mt-1">Use your Tranzak app or mobile camera to scan this QR code</p>
+              <h3 className="text-base font-extrabold text-gray-900 leading-tight">Scan to Pay</h3>
+              <p className="text-[10px] text-gray-500 mt-1 leading-snug">Use your Tranzak app to scan this QR code</p>
             </div>
 
-            <div className="flex justify-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <div className="inline-flex justify-center p-3 bg-white rounded-xl border border-gray-100 shadow-sm mx-auto">
               {qrModal.url ? (
-                <img src={qrModal.url} alt="Payment QR Code" className="w-48 h-48 object-contain" />
+                <img src={qrModal.url} alt="Payment QR Code" className="w-32 h-32 object-contain" />
               ) : (
-                <div className="w-48 h-48 bg-white flex items-center justify-center border rounded-lg">
-                  <QrCode className="w-24 h-24 text-emerald-700 opacity-50" />
-                  <p className="text-xs text-gray-500 absolute mt-28">QR loading...</p>
-                </div>
+                <QRCodeSVG value={qrModal.ref} size={128} level="H" fgColor="#064e3b" />
               )}
             </div>
 
-            <div className="bg-emerald-50 rounded-xl p-3 text-xs text-emerald-800 text-left space-y-1">
+            <div className="bg-emerald-50 rounded-xl p-2.5 text-[10px] text-emerald-800 text-left space-y-1">
               <p className="font-bold">How to pay:</p>
-              <p>1. Open your <strong>Tranzak</strong> or mobile money app</p>
+              <p>1. Open your <strong>Tranzak</strong> app</p>
               <p>2. Tap <strong>Scan QR</strong> and point camera here</p>
               <p>3. Confirm the amount and approve</p>
             </div>
 
-            <p className="text-[10px] text-gray-400 font-mono">Ref: {qrModal.ref}</p>
+            <p className="text-[9px] text-gray-400 font-mono tracking-wider">Ref: {qrModal.ref}</p>
 
             <div className="flex gap-2 pt-1">
               <Button
                 variant="outline"
-                className="flex-1 rounded-xl h-10 text-xs"
+                className="flex-1 rounded-lg h-9 text-[11px] font-semibold"
                 onClick={() => setQrModal(null)}
               >
                 Cancel
               </Button>
               <Button
-                className="flex-1 rounded-xl h-10 text-xs bg-emerald-700 hover:bg-emerald-800 text-white font-bold"
+                className="flex-1 rounded-lg h-9 text-[11px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-700/20"
                 onClick={() => {
                   setQrModal(null);
                   window.location.href = `/payment-success?email=${encodeURIComponent(qrModal.email)}`;
