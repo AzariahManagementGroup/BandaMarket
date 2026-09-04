@@ -23,7 +23,7 @@ const MaintenancePage = () => {
           />
         </div>
         
-        <h1 className="text-4xl font-extrabold text-white tracking-tight mb-4">
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 bg-[length:200%_auto] bg-gradient-to-r from-emerald-400 via-white to-emerald-400 bg-clip-text text-transparent animate-gradient-shift drop-shadow-sm">
           We'll Be Back Soon
         </h1>
         
