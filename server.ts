@@ -591,6 +591,45 @@ app.get("/api/admin/login-logs", async (req, res) => {
   }
 });
 
+// System Settings API
+app.get("/api/settings/maintenance", async (req, res) => {
+  try {
+    const setting = await prisma.referral_settings.findUnique({
+      where: { setting_key: "maintenance_mode" }
+    });
+    return res.json({ enabled: setting?.setting_value === "true" });
+  } catch (error) {
+    return res.json({ enabled: false });
+  }
+});
+
+app.post("/api/settings/maintenance", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, JWT_SECRET) as { role?: string };
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ error: "Forbidden: Admins only" });
+    }
+
+    const { enabled } = req.body;
+    
+    await prisma.referral_settings.upsert({
+      where: { setting_key: "maintenance_mode" },
+      update: { setting_value: enabled ? "true" : "false" },
+      create: { setting_key: "maintenance_mode", setting_value: enabled ? "true" : "false" }
+    });
+    
+    return res.json({ success: true, enabled });
+  } catch (error: any) {
+    console.error("Maintenance settings error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // ─── SANDBOX MOCK: user-data (wallets, cards, etc.) ───────────────────────────
 app.get("/api/user-data", async (req, res) => {
   const action = req.query.action as string;

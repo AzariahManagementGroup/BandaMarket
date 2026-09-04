@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link, Routes, Route } from "react-router-dom";
-import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap, Gift, RefreshCw, Cloud, Wallet, AlertCircle, ArrowLeftRight, Home } from "lucide-react";
+import { Users, Shield, LayoutDashboard, Settings, LogOut, ChevronRight, Menu, X, ShoppingBag, Mail, Key, CheckCircle, Package, Truck, Image, CreditCard, GraduationCap, Gift, RefreshCw, Cloud, Wallet, AlertCircle, ArrowLeftRight, Home, Hammer } from "lucide-react";
 
 import { getApiUrl } from "@/config";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ const AdminDashboard = () => {
 
   const navItems = [
     { label: "Overview", icon: LayoutDashboard, path: "" },
+    { label: "Maintenance Mode", icon: Hammer, path: "/maintenance" },
     { label: "Referral Reward (20 FCFA)", icon: Gift, path: "/referrals" },
     { label: "Marketplace Orders", icon: ShoppingBag, path: "/orders" },
     { label: "Academy Courses Manager", icon: GraduationCap, path: "/courses" },
@@ -161,6 +162,7 @@ const AdminDashboard = () => {
         <div className="p-4 md:p-8 w-full max-w-full overflow-x-hidden">
           <Routes>
             <Route path="/" element={<AdminOverview />} />
+            <Route path="/maintenance" element={<AdminMaintenanceMode />} />
             <Route path="/referrals" element={<AdminReferralSettings />} />
             <Route path="/orders" element={<AdminOrders />} />
             <Route path="/courses" element={<AdminCoursesManager />} />
@@ -181,6 +183,77 @@ const AdminDashboard = () => {
           </Routes>
         </div>
       </main>
+    </div>
+  );
+};
+
+const AdminMaintenanceMode = () => {
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch(getApiUrl('/api/settings/maintenance'))
+      .then(res => res.json())
+      .then(data => {
+        setEnabled(data.enabled);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleToggle = async () => {
+    setSaving(true);
+    const token = localStorage.getItem("camemark_token");
+    try {
+      const res = await fetch(getApiUrl('/api/settings/maintenance'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ enabled: !enabled })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setEnabled(!enabled);
+        toast.success(`Maintenance mode ${!enabled ? 'enabled' : 'disabled'}`);
+      } else {
+        toast.error(data.error || "Failed to update maintenance mode");
+      }
+    } catch (error) {
+      toast.error("Network error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-bold tracking-tight">Maintenance Mode</h3>
+      </div>
+      
+      <div className="p-6 rounded-2xl bg-card border border-border shadow-sm">
+        <div className="flex flex-col gap-4 max-w-2xl">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
+            <div>
+              <h4 className="font-bold text-foreground">Site Maintenance</h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                Enable to show a construction page to all non-admin users.
+              </p>
+            </div>
+            <Button 
+              onClick={handleToggle} 
+              disabled={saving}
+              variant={enabled ? "destructive" : "default"}
+            >
+              {saving ? "Saving..." : enabled ? "Disable Maintenance" : "Enable Maintenance"}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

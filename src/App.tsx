@@ -1,13 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { lazy, Suspense } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { lazy, Suspense, useState, useEffect } from "react";
+import { BrowserRouter, Route, Routes, useLocation, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Navigate } from "react-router-dom";
 import ChatAssistant from "./components/camemark/ChatAssistant.tsx";
+import { getApiUrl } from "@/config";
 
-const Index = lazy(() => import("./pages/Index.tsx"));
+const MaintenancePage = lazy(() => import("./pages/MaintenancePage.tsx"));const Index = lazy(() => import("./pages/Index.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const Signup = lazy(() => import("./pages/Signup.tsx"));
 const Signin = lazy(() => import("./pages/Signin.tsx"));
@@ -35,6 +35,32 @@ const PageLoader = () => (
   </div>
 );
 
+const MaintenanceGuard = ({ children }: { children: React.ReactNode }) => {
+  const [maintenance, setMaintenance] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+
+  useEffect(() => {
+    fetch(getApiUrl('/api/settings/maintenance'))
+      .then(res => res.json())
+      .then(data => {
+        setMaintenance(data.enabled);
+      })
+      .catch(() => setMaintenance(false))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <PageLoader />;
+
+  const isBypassedPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/signin');
+  
+  if (maintenance && !isBypassedPath) {
+    return <MaintenancePage />;
+  }
+
+  return <>{children}</>;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -42,26 +68,28 @@ const App = () => (
       <Sonner />
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/forum" element={<ForumPage />} />
-            <Route path="/academy" element={<AcademyPage />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/signin" element={<Signin />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/verify-otp" element={<VerifyOTP />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/market-zone" element={<MarketZone />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/dashboard" element={<BuyerDashboard />} />
-            <Route path="/seller-dashboard/*" element={<SellerDashboard />} />
-            <Route path="/cards-wallet" element={<CardsWallet />} />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
-            <Route path="/offline-commerce" element={<OfflineCommercePage />} />
-            <Route path="/admin/*" element={<AdminDashboard />} />
-            <Route path="/marketplace" element={<Navigate to="/market-zone" replace />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <MaintenanceGuard>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/forum" element={<ForumPage />} />
+              <Route path="/academy" element={<AcademyPage />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/signin" element={<Signin />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/verify-otp" element={<VerifyOTP />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/market-zone" element={<MarketZone />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/dashboard" element={<BuyerDashboard />} />
+              <Route path="/seller-dashboard/*" element={<SellerDashboard />} />
+              <Route path="/cards-wallet" element={<CardsWallet />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+              <Route path="/offline-commerce" element={<OfflineCommercePage />} />
+              <Route path="/admin/*" element={<AdminDashboard />} />
+              <Route path="/marketplace" element={<Navigate to="/market-zone" replace />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </MaintenanceGuard>
         </Suspense>
       </BrowserRouter>
       <ChatAssistant />
