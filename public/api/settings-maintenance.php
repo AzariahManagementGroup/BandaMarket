@@ -47,10 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("UPDATE referral_settings SET setting_value = ? WHERE setting_key = 'maintenance_mode'");
         $stmt->bind_param("s", $enabled);
     } else {
-        $id = generate_uuid();
         $key = 'maintenance_mode';
-        $stmt = $conn->prepare("INSERT INTO referral_settings (id, setting_key, setting_value, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())");
-        $stmt->bind_param("sss", $id, $key, $enabled);
+        $stmt = $conn->prepare("INSERT INTO referral_settings (setting_key, setting_value, updated_at) VALUES (?, ?, NOW())");
+        $stmt->bind_param("ss", $key, $enabled);
     }
     
     if ($stmt->execute()) {
