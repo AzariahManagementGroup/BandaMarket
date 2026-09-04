@@ -2,24 +2,33 @@
 require_once __DIR__ . '/config.php';
 
 // Verify Auth Token
-$headers = getallheaders();
-$authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
+$user = authenticate_request();
 
-if (!$authHeader || strpos($authHeader, 'Bearer ') !== 0) {
+if (!$user) {
     http_response_code(401);
     echo json_encode(["success" => false, "message" => "Unauthorized"]);
     exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $stmt = $conn->prepare("SELECT * FROM forum_registrations ORDER BY registered_at DESC");
-    $stmt->execute();
-    $registrations = fetch_assoc_stmt($stmt);
-    $stmt->close();
+    try {
+        $stmt = $conn->prepare("SELECT * FROM forum_registrations ORDER BY registered_at DESC");
+        if (!$stmt) {
+            http_response_code(500);
+            echo json_encode(["success" => false, "message" => "Database error: " . $conn->error]);
+            exit();
+        }
+        $stmt->execute();
+        $registrations = fetch_assoc_stmt($stmt);
+        $stmt->close();
 
-    echo json_encode([
-        "success" => true,
-        "registrations" => $registrations
-    ]);
+        echo json_encode([
+            "success" => true,
+            "registrations" => $registrations
+        ]);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(["success" => false, "message" => "Server error: " . $e->getMessage()]);
+    }
     exit();
 }

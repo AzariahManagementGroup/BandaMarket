@@ -97,6 +97,11 @@ if (strpos($uri, 'admin-forum-registrations') !== false) {
     exit();
 }
 
+if (strpos($uri, 'settings/maintenance') !== false) {
+    require_once __DIR__ . '/settings-maintenance.php';
+    exit();
+}
+
 if (strpos($uri, 'debug-forum') !== false) {
     require_once __DIR__ . '/debug-forum.php';
     exit();
