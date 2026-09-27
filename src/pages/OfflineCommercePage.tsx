@@ -209,7 +209,7 @@ const OfflineCommercePage = () => {
       <section className="bg-[#064E3B] text-white py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="max-w-7xl mx-auto space-y-4 relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-800/80 border border-emerald-700/80 text-emerald-200 text-xs font-extrabold uppercase">
-            <ShieldCheck className="h-4 w-4 text-emerald-400" /> Camer Market Offline Commerce Framework (COCF)
+            <ShieldCheck className="h-4 w-4 text-emerald-400" /> Banda Market Offline Commerce Framework (COCF)
           </div>
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black leading-tight tracking-tight max-w-4xl">
             Every Merchant & Customer Can Buy & Sell — Regardless of Internet Availability 🇨🇲

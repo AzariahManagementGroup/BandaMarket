@@ -400,7 +400,7 @@ const SellerDashboard = () => {
 
   const navItems = [
     { id: "dashboard", icon: Store, label: "Seller Dashboard", active: activeTab === "dashboard", href: "/seller-dashboard" },
-    { id: "academy", icon: GraduationCap, label: "Camer Market Academy 🎓", href: "/academy", academy: true },
+    { id: "academy", icon: GraduationCap, label: "Banda Market Academy 🎓", href: "/academy", academy: true },
     { id: "switch", icon: LayoutDashboard, label: "Switch to Buyer View", href: "/dashboard", highlight: true },
     ...(profile?.role === "admin" || profile?.signup_role === "admin" ? [
       { id: "admin", icon: Shield, label: "Admin Panel", href: "/admin", special: true }

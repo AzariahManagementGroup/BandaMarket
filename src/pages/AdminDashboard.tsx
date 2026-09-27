@@ -1186,7 +1186,7 @@ const AdminPaymentSettings = () => {
   );
 };
 
-// Component: Camer Market Academy Courses Manager
+// Component: Banda Market Academy Courses Manager
 const AdminCoursesManager = () => {
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1262,7 +1262,7 @@ const AdminCoursesManager = () => {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        toast.success("🎉 Course published live to Camer Market Academy!");
+        toast.success("🎉 Course published live to Banda Market Academy!");
         setNewCourse({
           title: "",
           category: "business",
@@ -1289,7 +1289,7 @@ const AdminCoursesManager = () => {
     <div className="max-w-4xl space-y-8">
       <div>
         <h3 className="text-2xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-          <GraduationCap className="h-6 w-6 text-emerald-600" /> Camer Market Academy Course Upload & Manager
+          <GraduationCap className="h-6 w-6 text-emerald-600" /> Banda Market Academy Course Upload & Manager
         </h3>
         <p className="text-xs text-muted-foreground mt-1">Publish new training courses, video lectures, and certificates to empower Malawian entrepreneurs and learners.</p>
       </div>

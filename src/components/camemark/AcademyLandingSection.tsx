@@ -58,7 +58,7 @@ const AcademyLandingSection = () => {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-black text-amber-300 uppercase tracking-widest">
-            <GraduationCap className="h-4 w-4 text-amber-400" /> CAMER MARKET ACADEMY
+            <GraduationCap className="h-4 w-4 text-amber-400" /> Banda Market ACADEMY
           </div>
           
           <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
@@ -125,7 +125,7 @@ const AcademyLandingSection = () => {
             <p className="text-xs md:text-sm text-emerald-100/90 mt-1">Explore all 250+ courses and join 25,000+ Malawian entrepreneurs today.</p>
           </div>
           <Button onClick={() => navigate("/academy")} className="bg-amber-400 hover:bg-amber-300 text-emerald-950 font-black h-12 px-8 rounded-2xl text-sm shadow-xl shrink-0">
-            Visit Camer Market Academy Hub →
+            Visit Banda Market Academy Hub →
           </Button>
         </div>
 

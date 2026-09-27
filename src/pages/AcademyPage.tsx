@@ -277,7 +277,7 @@ const AcademyPage = () => {
               <div className="relative rounded-3xl overflow-hidden border-4 border-white/20 shadow-2xl group">
                 <img 
                   src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80" 
-                  alt="Camer Market Academy Learners" 
+                  alt="Banda Market Academy Learners" 
                   className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" 
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#04281E] via-transparent to-transparent opacity-80" />
@@ -443,7 +443,7 @@ const AcademyPage = () => {
             <span className="bg-amber-400 text-emerald-950 text-xs font-black uppercase px-3 py-1 rounded-lg inline-block">
               National Academy Access
             </span>
-            <h3 className="text-2xl sm:text-4xl font-black">Join Camer Market Academy Today!</h3>
+            <h3 className="text-2xl sm:text-4xl font-black">Join Banda Market Academy Today!</h3>
             <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-medium">
               Get unlimited access to quality courses, practical skills, and resources designed for your success across Malawi and Central Africa.
             </p>
