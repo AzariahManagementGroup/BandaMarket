@@ -729,7 +729,7 @@ const BuyerDashboard = () => {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-black text-gray-900">Marketplace</h1>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-1">Discover products, services, and regional goods across Cameroon.</p>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">Discover products, services, and regional goods across Malawi.</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
@@ -948,7 +948,7 @@ const BuyerDashboard = () => {
                     <div className="p-3 bg-white rounded-2xl border border-gray-100 space-y-1">
                       <Truck className="h-5 w-5 text-emerald-600 mx-auto" />
                       <p className="font-extrabold text-[11px]">Fast Delivery</p>
-                      <p className="text-[9px] text-gray-400">Across Cameroon</p>
+                      <p className="text-[9px] text-gray-400">Across Malawi</p>
                     </div>
                     <div className="p-3 bg-white rounded-2xl border border-gray-100 space-y-1">
                       <MessageCircle className="h-5 w-5 text-emerald-600 mx-auto" />
@@ -1023,7 +1023,7 @@ const BuyerDashboard = () => {
                           return {
                             rank: idx + 1,
                             name: sellerName,
-                            location: p?.region || "Cameroon",
+                            location: p?.region || "Malawi",
                             rating: p?.rating || "4.5"
                           };
                         }).map((s) => (
@@ -1043,9 +1043,9 @@ const BuyerDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Widget 3: Cameroon 10 Economic Blocs Map */}
+                  {/* Widget 3: Malawi 10 Economic Blocs Map */}
                   <div className="bg-[#064E3B] text-white rounded-3xl p-5 space-y-3 shadow-lg relative overflow-hidden">
-                    <h4 className="font-black text-sm text-amber-400">Explore Cameroon's 10 Economic Blocs</h4>
+                    <h4 className="font-black text-sm text-amber-400">Explore Malawi's 10 Economic Blocs</h4>
                     <p className="text-[11px] text-emerald-100 leading-snug">Trade directly with verified cooperatives across Far North, Littoral, Centre, and South West.</p>
                     <Button 
                       onClick={() => navigate("/market-zone")}
@@ -1069,7 +1069,7 @@ const BuyerDashboard = () => {
                   </span>
                   <span className="inline-block animate-bounce origin-bottom-right">👋</span>
                 </h2>
-                <p className="text-xs sm:text-sm text-gray-500 font-medium">Find quality products, support local farmers, and enjoy secure shopping across Cameroon.</p>
+                <p className="text-xs sm:text-sm text-gray-500 font-medium">Find quality products, support local farmers, and enjoy secure shopping across Malawi.</p>
               </div>
 
               {/* Stats Grid */}

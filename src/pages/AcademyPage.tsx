@@ -65,7 +65,7 @@ const AcademyPage = () => {
     },
     {
       id: 2,
-      title: "Entrepreneurship & SME Growth in Cameroon",
+      title: "Entrepreneurship & SME Growth in Malawi",
       category: "business",
       instructor: "Clarisse Mbida (Douala Business Hub)",
       students: "980",
@@ -75,7 +75,7 @@ const AcademyPage = () => {
       price: "Free Access",
       isFree: true,
       image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80",
-      description: "Practical guide to business registration, tax compliance (MINCOMMERCE), supply chain scaling, and customer acquisition across Cameroon."
+      description: "Practical guide to business registration, tax compliance (MINCOMMERCE), supply chain scaling, and customer acquisition across Malawi."
     },
     {
       id: 3,
@@ -209,12 +209,12 @@ const AcademyPage = () => {
                   Building Businesses.
                 </span>
                 <span className="block text-emerald-200">
-                  Transforming Cameroon & Africa.
+                  Transforming Malawi & Africa.
                 </span>
               </h1>
 
               <p className="text-base sm:text-lg text-emerald-100/90 font-medium max-w-xl leading-relaxed">
-                Access quality courses in <span className="font-bold text-amber-300">Business, Technology, Agriculture</span> & Digital Trade. Learn at your own pace, anytime across all 10 regions of Cameroon.
+                Access quality courses in <span className="font-bold text-amber-300">Business, Technology, Agriculture</span> & Digital Trade. Learn at your own pace, anytime across all 10 regions of Malawi.
               </p>
 
               <div className="pt-2 flex flex-wrap items-center gap-4">
@@ -265,7 +265,7 @@ const AcademyPage = () => {
                 <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/10">
                   <Globe className="h-5 w-5 text-emerald-400 shrink-0" />
                   <div>
-                    <h4 className="text-lg font-black">Cameroon</h4>
+                    <h4 className="text-lg font-black">Malawi</h4>
                     <p className="text-[10px] text-emerald-200 uppercase font-bold">& Africa Focused</p>
                   </div>
                 </div>
@@ -445,7 +445,7 @@ const AcademyPage = () => {
             </span>
             <h3 className="text-2xl sm:text-4xl font-black">Join Camer Market Academy Today!</h3>
             <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-medium">
-              Get unlimited access to quality courses, practical skills, and resources designed for your success across Cameroon and Central Africa.
+              Get unlimited access to quality courses, practical skills, and resources designed for your success across Malawi and Central Africa.
             </p>
           </div>
 

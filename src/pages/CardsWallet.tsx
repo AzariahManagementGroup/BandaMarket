@@ -486,7 +486,7 @@ const CardsWallet = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto px-6 mb-12">
         <div className="bg-gradient-to-br from-[#064E3B] to-emerald-900 rounded-3xl p-6 text-white flex flex-col justify-between relative overflow-hidden min-h-[12rem]">
           <div className="relative z-10 w-3/4">
-            <h3 className="font-black text-lg mb-2">Send Money Across Cameroon</h3>
+            <h3 className="font-black text-lg mb-2">Send Money Across Malawi</h3>
             <p className="text-[10px] text-emerald-100/80 mb-4 leading-relaxed">Send instantly to mobile money, bank accounts, or other CaMark wallet users.</p>
             <Button onClick={() => toast.info("Send Money is coming soon!")} className="bg-[#EAB308] hover:bg-yellow-500 text-yellow-950 font-bold rounded-xl h-9 text-xs px-4">
               Send Money Now <ArrowRight className="h-3 w-3 ml-1" />

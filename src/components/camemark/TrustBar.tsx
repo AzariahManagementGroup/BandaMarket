@@ -3,7 +3,7 @@ import { ShieldCheck, BadgeCheck, Flag, Globe2, Users } from "lucide-react";
 const items = [
   { icon: ShieldCheck, title: "Secure Payments", desc: "Bank-grade security & encryption." },
   { icon: BadgeCheck, title: "Verified Merchants", desc: "Every seller is verified for your protection." },
-  { icon: Flag, title: "Regional Pride", desc: "Built in Cameroon, for Cameroonians." },
+  { icon: Flag, title: "Regional Pride", desc: "Built in Malawi, for Malawians." },
   { icon: Globe2, title: "Cross-Border Potential", desc: "Tap into African markets through AfCFTA." },
   { icon: Users, title: "Job Creation", desc: "Empowering communities and growing livelihoods." },
 ];

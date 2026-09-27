@@ -28,7 +28,7 @@ const BuiltFor = () => {
           Built for <span className="text-gradient-flag">Sellers, Farmers & Partners</span>
         </h2>
         <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
-          Tools that empower every player in Cameroon's economy — from rural growers to urban logistics partners.
+          Tools that empower every player in Malawi's economy — from rural growers to urban logistics partners.
         </p>
       </div>
 
@@ -65,7 +65,7 @@ const BuiltFor = () => {
 
         {/* Farmer */}
         <div className="group rounded-3xl bg-card border border-border overflow-hidden shadow-card hover-lift animate-fade-in" style={{ animationDelay: "0.1s" }}>
-          <img src={farmer} alt="Cameroonian farmer holding fresh produce" loading="lazy" className="w-full h-44 object-cover group-hover:scale-110 transition-transform duration-700" />
+          <img src={farmer} alt="Malawian farmer holding fresh produce" loading="lazy" className="w-full h-44 object-cover group-hover:scale-110 transition-transform duration-700" />
           <div className="p-6">
             <h3 className="font-bold text-foreground">Farmer Marketplace</h3>
             <p className="text-xs text-muted-foreground mb-3">Sell directly to thousands of buyers.</p>

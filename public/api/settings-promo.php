@@ -2,14 +2,14 @@
 require_once __DIR__ . '/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $stmt = $conn->prepare("SELECT setting_value FROM referral_settings WHERE setting_key = 'voice_auto_launch'");
+    $stmt = $conn->prepare("SELECT setting_value FROM referral_settings WHERE setting_key = 'promo_slider_enabled'");
     if (!$stmt) {
         echo json_encode(["enabled" => false]);
         exit();
     }
     $stmt->execute();
     $stmt->bind_result($val);
-    $enabled = true;
+    $enabled = false;
     if ($stmt->fetch()) {
         $enabled = ($val === 'true');
     }
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $enabled = isset($data['enabled']) && $data['enabled'] ? 'true' : 'false';
     
     // Check if exists
-    $stmt = $conn->prepare("SELECT id FROM referral_settings WHERE setting_key = 'voice_auto_launch'");
+    $stmt = $conn->prepare("SELECT id FROM referral_settings WHERE setting_key = 'promo_slider_enabled'");
     if (!$stmt) {
         http_response_code(500);
         echo json_encode(["error" => "Database error: " . $conn->error]);
@@ -44,10 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
     
     if ($exists) {
-        $stmt = $conn->prepare("UPDATE referral_settings SET setting_value = ? WHERE setting_key = 'voice_auto_launch'");
+        $stmt = $conn->prepare("UPDATE referral_settings SET setting_value = ? WHERE setting_key = 'promo_slider_enabled'");
         $stmt->bind_param("s", $enabled);
     } else {
-        $key = 'voice_auto_launch';
+        $key = 'promo_slider_enabled';
         $stmt = $conn->prepare("INSERT INTO referral_settings (setting_key, setting_value, updated_at) VALUES (?, ?, NOW())");
         $stmt->bind_param("ss", $key, $enabled);
     }

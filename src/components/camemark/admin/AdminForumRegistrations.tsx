@@ -70,7 +70,7 @@ const AdminForumRegistrations = () => {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Forum Registrations 2026</h2>
-        <p className="text-muted-foreground text-sm mt-1">Manage and view all delegates who have registered for the upcoming Cameroon E-Commerce Forum.</p>
+        <p className="text-muted-foreground text-sm mt-1">Manage and view all delegates who have registered for the upcoming Malawi E-Commerce Forum.</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-card p-4 rounded-xl shadow-sm border border-border">

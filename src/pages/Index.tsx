@@ -32,7 +32,7 @@ const Index = () => {
 
         // Attempt to play a welcome voice
         const playWelcomeVoice = () => {
-          const message = t("voice.welcome", "Bienvenue sur le marché numérique du Cameroun");
+          const message = t("voice.welcome", "Welcome to Banda Market");
           const utterance = new SpeechSynthesisUtterance(message);
           
           if (i18n.language?.startsWith("fr")) utterance.lang = "fr-FR";

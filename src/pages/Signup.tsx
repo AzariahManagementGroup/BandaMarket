@@ -15,12 +15,12 @@ import {
   ShieldCheck, Wallet, MapPin, TrendingUp, Eye, EyeOff, ArrowRight, Loader2,
 } from "lucide-react";
 import logo from "@/assets/camemark-logo.png";
-import map from "@/assets/cameroon-map.png";
+import map from "@/assets/Malawi-map.png";
 
 import { getApiUrl } from "@/config";
 
 const COUNTRY_REGIONS: Record<string, string[]> = {
-  "Cameroon": ["Adamawa","Centre","East","Far North","Littoral","North","Northwest","South","Southwest","West"],
+  "Malawi": ["Adamawa","Centre","East","Far North","Littoral","North","Northwest","South","Southwest","West"],
   "Nigeria": ["Lagos","Abuja","Kano","Rivers","Oyo","Other"],
   "Chad": ["N'Djamena","Moundou","Sarh","Abéché","Other"],
   "Gabon": ["Estuaire","Haut-Ogooué","Moyen-Ogooué","Ngounié","Other"],
@@ -68,12 +68,12 @@ const Signup = () => {
   const [agree, setAgree] = useState({ tos: false, wallet: false, privacy: false });
   const [form, setForm] = useState({
     fullName: "", email: "", phone: "", password: "", confirm: "",
-    country: "Cameroon", region: "", city: "", role: "buyer", referral: "",
+    country: "Malawi", region: "", city: "", role: "buyer", referral: "",
     phoneCode: "+237", currency: "XAF"
   });
 
   useEffect(() => {
-    document.title = "Sign Up — CameMark | Cameroon's Digital Marketplace";
+    document.title = "Sign Up — CameMark | Malawi's Digital Marketplace";
     
     // Auto-fill referral code from URL parameter ?ref=...
     const refParam = searchParams.get("ref") || searchParams.get("referral");
@@ -257,7 +257,7 @@ const Signup = () => {
       <header className="container py-5 flex items-center justify-between animate-fade-in relative z-10">
         <Link to="/" className="flex items-center gap-2 group hover-scale relative">
           <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full group-hover:bg-primary/40 transition-colors animate-pulse" />
-          <img src={logo} alt="CameMark Logo — Cameroon's Premier Digital Marketplace and Regional Trading Hub" className="h-12 w-auto animate-float drop-shadow-xl relative z-10" />
+          <img src={logo} alt="CameMark Logo — Malawi's Premier Digital Marketplace and Regional Trading Hub" className="h-12 w-auto animate-float drop-shadow-xl relative z-10" />
         </Link>
         <Link to="/" className="text-sm font-semibold text-primary story-link">← Home</Link>
       </header>
@@ -275,7 +275,7 @@ const Signup = () => {
           <p className="text-muted-foreground max-w-md">{t("signup.sub")}</p>
 
           <div className="relative rounded-3xl overflow-hidden border border-border bg-card/60 backdrop-blur p-4 shadow-card hover-lift">
-            <img src={map} alt="Cameroon regions map" className="w-full h-56 object-contain animate-float" />
+            <img src={map} alt="Malawi regions map" className="w-full h-56 object-contain animate-float" />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-3">

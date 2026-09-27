@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* CameMark — Cameroon flag inspired (green / red / yellow) on warm cream */
+    /* CameMark — Malawi flag inspired (green / red / yellow) on warm cream */
     --background: 40 33% 97%;
     --foreground: 150 40% 10%;
 

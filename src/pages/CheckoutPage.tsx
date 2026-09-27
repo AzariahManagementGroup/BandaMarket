@@ -99,7 +99,7 @@ const CheckoutPage = () => {
       address: "Nkolbisson, Avenue Kennedy, Yaoundé",
       city: "Yaoundé",
       region: "Centre",
-      country: "Cameroon",
+      country: "Malawi",
       phone: "+237 690 123 456",
       isDefault: true
     }
@@ -110,7 +110,7 @@ const CheckoutPage = () => {
     address: "",
     city: "Douala",
     region: "Littoral",
-    country: "Cameroon",
+    country: "Malawi",
     phone: ""
   });
 
@@ -121,7 +121,7 @@ const CheckoutPage = () => {
     address: "Nkolbisson, Avenue Kennedy, Yaoundé",
     city: "Yaoundé",
     region: "Centre",
-    country: "Cameroon",
+    country: "Malawi",
     saveInfo: true
   });
 
@@ -273,7 +273,7 @@ const CheckoutPage = () => {
       country: newAddressForm.country
     }));
     setIsAddAddressModalOpen(false);
-    setNewAddressForm({ title: "", address: "", city: "Douala", region: "Littoral", country: "Cameroon", phone: "" });
+    setNewAddressForm({ title: "", address: "", city: "Douala", region: "Littoral", country: "Malawi", phone: "" });
     toast.success("New delivery address added & saved!");
   };
 
@@ -928,7 +928,7 @@ const CheckoutPage = () => {
             <div className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-white border border-gray-100 shadow-sm">
               <Truck className="h-6 w-6 text-emerald-600" />
               <p className="font-extrabold text-gray-900 text-[11px]">Fast & Reliable</p>
-              <p className="text-[10px] text-gray-400">Logistics across Cameroon</p>
+              <p className="text-[10px] text-gray-400">Logistics across Malawi</p>
             </div>
             <div className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-white border border-gray-100 shadow-sm">
               <MessageCircle className="h-6 w-6 text-emerald-600" />
@@ -1050,7 +1050,7 @@ const CheckoutPage = () => {
                 <Truck className="h-5 w-5 text-emerald-600 shrink-0" />
                 <div>
                   <p className="font-extrabold text-xs text-gray-900">Fast & Reliable Logistics</p>
-                  <p className="text-[10px] text-gray-400">Quick delivery across Cameroon</p>
+                  <p className="text-[10px] text-gray-400">Quick delivery across Malawi</p>
                 </div>
               </div>
             </div>
@@ -1066,7 +1066,7 @@ const CheckoutPage = () => {
               <MapPin className="h-5 w-5 text-emerald-600" /> Add Custom Delivery Address
             </DialogTitle>
             <DialogDescription className="text-xs text-gray-500">
-              Enter your exact home, office, or local address in Cameroon for shipping.
+              Enter your exact home, office, or local address in Malawi for shipping.
             </DialogDescription>
           </DialogHeader>
 

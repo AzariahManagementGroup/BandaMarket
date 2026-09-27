@@ -152,7 +152,7 @@ const PaymentSuccess = () => {
         <div class="date-day">Oct 3–5</div>
         <div class="date-month">2025</div>
       </div>
-      <div class="location">📍 Yaoundé,<br/>Cameroon</div>
+      <div class="location">📍 Yaoundé,<br/>Malawi</div>
     </div>
   </div>
 
@@ -271,7 +271,7 @@ const PaymentSuccess = () => {
                     <div className="font-extrabold text-sm">Oct 3–5</div>
                     <div className="text-xs opacity-75">2025</div>
                   </div>
-                  <p className="text-[10px] text-emerald-700 text-center font-medium">📍 Yaoundé,<br/>Cameroon</p>
+                  <p className="text-[10px] text-emerald-700 text-center font-medium">📍 Yaoundé,<br/>Malawi</p>
                 </div>
               </div>
 

@@ -6,16 +6,16 @@ const resources = {
   en: { translation: {
     nav: { home: "Home", marketplace: "Marketplace", regions: "Regions", wallet: "Wallet", logistics: "Logistics", about: "About", contact: "Contact", signin: "Sign In", getStarted: "Get Started" },
     hero: {
-      badge: "Proudly Cameroonian. Built for Africa. Ready for the World.",
-      typing: ["One Digital Market", "for All 10 Regions", "Trade Across Africa", "Empower Cameroon"],
-      tagline: "Cameroon's Digital Market, Wallet & Trade Gateway",
+      badge: "Proudly Malawian. Built for Africa. Ready for the World.",
+      typing: ["One Digital Market", "for All 10 Regions", "Trade Across Africa", "Empower Malawi"],
+      tagline: "Malawi's Digital Market, Wallet & Trade Gateway",
       slogan: "Buy. Sell. Bargain. Pay. Deliver. Grow.",
       desc: "CameMark connects buyers, sellers, farmers, cooperatives and businesses across all 10 regions with secure payments, smart bargains, logistics and regional trade opportunities.",
       start: "Start Trading", explore: "Explore Regions",
     },
     signup: {
       title: "Create Your", brand: "CameMark Account",
-      sub: "Join Cameroon's Digital Market, Wallet & Trade Gateway",
+      sub: "Join Malawi's Digital Market, Wallet & Trade Gateway",
       panelTitle: "Sign Up", panelSub: "Start trading in minutes",
       fullName: "Full Name", phone: "Phone Number", email: "Email Address", password: "Password",
       confirm: "Confirm Password", country: "Country", region: "Region", city: "City / Town",
@@ -27,26 +27,26 @@ const resources = {
       have: "Already have an account?", signin: "Sign In",
       placeholders: { name: "Enter your full name", email: "you@example.com", pwd: "Create a strong password", confirm: "Confirm your password", city: "Enter your city or town", region: "Select your region", country: "Select country", referral: "Enter referral code" },
       benefits: ["Buy & Sell Securely", "Access CamRency Wallet", "Explore 10 Regions", "Grow with Digital Trade"],
-      benefitDesc: ["Trade with confidence on a secure and trusted platform.", "Fast, safe and reliable payments across Cameroon.", "Connect with buyers and sellers across all 10 regions.", "Expand your business and unlock new opportunities."],
+      benefitDesc: ["Trade with confidence on a secure and trusted platform.", "Fast, safe and reliable payments across Malawi.", "Connect with buyers and sellers across all 10 regions.", "Expand your business and unlock new opportunities."],
       success: "Account created! Check your inbox to verify.",
     },
     voice: {
-      welcome: "Welcome to Cameroon's Digital Market"
+      welcome: "Welcome to Malawi's Digital Market"
     }
   }},
   fr: { translation: {
     nav: { home: "Accueil", marketplace: "Marché", regions: "Régions", wallet: "Portefeuille", logistics: "Logistique", about: "À propos", contact: "Contact", signin: "Connexion", getStarted: "Commencer" },
     hero: {
-      badge: "Fièrement camerounais. Conçu pour l'Afrique. Prêt pour le monde.",
-      typing: ["Un marché numérique", "pour les 10 régions", "Commercer en Afrique", "Autonomiser le Cameroun"],
-      tagline: "Le marché numérique, portefeuille et passerelle commerciale du Cameroun",
+      badge: "Fièrement Malawiais. Conçu pour l'Afrique. Prêt pour le monde.",
+      typing: ["Un marché numérique", "pour les 10 régions", "Commercer en Afrique", "Autonomiser le Malawi"],
+      tagline: "Le marché numérique, portefeuille et passerelle commerciale du Malawi",
       slogan: "Acheter. Vendre. Négocier. Payer. Livrer. Grandir.",
       desc: "CameMark connecte acheteurs, vendeurs, agriculteurs, coopératives et entreprises dans les 10 régions avec des paiements sécurisés, la logistique et les opportunités commerciales.",
       start: "Commencer", explore: "Explorer les régions",
     },
     signup: {
       title: "Créez votre", brand: "Compte CameMark",
-      sub: "Rejoignez le marché numérique du Cameroun",
+      sub: "Rejoignez le marché numérique du Malawi",
       panelTitle: "Inscription", panelSub: "Commencez à trader en quelques minutes",
       fullName: "Nom complet", phone: "Numéro de téléphone", email: "Adresse e-mail", password: "Mot de passe",
       confirm: "Confirmer le mot de passe", country: "Pays", region: "Région", city: "Ville",
@@ -62,7 +62,7 @@ const resources = {
       success: "Compte créé ! Vérifiez votre boîte mail.",
     },
     voice: {
-      welcome: "Bienvenue sur le marché numérique du Cameroun"
+      welcome: "Bienvenue sur le marché numérique du Malawi"
     }
   }},
   es: { translation: {

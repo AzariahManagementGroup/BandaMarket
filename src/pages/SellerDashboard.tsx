@@ -713,7 +713,7 @@ const SellerDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-extrabold text-gray-900">Your Product Listings</h3>
-                    <p className="text-xs text-gray-400 mt-1">Manage and publish items available to buyers across Cameroon</p>
+                    <p className="text-xs text-gray-400 mt-1">Manage and publish items available to buyers across Malawi</p>
                   </div>
                   <Button onClick={() => setIsNewListingModalOpen(true)} variant="outline" size="sm" className="font-bold border-emerald-600 text-emerald-700">
                     <Plus className="h-4 w-4 mr-2" /> Add Listing
@@ -820,7 +820,7 @@ const SellerDashboard = () => {
                 <div className="text-center py-16 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
                   <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                   <h4 className="text-lg font-bold text-gray-700">No Listings Created</h4>
-                  <p className="text-sm text-gray-400 mt-1 max-w-md mx-auto">Create product listings to showcase your goods across all 10 regions of Cameroon.</p>
+                  <p className="text-sm text-gray-400 mt-1 max-w-md mx-auto">Create product listings to showcase your goods across all 10 regions of Malawi.</p>
                   <Button onClick={() => setIsNewListingModalOpen(true)} className="mt-6 bg-[#064E3B] text-white font-bold h-11 px-6 rounded-xl">
                     <Plus className="h-4 w-4 mr-2" /> Add First Listing
                   </Button>
@@ -837,7 +837,7 @@ const SellerDashboard = () => {
                   <h3 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
                     Sales Orders & Tracking <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">{salesOrders.length} Total</span>
                   </h3>
-                  <p className="text-xs text-gray-500 mt-1">Real-time order tracking, buyer contact details, and dispatch status across Cameroon.</p>
+                  <p className="text-xs text-gray-500 mt-1">Real-time order tracking, buyer contact details, and dispatch status across Malawi.</p>
                 </div>
                 <Button onClick={() => {
                   const local = localStorage.getItem("camemark_sales_orders");
@@ -1048,7 +1048,7 @@ const SellerDashboard = () => {
             <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
               <div>
                 <h3 className="text-2xl font-extrabold text-gray-900">Logistics & Shipments</h3>
-                <p className="text-sm text-gray-500 mt-1">Manage shipping partner pickups across Cameroon's 10 regions.</p>
+                <p className="text-sm text-gray-500 mt-1">Manage shipping partner pickups across Malawi's 10 regions.</p>
               </div>
               <div className="text-center py-16 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
                 <Truck className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -1113,7 +1113,7 @@ const SellerDashboard = () => {
           <DialogHeader className="shrink-0">
             <DialogTitle className="text-xl font-black text-gray-900">Post New Product Listing</DialogTitle>
             <DialogDescription className="text-xs text-gray-500">
-              Fill in product details to make your item available across all 10 regions of Cameroon.
+              Fill in product details to make your item available across all 10 regions of Malawi.
             </DialogDescription>
           </DialogHeader>
 

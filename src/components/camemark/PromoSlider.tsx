@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
+import { getApiUrl } from "@/config";
 
 import feature1 from "@/assets/promos/feature-1.png";
 import feature2 from "@/assets/promos/feature-2.png";
@@ -24,6 +25,32 @@ export const PromoSlider = () => {
   const [emblaRef] = useEmblaCarousel({ loop: true }, [
     Autoplay({ delay: 5000, stopOnInteraction: false }),
   ]);
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(getApiUrl('/api/settings/promo'))
+      .then(res => res.json())
+      .then(data => {
+        setEnabled(data.enabled === true || data.enabled === 'true');
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching promo slider settings:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return null;
+
+  if (!enabled) {
+    return (
+      <section className="promo-slider container py-4 md:py-6">
+        <div className="w-full h-32 md:h-[200px] rounded-xl md:rounded-2xl border-4 border-amber-300 shadow-[0_0_15px_rgba(252,211,77,0.5)] bg-gradient-to-r from-background via-muted to-background animate-pulse mx-auto max-w-[95%] md:max-w-none">
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="promo-slider container py-4 md:py-6">

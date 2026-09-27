@@ -11,7 +11,7 @@ const EventPopupModal = () => {
     linkUrl: string;
   }>({
     imageUrl: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
-    title: "Cameroon E-Commerce Forum 2026",
+    title: "Malawi E-Commerce Forum 2026",
     linkUrl: "/forum"
   });
 
@@ -27,7 +27,7 @@ const EventPopupModal = () => {
           if (data.banner.enabled === 0) return; // Disabled by admin
           setBanner({
             imageUrl: data.banner.imageUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
-            title: data.banner.title || "Cameroon E-Commerce Forum 2026",
+            title: data.banner.title || "Malawi E-Commerce Forum 2026",
             linkUrl: data.banner.linkUrl || "/forum"
           });
         }

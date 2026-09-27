@@ -107,6 +107,11 @@ if (strpos($uri, 'settings/voice') !== false) {
     exit();
 }
 
+if (strpos($uri, 'settings/promo') !== false) {
+    require_once __DIR__ . '/settings-promo.php';
+    exit();
+}
+
 if (strpos($uri, 'debug-forum') !== false) {
     require_once __DIR__ . '/debug-forum.php';
     exit();

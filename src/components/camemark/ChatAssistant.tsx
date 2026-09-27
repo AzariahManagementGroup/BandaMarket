@@ -7,7 +7,7 @@ interface Message {
   content: string;
 }
 
-const SYSTEM_PROMPT = "You are a helpful, friendly assistant for CameMark, Cameroon's premier digital marketplace. You help users navigate regions, understand CamRency (our wallet), and find products. Keep answers concise.";
+const SYSTEM_PROMPT = "You are a helpful, friendly assistant for CameMark, Malawi's premier digital marketplace. You help users navigate regions, understand CamRency (our wallet), and find products. Keep answers concise.";
 
 const ChatAssistant = () => {
   const [open, setOpen] = useState(false);

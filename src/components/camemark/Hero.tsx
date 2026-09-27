@@ -8,7 +8,7 @@ import heroImg from "@/assets/hero-marketplace.jpg";
 const stats = [
   { icon: MapPin, label: "10 Regions", sub: "Connected" },
   { icon: Shield, label: "100% Secure", sub: "Payments" },
-  { icon: Truck, label: "Fast & Reliable", sub: "Logistics across Cameroon" },
+  { icon: Truck, label: "Fast & Reliable", sub: "Logistics across Malawi" },
   { icon: Globe2, label: "AfCFTA Ready", sub: "Trade beyond borders" },
 ];
 
@@ -114,7 +114,7 @@ const Hero = () => {
           <div className="absolute -inset-6 bg-gradient-to-tr from-primary/20 via-secondary/20 to-accent/20 blur-3xl rounded-full" />
           <img
             src={heroImg}
-            alt="CameMark digital marketplace dashboard with Cameroonian produce, wallet card and mobile app"
+            alt="CameMark digital marketplace dashboard with Malawian produce, wallet card and mobile app"
             width={1280}
             height={896}
             className="relative rounded-3xl shadow-elegant w-full h-auto hover:scale-[1.02] transition-transform duration-700"

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import map from "@/assets/cameroon-map.png";
+import map from "@/assets/Malawi-map.png";
 
 const leftRegions = ["Far North", "North", "Adamawa", "East", "South"];
 const rightRegions = ["Northwest", "West", "Littoral", "Southwest", "Centre"];
@@ -16,7 +16,7 @@ const RegionsMap = () => {
           <MapPin className="h-3.5 w-3.5" /> Regional Trade Hub
         </div>
         <h2 className="text-2xl md:text-3xl font-black text-foreground">10 Digital Economic Blocs</h2>
-        <p className="text-xs md:text-sm text-muted-foreground mt-1">One Cameroon. One Market. Click any region to browse local producers.</p>
+        <p className="text-xs md:text-sm text-muted-foreground mt-1">One Malawi. One Market. Click any region to browse local producers.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-6">
@@ -36,7 +36,7 @@ const RegionsMap = () => {
         <div className="relative flex justify-center py-2">
           <img 
             src={map} 
-            alt="Official map of the 10 regions of Cameroon" 
+            alt="Official map of the 10 regions of Malawi" 
             loading="lazy" 
             className="w-56 md:w-72 lg:w-80 h-auto drop-shadow-xl hover:scale-105 transition-transform duration-500 object-contain" 
           />

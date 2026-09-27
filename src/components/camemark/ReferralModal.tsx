@@ -76,7 +76,7 @@ const ReferralModal = ({ isOpen, onClose, user }: ReferralModalProps) => {
   };
 
   const handleShareWhatsApp = () => {
-    const message = `🎁 *Join me on CameMark!*\nCameroon's premier digital marketplace to buy & sell farm produce and products.\n\nSign up with my personal link and earn bonus points:\n👉 ${referralLink}`;
+    const message = `🎁 *Join me on CameMark!*\nMalawi's premier digital marketplace to buy & sell farm produce and products.\n\nSign up with my personal link and earn bonus points:\n👉 ${referralLink}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, "_blank");
   };
 

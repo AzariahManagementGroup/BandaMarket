@@ -190,17 +190,21 @@ const AdminDashboard = () => {
 const AdminMaintenanceMode = () => {
   const [enabled, setEnabled] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [promoEnabled, setPromoEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingVoice, setSavingVoice] = useState(false);
+  const [savingPromo, setSavingPromo] = useState(false);
 
   useEffect(() => {
     Promise.all([
       fetch(getApiUrl('/api/settings/maintenance')).then(res => res.json()),
-      fetch(getApiUrl('/api/settings/voice')).then(res => res.json())
-    ]).then(([maintenanceData, voiceData]) => {
+      fetch(getApiUrl('/api/settings/voice')).then(res => res.json()),
+      fetch(getApiUrl('/api/settings/promo')).then(res => res.json())
+    ]).then(([maintenanceData, voiceData, promoData]) => {
       setEnabled(maintenanceData.enabled);
       setVoiceEnabled(voiceData.enabled);
+      setPromoEnabled(promoData.enabled);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -256,6 +260,32 @@ const AdminMaintenanceMode = () => {
     }
   };
 
+  const handlePromoToggle = async () => {
+    setSavingPromo(true);
+    const token = localStorage.getItem("camemark_token");
+    try {
+      const res = await fetch(getApiUrl('/api/settings/promo'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ enabled: !promoEnabled })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPromoEnabled(!promoEnabled);
+        toast.success(`Promo Slider ${!promoEnabled ? 'enabled' : 'disabled'}`);
+      } else {
+        toast.error(data.error || "Failed to update promo slider setting");
+      }
+    } catch (error) {
+      toast.error("Network error");
+    } finally {
+      setSavingPromo(false);
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
 
   return (
@@ -295,6 +325,22 @@ const AdminMaintenanceMode = () => {
               variant={voiceEnabled ? "destructive" : "default"}
             >
               {savingVoice ? "Saving..." : voiceEnabled ? "Disable Voice" : "Enable Voice"}
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
+            <div>
+              <h4 className="font-bold text-foreground">Promo Slider</h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                Enable or disable the Promo Slider on the home page.
+              </p>
+            </div>
+            <Button 
+              onClick={handlePromoToggle} 
+              disabled={savingPromo}
+              variant={promoEnabled ? "destructive" : "default"}
+            >
+              {savingPromo ? "Saving..." : promoEnabled ? "Disable Slider" : "Enable Slider"}
             </Button>
           </div>
         </div>
@@ -429,7 +475,7 @@ const AdminOrders = () => {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-2xl font-extrabold text-foreground tracking-tight">Marketplace Orders Feed</h3>
-          <p className="text-xs text-muted-foreground mt-1">Real-time orders placed by buyers to sellers across Cameroon</p>
+          <p className="text-xs text-muted-foreground mt-1">Real-time orders placed by buyers to sellers across Malawi</p>
         </div>
         <span className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200">
           <CheckCircle className="h-3.5 w-3.5" /> {orders.length} Total Orders
@@ -719,7 +765,7 @@ const AdminDeliveryFees = () => {
 const AdminPopupBanner = () => {
   const [banner, setBanner] = useState({
     imageUrl: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
-    title: "Cameroon E-Commerce Forum 2026",
+    title: "Malawi E-Commerce Forum 2026",
     linkUrl: "/forum",
     enabled: 1
   });
@@ -733,7 +779,7 @@ const AdminPopupBanner = () => {
         if (data && data.banner) {
           setBanner({
             imageUrl: data.banner.imageUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
-            title: data.banner.title || "Cameroon E-Commerce Forum 2026",
+            title: data.banner.title || "Malawi E-Commerce Forum 2026",
             linkUrl: data.banner.linkUrl || "/forum",
             enabled: data.banner.enabled !== undefined ? parseInt(data.banner.enabled, 10) : 1
           });
@@ -845,7 +891,7 @@ const AdminPopupBanner = () => {
           <div className="space-y-1.5">
             <Label className="text-xs font-bold text-muted-foreground uppercase">Banner Event Title</Label>
             <Input 
-              placeholder="Cameroon E-Commerce Forum 2026"
+              placeholder="Malawi E-Commerce Forum 2026"
               required
               className="h-11 rounded-xl bg-background border-border text-xs font-bold"
               value={banner.title}
@@ -972,12 +1018,12 @@ const AdminPaymentSettings = () => {
                 value={paymentConfig.activeProvider}
                 onChange={(e) => setPaymentConfig({ ...paymentConfig, activeProvider: e.target.value })}
               >
-                <option value="flutterwave">Flutterwave Cameroon (MoMo, OM, Visa/MC)</option>
+                <option value="flutterwave">Flutterwave Malawi (MoMo, OM, Visa/MC)</option>
                 <option value="paystack">Paystack Africa</option>
                 <option value="cinetpay">CinetPay CEMAC (MoMo & OM Direct)</option>
-                <option value="tranzak">Tranzak Cameroon (Default for Forum)</option>
+                <option value="tranzak">Tranzak Malawi (Default for Forum)</option>
                 <option value="momo">MTN Mobile Money Direct API</option>
-                <option value="orange">Orange Money Cameroon Direct API</option>
+                <option value="orange">Orange Money Malawi Direct API</option>
               </select>
             </div>
           </div>
@@ -985,7 +1031,7 @@ const AdminPaymentSettings = () => {
           {/* Provider 1: Flutterwave Keys */}
           <div className="space-y-3 pt-2">
             <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-emerald-600" /> Flutterwave Cameroon Credentials
+              <CreditCard className="h-4 w-4 text-emerald-600" /> Flutterwave Malawi Credentials
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -1245,7 +1291,7 @@ const AdminCoursesManager = () => {
         <h3 className="text-2xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
           <GraduationCap className="h-6 w-6 text-emerald-600" /> Camer Market Academy Course Upload & Manager
         </h3>
-        <p className="text-xs text-muted-foreground mt-1">Publish new training courses, video lectures, and certificates to empower Cameroonian entrepreneurs and learners.</p>
+        <p className="text-xs text-muted-foreground mt-1">Publish new training courses, video lectures, and certificates to empower Malawian entrepreneurs and learners.</p>
       </div>
 
       {/* Course Upload Form Card */}

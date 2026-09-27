@@ -7,7 +7,7 @@ const features = [
   { icon: MessagesSquare, title: "Bargain & Negotiate", desc: "Chat, negotiate and close the best deals with confidence." },
   { icon: Sprout, title: "Farmers & Cooperatives", desc: "Empowering farmers with markets, tools and better prices." },
   { icon: Truck, title: "Logistics Network", desc: "Integrated delivery network across all 10 regions." },
-  { icon: Map, title: "Regional Economic Blocs", desc: "Trade within and across Cameroon's 10 digital economic blocs." },
+  { icon: Map, title: "Regional Economic Blocs", desc: "Trade within and across Malawi's 10 digital economic blocs." },
   { icon: Globe2, title: "AfCFTA Ready Trade", desc: "Access continental markets through AfCFTA pathways." },
 ];
 

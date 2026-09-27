@@ -19,7 +19,7 @@ const AcademyLandingSection = () => {
       image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80"
     },
     {
-      title: "Entrepreneurship & SME Growth in Cameroon",
+      title: "Entrepreneurship & SME Growth in Malawi",
       level: "All Levels",
       instructor: "Clarisse Mbida",
       rating: "4.9",
@@ -63,7 +63,7 @@ const AcademyLandingSection = () => {
           
           <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
             Empowering Learners. Building Businesses. <br />
-            <span className="text-amber-400 underline decoration-amber-400/40">Transforming Cameroon & Africa.</span>
+            <span className="text-amber-400 underline decoration-amber-400/40">Transforming Malawi & Africa.</span>
           </h2>
           
           <p className="text-base md:text-lg text-emerald-100/90 font-medium">
@@ -122,7 +122,7 @@ const AcademyLandingSection = () => {
         <div className="bg-white/10 border border-white/20 rounded-3xl p-8 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           <div>
             <h3 className="text-2xl font-black text-white">Ready to Boost Your Digital Skills?</h3>
-            <p className="text-xs md:text-sm text-emerald-100/90 mt-1">Explore all 250+ courses and join 25,000+ Cameroonian entrepreneurs today.</p>
+            <p className="text-xs md:text-sm text-emerald-100/90 mt-1">Explore all 250+ courses and join 25,000+ Malawian entrepreneurs today.</p>
           </div>
           <Button onClick={() => navigate("/academy")} className="bg-amber-400 hover:bg-amber-300 text-emerald-950 font-black h-12 px-8 rounded-2xl text-sm shadow-xl shrink-0">
             Visit Camer Market Academy Hub →

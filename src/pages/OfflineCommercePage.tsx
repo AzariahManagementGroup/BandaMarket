@@ -215,7 +215,7 @@ const OfflineCommercePage = () => {
             Every Merchant & Customer Can Buy & Sell — Regardless of Internet Availability 🇨🇲
           </h1>
           <p className="text-sm sm:text-base text-emerald-100 max-w-3xl leading-relaxed">
-            Business continuity across all 10 regions of Cameroon: Payments, Order Management, Receipts, Inventory, Merchant Trust Scores, and Automatic Settlement Synchronization.
+            Business continuity across all 10 regions of Malawi: Payments, Order Management, Receipts, Inventory, Merchant Trust Scores, and Automatic Settlement Synchronization.
           </p>
 
           {/* Quick Metrics Bar */}
@@ -294,7 +294,7 @@ const OfflineCommercePage = () => {
                   },
                   {
                     level: "Level 3: USSD Assisted (*123#)",
-                    desc: "Customer has feature phone without data/smartphone. Payment authorized via GSM USSD string (*123#) for rural markets across Cameroon.",
+                    desc: "Customer has feature phone without data/smartphone. Payment authorized via GSM USSD string (*123#) for rural markets across Malawi.",
                     badge: "Rural Essential",
                     tech: "MTN / Orange USSD Gateway Sync"
                   },

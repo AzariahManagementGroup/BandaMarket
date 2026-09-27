@@ -30,7 +30,7 @@ const MarketZone = () => {
   const handleShareProduct = (product: any, platform: string = "whatsapp") => {
     const productUrl = `${window.location.origin}/checkout?productId=${product.id}`;
     const productImg = product.imageUrl || `${window.location.origin}/og-image.png`;
-    const shareText = `🛒 *${product.title}*\n💰 Price: ${product.currency} ${product.price.toLocaleString()}\n📍 Seller: ${product.sellerName || 'Verified Merchant'} (${product.city || 'Cameroon'}, ${product.region || ''})\n🖼️ View Image: ${productImg}\n\n👉 Buy now on CameMark: ${productUrl}`;
+    const shareText = `🛒 *${product.title}*\n💰 Price: ${product.currency} ${product.price.toLocaleString()}\n📍 Seller: ${product.sellerName || 'Verified Merchant'} (${product.city || 'Malawi'}, ${product.region || ''})\n🖼️ View Image: ${productImg}\n\n👉 Buy now on CameMark: ${productUrl}`;
 
     if (platform === "whatsapp") {
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, "_blank");
@@ -162,7 +162,7 @@ const MarketZone = () => {
     fullName: "",
     email: "",
     phone: "",
-    country: "Cameroon",
+    country: "Malawi",
     region: region !== "All Regions" ? region : "Littoral",
     city: "Douala",
     deliveryAddress: "",
@@ -280,7 +280,7 @@ const MarketZone = () => {
               {region}
             </h1>
             <p className="mt-3 text-muted-foreground max-w-xl">
-              Discover authentic products, agricultural goods, and services directly from verified sellers and farmers in the {region} region of Cameroon.
+              Discover authentic products, agricultural goods, and services directly from verified sellers and farmers in the {region} region of Malawi.
             </p>
           </div>
         </section>
@@ -476,7 +476,7 @@ const MarketZone = () => {
                     <SelectValue placeholder="Select Country" />
                   </SelectTrigger>
                   <SelectContent className="bg-white">
-                    <SelectItem value="Cameroon">Cameroon 🇨🇲</SelectItem>
+                    <SelectItem value="Malawi">Malawi 🇨🇲</SelectItem>
                     <SelectItem value="Nigeria">Nigeria 🇳🇬</SelectItem>
                     <SelectItem value="Chad">Chad 🇹🇩</SelectItem>
                     <SelectItem value="Gabon">Gabon 🇬🇦</SelectItem>
