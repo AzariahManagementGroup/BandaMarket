@@ -28,7 +28,7 @@ try {
 } catch (Exception $e) {
     // Fallback to production credentials
     try {
-        $conn = @new mysqli('localhost', 'worlvjwl_camemark_dbuser', 'camemark_dbuser$1', 'worlvjwl_camemark_db');
+        $conn = @new mysqli('localhost', 'worlvjwl_bandauser', 'bandauser$1', 'worlvjwl_banda');
         if ($conn->connect_error) {
             http_response_code(500);
             echo json_encode(["error" => "Database connection failed: " . $conn->connect_error]);
@@ -51,7 +51,7 @@ function get_db_connection() {
     } catch (PDOException $e) {
         // Fallback
         try {
-            return new PDO("mysql:host=localhost;dbname=worlvjwl_camemark_db;charset=utf8mb4", 'worlvjwl_camemark_dbuser', 'camemark_dbuser$1', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+            return new PDO("mysql:host=localhost;dbname=worlvjwl_banda;charset=utf8mb4", 'worlvjwl_bandauser', 'bandauser$1', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         } catch (PDOException $e2) {
             die("PDO Connection failed: " . $e2->getMessage());
         }
