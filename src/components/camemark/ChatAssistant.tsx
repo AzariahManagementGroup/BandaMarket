@@ -7,7 +7,7 @@ interface Message {
   content: string;
 }
 
-const SYSTEM_PROMPT = "You are a helpful, friendly assistant for CameMark, Malawi's premier digital marketplace. You help users navigate regions, understand CamRency (our wallet), and find products. Keep answers concise.";
+const SYSTEM_PROMPT = "You are a helpful, friendly assistant for Banda Market, Malawi's premier digital marketplace. You help users navigate regions, understand CamRency (our wallet), and find products. Keep answers concise.";
 
 const ChatAssistant = () => {
   const [open, setOpen] = useState(false);
@@ -36,7 +36,7 @@ const ChatAssistant = () => {
   useEffect(() => {
     if (open && !hasWelcomed) {
       setHasWelcomed(true);
-      setMessages([{ id: Date.now().toString(), role: "ai", content: "Welcome to CameMark! How can I help you navigate the marketplace today?" }]);
+      setMessages([{ id: Date.now().toString(), role: "ai", content: "Welcome to Banda Market! How can I help you navigate the marketplace today?" }]);
     }
   }, [open, hasWelcomed]);
 
@@ -80,7 +80,7 @@ const ChatAssistant = () => {
       text = text.replace(/^[\s>⚠️*#\-:\n]+/, "").trim();
       
       if (!text) {
-        text = "Welcome to CameMark! I'm here to help you navigate the marketplace. What would you like to know?";
+        text = "Welcome to Banda Market! I'm here to help you navigate the marketplace. What would you like to know?";
       }
       
       setMessages(prev => [...prev, { id: Date.now().toString(), role: "ai", content: text }]);
@@ -114,7 +114,7 @@ const ChatAssistant = () => {
               <Bot className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-primary-foreground leading-tight">CameMark AI</h3>
+              <h3 className="text-sm font-bold text-primary-foreground leading-tight">Banda Market AI</h3>
               <p className="text-[10px] text-primary-foreground/80">Always here to help</p>
             </div>
           </div>
