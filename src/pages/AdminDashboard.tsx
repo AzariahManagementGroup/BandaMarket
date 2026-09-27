@@ -189,16 +189,19 @@ const AdminDashboard = () => {
 
 const AdminMaintenanceMode = () => {
   const [enabled, setEnabled] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingVoice, setSavingVoice] = useState(false);
 
   useEffect(() => {
-    fetch(getApiUrl('/api/settings/maintenance'))
-      .then(res => res.json())
-      .then(data => {
-        setEnabled(data.enabled);
-      })
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch(getApiUrl('/api/settings/maintenance')).then(res => res.json()),
+      fetch(getApiUrl('/api/settings/voice')).then(res => res.json())
+    ]).then(([maintenanceData, voiceData]) => {
+      setEnabled(maintenanceData.enabled);
+      setVoiceEnabled(voiceData.enabled);
+    }).finally(() => setLoading(false));
   }, []);
 
   const handleToggle = async () => {
@@ -227,12 +230,38 @@ const AdminMaintenanceMode = () => {
     }
   };
 
+  const handleVoiceToggle = async () => {
+    setSavingVoice(true);
+    const token = localStorage.getItem("camemark_token");
+    try {
+      const res = await fetch(getApiUrl('/api/settings/voice'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ enabled: !voiceEnabled })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setVoiceEnabled(!voiceEnabled);
+        toast.success(`Voice auto-launch ${!voiceEnabled ? 'enabled' : 'disabled'}`);
+      } else {
+        toast.error(data.error || "Failed to update voice setting");
+      }
+    } catch (error) {
+      toast.error("Network error");
+    } finally {
+      setSavingVoice(false);
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold tracking-tight">Maintenance Mode</h3>
+        <h3 className="text-xl font-bold tracking-tight">System Settings</h3>
       </div>
       
       <div className="p-6 rounded-2xl bg-card border border-border shadow-sm">
@@ -250,6 +279,22 @@ const AdminMaintenanceMode = () => {
               variant={enabled ? "destructive" : "default"}
             >
               {saving ? "Saving..." : enabled ? "Disable Maintenance" : "Enable Maintenance"}
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
+            <div>
+              <h4 className="font-bold text-foreground">Welcome Voice Auto-Launch</h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                Enable or disable the automatic welcome voice when users visit the home page.
+              </p>
+            </div>
+            <Button 
+              onClick={handleVoiceToggle} 
+              disabled={savingVoice}
+              variant={voiceEnabled ? "destructive" : "default"}
+            >
+              {savingVoice ? "Saving..." : voiceEnabled ? "Disable Voice" : "Enable Voice"}
             </Button>
           </div>
         </div>

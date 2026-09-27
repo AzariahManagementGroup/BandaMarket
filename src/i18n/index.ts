@@ -129,12 +129,12 @@ const resources = {
   }},
 };
 
-const savedLanguage = localStorage.getItem('camemark_lang') || 'fr';
+const savedLanguage = localStorage.getItem('camemark_lang') || 'en';
 
 i18n.use(initReactI18next).init({
   resources, 
   lng: savedLanguage,
-  fallbackLng: "fr",
+  fallbackLng: "en",
   interpolation: { escapeValue: false },
 });
 
