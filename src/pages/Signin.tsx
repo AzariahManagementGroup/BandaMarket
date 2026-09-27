@@ -17,7 +17,7 @@ const Signin = () => {
   const [otpEmail, setOtpEmail] = useState("");
 
   useEffect(() => {
-    document.title = "Sign In — CameMark";
+    document.title = "Sign In — Banda Market";
     
     // Check if already logged in
     const token = localStorage.getItem("camemark_token");
@@ -61,7 +61,7 @@ const Signin = () => {
       localStorage.setItem("camemark_token", data.token);
       localStorage.setItem("camemark_user", JSON.stringify(data.user));
 
-      toast.success("Welcome back to CameMark!");
+      toast.success("Welcome back to Banda Market!");
       navigate("/dashboard");
     } catch (err: any) {
       toast.error(err.message || "Failed to sign in");
@@ -119,13 +119,13 @@ const Signin = () => {
       <div className="w-full max-w-md animate-fade-in">
         <div className="text-center mb-8 mt-8 sm:mt-0">
           <Link to="/">
-            <img src={logo} alt="CameMark" className="h-12 w-auto mx-auto mb-6 animate-float" />
+            <img src={logo} alt="Banda Market" className="h-12 w-auto mx-auto mb-6 animate-float" />
           </Link>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
             {requiresOtp ? "Weekly Security OTP" : "Welcome Back"}
           </h1>
           <p className="text-gray-500 mt-2">
-            {requiresOtp ? `Enter the 6-digit code sent to ${otpEmail}` : "Sign in to your CameMark account"}
+            {requiresOtp ? `Enter the 6-digit code sent to ${otpEmail}` : "Sign in to your Banda Market account"}
           </p>
         </div>
 

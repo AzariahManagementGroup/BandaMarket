@@ -614,7 +614,7 @@ const CardsWallet = () => {
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-gray-900 flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-emerald-600" /> CameMark Payment Gateway
+                <ShieldCheck className="h-5 w-5 text-emerald-600" /> Banda Market Payment Gateway
               </span>
               <span className="text-xs font-bold bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-full border border-emerald-200">
                 256-bit Encrypted

@@ -42,7 +42,7 @@ const OfflineCommercePage = () => {
     };
     const handleOffline = () => {
       setIsOnline(false);
-      toast.warning("📶 Network Offline: CameMark COCF Mode Activated. Offline Ledger active!");
+      toast.warning("📶 Network Offline: Banda Market COCF Mode Activated. Offline Ledger active!");
     };
 
     window.addEventListener("online", handleOnline);
@@ -128,7 +128,7 @@ const OfflineCommercePage = () => {
     toast.success(`⚡ Offline Payment Executed! XAF ${paymentAmount.toLocaleString()} deducted from cryptographic offline wallet.`);
   };
 
-  // Synchronize Pending Local Ledger with CameMark Cloud API
+  // Synchronize Pending Local Ledger with Banda Market Cloud API
   const handleSyncEngine = async () => {
     if (pendingTxs.length === 0) {
       toast.info("No pending offline transactions to synchronize.");
@@ -136,7 +136,7 @@ const OfflineCommercePage = () => {
     }
 
     setIsSyncing(true);
-    toast.loading("🔄 Connecting to CameMark Cloud National Ledger...", { id: "sync-toast" });
+    toast.loading("🔄 Connecting to Banda Market Cloud National Ledger...", { id: "sync-toast" });
 
     try {
       const res = await fetch(getApiUrl("/api/offline-sync"), {
@@ -145,7 +145,7 @@ const OfflineCommercePage = () => {
         body: JSON.stringify({
           batch: pendingTxs,
           merchantId: "mch-douala-88",
-          merchantName: "CameMark Verified Regional Merchant"
+          merchantName: "Banda Market Verified Regional Merchant"
         })
       });
       const data = await res.json();
@@ -195,7 +195,7 @@ const OfflineCommercePage = () => {
         {isOnline ? (
           <>
             <Wifi className="h-4 w-4 text-emerald-400" />
-            <span>ONLINE MODE — Connected to CameMark Cloud Ledger</span>
+            <span>ONLINE MODE — Connected to Banda Market Cloud Ledger</span>
           </>
         ) : (
           <>
@@ -386,7 +386,7 @@ const OfflineCommercePage = () => {
                 </h3>
                 <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-2 text-xs">
                   <span className="text-[10px] uppercase font-bold text-gray-400 block">Certificate Signature</span>
-                  <p className="font-mono text-[11px] text-gray-800 font-bold break-all">CERT-CAMEMARK-OFFLINE-DEVICETRUST-8823-CM</p>
+                  <p className="font-mono text-[11px] text-gray-800 font-bold break-all">CERT-BANDA MARKET-OFFLINE-DEVICETRUST-8823-CM</p>
                   <div className="flex items-center gap-1.5 text-emerald-700 font-extrabold text-[11px] pt-1">
                     <CheckCircle2 className="h-3.5 w-3.5" /> Hardware Cryptographic Trust Validated
                   </div>
@@ -459,7 +459,7 @@ const OfflineCommercePage = () => {
                 <div className="p-6 bg-emerald-50/60 rounded-3xl border border-emerald-100 space-y-4 text-center">
                   <div className="h-48 w-48 mx-auto bg-white p-3 rounded-2xl shadow-md border border-emerald-200 flex items-center justify-center relative">
                     <img 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=CAMEMARK-OFFLINE-TX-${Date.now()}-NONCE-8831`} 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=BANDA MARKET-OFFLINE-TX-${Date.now()}-NONCE-8831`} 
                       alt="Dynamic Signed Offline QR"
                       className="h-full w-full object-contain" 
                     />

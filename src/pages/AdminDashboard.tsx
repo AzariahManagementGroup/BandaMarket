@@ -87,7 +87,7 @@ const AdminDashboard = () => {
       >
         <div className="p-6 flex items-center justify-between">
           <Link to="/" className={`font-extrabold text-primary ${!isSidebarOpen && "hidden"}`}>
-            CAMEMARK ADMIN
+            BANDA MARKET ADMIN
           </Link>
           <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-1.5 hover:bg-muted rounded-md transition-colors hidden md:block">
             {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

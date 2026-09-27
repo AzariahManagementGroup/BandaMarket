@@ -18,7 +18,7 @@ const MaintenancePage = () => {
           <div className="absolute inset-[-20px] bg-emerald-500/20 rounded-full blur-xl animate-pulse" />
           <img 
             src={logo} 
-            alt="CameMark Logo" 
+            alt="Banda Market Logo" 
             className="h-16 w-auto relative z-10 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-bounce"
           />
         </div>
@@ -28,7 +28,7 @@ const MaintenancePage = () => {
         </h1>
         
         <p className="text-slate-300 text-lg mb-10 leading-relaxed font-medium">
-          CameMark is currently undergoing scheduled maintenance to upgrade our infrastructure and bring you a better experience. 
+          Banda Market is currently undergoing scheduled maintenance to upgrade our infrastructure and bring you a better experience. 
         </p>
 
         {/* Action Button */}
@@ -47,7 +47,7 @@ const MaintenancePage = () => {
       {/* Footer */}
       <div className="relative z-10 mt-12 flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-widest">
         <Settings className="h-4 w-4 animate-[spin_4s_linear_infinite]" />
-        &copy; {new Date().getFullYear()} CameMark
+        &copy; {new Date().getFullYear()} Banda Market
       </div>
     </div>
   );

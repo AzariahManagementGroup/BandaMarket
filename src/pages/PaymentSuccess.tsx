@@ -42,7 +42,7 @@ const PaymentSuccess = () => {
   }, [location.search]);
 
   const qrValue = ticket
-    ? `CAMEMARK-FORUM-2025|ID:${ticket.id}|NAME:${ticket.name}|EMAIL:${ticket.email}|CAT:${ticket.category}`
+    ? `BANDA MARKET-FORUM-2025|ID:${ticket.id}|NAME:${ticket.name}|EMAIL:${ticket.email}|CAT:${ticket.category}`
     : "";
 
   const handlePrint = () => {
@@ -56,7 +56,7 @@ const PaymentSuccess = () => {
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <title>CameMark Forum Pass — ${ticket.name}</title>
+  <title>Banda Market Forum Pass — ${ticket.name}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0fdf4; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
@@ -119,7 +119,7 @@ const PaymentSuccess = () => {
 <div class="pass">
   <div class="header">
     <div class="header-left">
-      <div class="event-label">CameMark Forum 2025</div>
+      <div class="event-label">Banda Market Forum 2025</div>
       <div class="title">Event<br/>Admission Pass</div>
       <div class="badge">${ticket.category}</div>
     </div>
@@ -157,7 +157,7 @@ const PaymentSuccess = () => {
   </div>
 
   <div class="footer-bar">
-    <div class="brand">CameMark 🇨🇲</div>
+    <div class="brand">Banda Market 🇨🇲</div>
     <div class="validity">Valid for event entry • Non-transferable</div>
   </div>
 </div>
@@ -224,7 +224,7 @@ const PaymentSuccess = () => {
               {/* Pass header */}
               <div className="bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-700 p-6 text-white flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-emerald-300 text-xs tracking-widest uppercase mb-1">CameMark Forum 2025</p>
+                  <p className="text-emerald-300 text-xs tracking-widest uppercase mb-1">Banda Market Forum 2025</p>
                   <h2 className="text-xl font-extrabold leading-tight">Event Admission Pass</h2>
                   <span className="mt-2 inline-block bg-white/20 text-white text-xs px-3 py-1 rounded-full tracking-wider uppercase">
                     {ticket.category}
@@ -277,7 +277,7 @@ const PaymentSuccess = () => {
 
               {/* Footer bar */}
               <div className="bg-emerald-900 text-white px-6 py-2.5 flex justify-between items-center text-xs">
-                <span className="font-bold tracking-wide">CameMark 🇨🇲</span>
+                <span className="font-bold tracking-wide">Banda Market 🇨🇲</span>
                 <span className="opacity-60">Valid for event entry • Non-transferable</span>
               </div>
             </div>

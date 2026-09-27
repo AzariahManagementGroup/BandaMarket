@@ -200,7 +200,7 @@ const BuyerDashboard = () => {
   }, [selectedCategory, selectedRegion, searchQuery]);
 
   useEffect(() => {
-    document.title = "Dashboard | CameMark";
+    document.title = "Dashboard | Banda Market";
     const token = localStorage.getItem("camemark_token");
     const userStr = localStorage.getItem("camemark_user");
 
@@ -473,7 +473,7 @@ const BuyerDashboard = () => {
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-100 p-6 overflow-y-auto">
         <div className="flex items-center gap-2 mb-10">
-          <img src={logo} alt="CameMark" className="h-10 w-auto animate-float" />
+          <img src={logo} alt="Banda Market" className="h-10 w-auto animate-float" />
         </div>
 
         <nav className="space-y-1">
@@ -553,7 +553,7 @@ const BuyerDashboard = () => {
           {/* Drawer container */}
           <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col p-5 overflow-y-auto custom-scrollbar animate-slide-in-left z-10">
             <div className="flex items-center justify-between mb-6 shrink-0">
-              <img src={logo} alt="CameMark" className="h-8 w-auto" />
+              <img src={logo} alt="Banda Market" className="h-8 w-auto" />
               <button 
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
@@ -1308,9 +1308,9 @@ const BuyerDashboard = () => {
         <SheetContent side="left" className="p-0 bg-white border-r-0 w-72 flex flex-col">
           <SheetHeader className="p-6 bg-[#064E3B] text-white text-left">
             <div className="flex items-center gap-2 mb-2">
-              <img src={logo} alt="CameMark" className="h-8 w-auto brightness-0 invert" />
+              <img src={logo} alt="Banda Market" className="h-8 w-auto brightness-0 invert" />
             </div>
-            <SheetTitle className="text-white text-lg font-black">CameMark Dashboard</SheetTitle>
+            <SheetTitle className="text-white text-lg font-black">Banda Market Dashboard</SheetTitle>
             <SheetDescription className="text-emerald-100 text-[10px]">
               {profile?.full_name || "Buyer"} • {profile?.signup_role?.replace('_', ' ') || "User"}
             </SheetDescription>

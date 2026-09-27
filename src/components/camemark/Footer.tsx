@@ -17,7 +17,7 @@ const Footer = () => {
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-background rounded-xl px-4 py-3 inline-flex relative group">
             <div className="absolute inset-0 bg-primary/20 blur-xl group-hover:bg-primary/40 transition-colors animate-pulse rounded-xl" />
-            <img src={logo} alt="CameMark Logo — Malawi's Premier Digital Marketplace and Regional Trading Hub" className="h-28 w-auto animate-float drop-shadow-md relative z-10" loading="lazy" />
+            <img src={logo} alt="Banda Market Logo — Malawi's Premier Digital Marketplace and Regional Trading Hub" className="h-28 w-auto animate-float drop-shadow-md relative z-10" loading="lazy" />
           </div>
           <p className="text-sm text-primary-foreground/80 leading-relaxed max-w-xs">
             Malawi's Digital Marketplace, Wallet & Trade Gateway. Empowering regions. Connecting Malawi. Building a prosperous future.
@@ -49,7 +49,7 @@ const Footer = () => {
       </div>
       <div className="border-t border-primary-foreground/10">
         <div className="container py-4 flex flex-col sm:flex-row items-center justify-between text-xs text-primary-foreground/70 gap-2">
-          <span>© 2026 CameMark. All rights reserved.</span>
+          <span>© 2026 Banda Market. All rights reserved.</span>
           <span>Made in Malawi. Made for Africa. Made to Grow.</span>
           <span>Proudly Malawian 🇨🇲</span>
         </div>

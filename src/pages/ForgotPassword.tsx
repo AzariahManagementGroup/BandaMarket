@@ -13,7 +13,7 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    document.title = "Forgot Password — CameMark";
+    document.title = "Forgot Password — Banda Market";
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,7 +46,7 @@ const ForgotPassword = () => {
       <div className="w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
           <Link to="/">
-            <img src={logo} alt="CameMark" className="h-12 w-auto mx-auto mb-6 animate-float" />
+            <img src={logo} alt="Banda Market" className="h-12 w-auto mx-auto mb-6 animate-float" />
           </Link>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
             Forgot Password?

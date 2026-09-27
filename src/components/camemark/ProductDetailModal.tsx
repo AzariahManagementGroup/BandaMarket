@@ -125,7 +125,7 @@ const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen
                   <Heart className="h-4 w-4" />
                 </button>
                 <button onClick={() => {
-                  const shareText = `🛒 *${product.title}*\n💰 Price: ${product.currency || 'FCFA'} ${product.price?.toLocaleString()}\n👉 Buy on CameMark: ${window.location.origin}/checkout?productId=${product.id}`;
+                  const shareText = `🛒 *${product.title}*\n💰 Price: ${product.currency || 'FCFA'} ${product.price?.toLocaleString()}\n👉 Buy on Banda Market: ${window.location.origin}/checkout?productId=${product.id}`;
                   window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, "_blank");
                 }} className="h-9 w-9 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-md">
                   <Share2 className="h-4 w-4" />
@@ -189,7 +189,7 @@ const ProductDetailModal = ({ product, isOpen, onClose }: { product: any; isOpen
             <div className="p-4 bg-white border-t border-gray-100 grid grid-cols-3 gap-2 shrink-0">
               <Button 
                 onClick={() => {
-                  const whatsappMsg = `Hello ${product.sellerName || 'Seller'}, I want to chat about *${product.title}* listed on CameMark.`;
+                  const whatsappMsg = `Hello ${product.sellerName || 'Seller'}, I want to chat about *${product.title}* listed on Banda Market.`;
                   window.open(`https://api.whatsapp.com/send?phone=237600000000&text=${encodeURIComponent(whatsappMsg)}`, "_blank");
                 }}
                 variant="outline" 

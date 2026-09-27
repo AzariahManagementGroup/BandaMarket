@@ -17,7 +17,7 @@ const VerifyOTP = () => {
   const [otp, setOtp] = useState("");
 
   useEffect(() => {
-    document.title = "Verify OTP — CameMark";
+    document.title = "Verify OTP — Banda Market";
     if (!email) {
       toast.error("Session expired. Please request a new code.");
       navigate("/forgot-password");
@@ -54,7 +54,7 @@ const VerifyOTP = () => {
       <div className="w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
           <Link to="/">
-            <img src={logo} alt="CameMark" className="h-12 w-auto mx-auto mb-6 animate-float" />
+            <img src={logo} alt="Banda Market" className="h-12 w-auto mx-auto mb-6 animate-float" />
           </Link>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
             Verify Code

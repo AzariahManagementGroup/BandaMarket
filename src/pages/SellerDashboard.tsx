@@ -189,7 +189,7 @@ const SellerDashboard = () => {
   };
 
   useEffect(() => {
-    document.title = "Seller Dashboard | CameMark";
+    document.title = "Seller Dashboard | Banda Market";
     const token = localStorage.getItem("camemark_token");
     const userStr = localStorage.getItem("camemark_user");
 
@@ -428,7 +428,7 @@ const SellerDashboard = () => {
       {/* Sidebar Desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-100 p-6 overflow-y-auto">
         <div className="flex items-center gap-2 mb-10">
-          <img src={logo} alt="CameMark" className="h-10 w-auto animate-float" />
+          <img src={logo} alt="Banda Market" className="h-10 w-auto animate-float" />
         </div>
 
         <nav className="space-y-1">
@@ -484,7 +484,7 @@ const SellerDashboard = () => {
               </SheetTrigger>
               <SheetContent side="left" className="w-72 p-6 bg-white flex flex-col">
                 <div className="flex items-center gap-2 mb-8">
-                  <img src={logo} alt="CameMark" className="h-10 w-auto" />
+                  <img src={logo} alt="Banda Market" className="h-10 w-auto" />
                 </div>
                 <nav className="space-y-1 flex-1 overflow-y-auto">
                   {navItems.map((item) => (
@@ -760,7 +760,7 @@ const SellerDashboard = () => {
                   <div className="text-center py-12 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
                     <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                     <h4 className="font-bold text-gray-700">No Listings Yet</h4>
-                    <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">Start selling on CameMark by adding your first product listing.</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">Start selling on Banda Market by adding your first product listing.</p>
                     <Button onClick={() => setIsNewListingModalOpen(true)} className="mt-4 bg-[#064E3B] text-white font-bold text-xs h-10 px-5 rounded-xl">
                       <Plus className="h-4 w-4 mr-2" /> Post Your First Product
                     </Button>

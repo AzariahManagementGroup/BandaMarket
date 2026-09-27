@@ -131,7 +131,7 @@ const CheckoutPage = () => {
   const [deliveryFees, setDeliveryFees] = useState({ standardFee: 1000, expressFee: 2500, pickupFee: 0 });
 
   useEffect(() => {
-    document.title = "Checkout | CameMark Secure Checkout";
+    document.title = "Checkout | Banda Market Secure Checkout";
     
     // Load local user profile
     const userStr = localStorage.getItem("camemark_user");
@@ -386,7 +386,7 @@ const CheckoutPage = () => {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
           <Link to="/" className="flex items-center gap-2 shrink-0">
-            <img src={logo} alt="CameMark Logo" className="h-7 sm:h-9 w-auto object-contain" />
+            <img src={logo} alt="Banda Market Logo" className="h-7 sm:h-9 w-auto object-contain" />
           </Link>
           <div className="hidden md:flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 w-full max-w-md">
             <Input 
@@ -988,7 +988,7 @@ const CheckoutPage = () => {
                 <Label className="text-[11px] font-bold text-gray-500 uppercase">Promo / Bargain Code</Label>
                 <div className="flex gap-2">
                   <Input 
-                    placeholder="e.g. CAMEMARK10 or BARGAIN" 
+                    placeholder="e.g. BANDA MARKET10 or BARGAIN" 
                     className="h-10 rounded-xl bg-gray-50 text-xs border-gray-200"
                     value={promoCode}
                     onChange={(e) => setPromoCode(e.target.value)}
@@ -1000,12 +1000,12 @@ const CheckoutPage = () => {
                         toast.error("Please enter a promo code.");
                         return;
                       }
-                      if (promoCode.toUpperCase() === "CAMEMARK10" || promoCode.toUpperCase() === "BARGAIN") {
+                      if (promoCode.toUpperCase() === "BANDA MARKET10" || promoCode.toUpperCase() === "BARGAIN") {
                         const calculatedDiscount = Math.round(basePrice * 0.1);
                         setDiscount(calculatedDiscount);
                         toast.success(`🎉 Promo code applied! You saved FCFA ${calculatedDiscount.toLocaleString()} (10% OFF)!`);
                       } else {
-                        toast.error("Invalid promo code. Try 'CAMEMARK10' or 'BARGAIN'.");
+                        toast.error("Invalid promo code. Try 'BANDA MARKET10' or 'BARGAIN'.");
                       }
                     }} 
                     className="bg-[#064E3B] hover:bg-emerald-950 text-white font-bold h-10 px-4 rounded-xl text-xs"
@@ -1139,7 +1139,7 @@ const CheckoutPage = () => {
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-gray-900 flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-emerald-600" /> CameMark Payment Gateway
+                <ShieldCheck className="h-5 w-5 text-emerald-600" /> Banda Market Payment Gateway
               </span>
               <span className="text-xs font-bold bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-full border border-emerald-200">
                 256-bit Encrypted

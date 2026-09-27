@@ -30,14 +30,14 @@ const MarketZone = () => {
   const handleShareProduct = (product: any, platform: string = "whatsapp") => {
     const productUrl = `${window.location.origin}/checkout?productId=${product.id}`;
     const productImg = product.imageUrl || `${window.location.origin}/og-image.png`;
-    const shareText = `🛒 *${product.title}*\n💰 Price: ${product.currency} ${product.price.toLocaleString()}\n📍 Seller: ${product.sellerName || 'Verified Merchant'} (${product.city || 'Malawi'}, ${product.region || ''})\n🖼️ View Image: ${productImg}\n\n👉 Buy now on CameMark: ${productUrl}`;
+    const shareText = `🛒 *${product.title}*\n💰 Price: ${product.currency} ${product.price.toLocaleString()}\n📍 Seller: ${product.sellerName || 'Verified Merchant'} (${product.city || 'Malawi'}, ${product.region || ''})\n🖼️ View Image: ${productImg}\n\n👉 Buy now on Banda Market: ${productUrl}`;
 
     if (platform === "whatsapp") {
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, "_blank");
     } else if (platform === "facebook") {
       window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}`, "_blank");
     } else if (platform === "twitter") {
-      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out ${product.title} on CameMark 🇨🇲`)}&url=${encodeURIComponent(productUrl)}`, "_blank");
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out ${product.title} on Banda Market 🇨🇲`)}&url=${encodeURIComponent(productUrl)}`, "_blank");
     } else {
       navigator.clipboard.writeText(`${shareText}`);
       toast.success("📋 Product details & image link copied to clipboard!");
@@ -54,7 +54,7 @@ const MarketZone = () => {
   };
 
   useEffect(() => {
-    document.title = `Market Zone: ${region} — CameMark`;
+    document.title = `Market Zone: ${region} — Banda Market`;
     
     // Check if user is logged in
     const token = localStorage.getItem("camemark_token");

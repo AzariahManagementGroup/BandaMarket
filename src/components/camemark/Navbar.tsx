@@ -127,7 +127,7 @@ const Navbar = () => {
           <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full group-hover:bg-primary/30 transition-colors" />
           <img
             src={logo}
-            alt="CameMark Logo — Malawi's Premier Digital Marketplace and Regional Trading Hub"
+            alt="Banda Market Logo — Malawi's Premier Digital Marketplace and Regional Trading Hub"
             className="h-10 md:h-12 w-auto drop-shadow-md group-hover:scale-105 transition-all duration-300 relative z-10"
           />
         </a>
@@ -274,7 +274,7 @@ const Navbar = () => {
               {/* Mobile header */}
               <div className="px-5 pt-5 pb-4 border-b border-border bg-leaf relative overflow-hidden">
                 <div className="absolute inset-0 bg-primary/10 blur-xl animate-pulse" />
-                <img src={logo} alt="CameMark Logo — Malawi's Premier Digital Marketplace and Regional Trading Hub" className="h-24 w-auto mb-3 animate-float drop-shadow-md relative z-10" />
+                <img src={logo} alt="Banda Market Logo — Malawi's Premier Digital Marketplace and Regional Trading Hub" className="h-24 w-auto mb-3 animate-float drop-shadow-md relative z-10" />
                 {/* Breadcrumb on mobile */}
                 <Breadcrumb className="relative z-10">
                   <BreadcrumbList className="text-[10px] font-bold">

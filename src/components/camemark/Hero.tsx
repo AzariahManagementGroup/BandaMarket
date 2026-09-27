@@ -114,7 +114,7 @@ const Hero = () => {
           <div className="absolute -inset-6 bg-gradient-to-tr from-primary/20 via-secondary/20 to-accent/20 blur-3xl rounded-full" />
           <img
             src={heroImg}
-            alt="CameMark digital marketplace dashboard with Malawian produce, wallet card and mobile app"
+            alt="Banda Market digital marketplace dashboard with Malawian produce, wallet card and mobile app"
             width={1280}
             height={896}
             className="relative rounded-3xl shadow-elegant w-full h-auto hover:scale-[1.02] transition-transform duration-700"

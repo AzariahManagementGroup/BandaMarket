@@ -73,7 +73,7 @@ const Signup = () => {
   });
 
   useEffect(() => {
-    document.title = "Sign Up — CameMark | Malawi's Digital Marketplace";
+    document.title = "Sign Up — Banda Market | Malawi's Digital Marketplace";
     
     // Auto-fill referral code from URL parameter ?ref=...
     const refParam = searchParams.get("ref") || searchParams.get("referral");
@@ -257,7 +257,7 @@ const Signup = () => {
       <header className="container py-5 flex items-center justify-between animate-fade-in relative z-10">
         <Link to="/" className="flex items-center gap-2 group hover-scale relative">
           <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full group-hover:bg-primary/40 transition-colors animate-pulse" />
-          <img src={logo} alt="CameMark Logo — Malawi's Premier Digital Marketplace and Regional Trading Hub" className="h-12 w-auto animate-float drop-shadow-xl relative z-10" />
+          <img src={logo} alt="Banda Market Logo — Malawi's Premier Digital Marketplace and Regional Trading Hub" className="h-12 w-auto animate-float drop-shadow-xl relative z-10" />
         </Link>
         <Link to="/" className="text-sm font-semibold text-primary story-link">← Home</Link>
       </header>

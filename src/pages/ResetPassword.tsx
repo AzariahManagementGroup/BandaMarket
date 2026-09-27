@@ -19,7 +19,7 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
-    document.title = "Reset Password — CameMark";
+    document.title = "Reset Password — Banda Market";
     if (!resetToken) {
       toast.error("Invalid reset session. Please request a new code.");
       navigate("/forgot-password");
@@ -60,7 +60,7 @@ const ResetPassword = () => {
       <div className="w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
           <Link to="/">
-            <img src={logo} alt="CameMark" className="h-12 w-auto mx-auto mb-6 animate-float" />
+            <img src={logo} alt="Banda Market" className="h-12 w-auto mx-auto mb-6 animate-float" />
           </Link>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
             Reset Password
