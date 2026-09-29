@@ -96,7 +96,7 @@ const NewFooter = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6 relative">
           
           <div className="col-span-2 lg:col-span-1">
-            <img src={logo} alt="Banda Market" className="h-10 w-auto mb-2 brightness-0 invert" />
+            <img src={logo} alt="Banda Market" className="h-16 w-auto mb-2 brightness-0 invert" />
             <p className="text-xs text-white mb-4">Shop • Sell • Grow • Belong</p>
             <p className="text-xs text-white/60 mb-6">Africa to the world, the world to Africa.</p>
             <div className="flex gap-3 text-white/60">

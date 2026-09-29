@@ -1,11 +1,32 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Search, ShoppingCart, User, Heart, Menu, ChevronDown, Globe, Shield, Headphones, Truck, CheckCircle } from "lucide-react";
 import logo from "@/assets/camemark-logo.png";
 import { getCartItems } from "@/utils/cart";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const LANGS = [
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "ar", label: "العربية", flag: "🇸🇦" },
+];
+
+const CURRENCIES = ["USD", "EUR", "GBP", "XAF", "NGN", "ZAR", "KES"];
 
 const NewNavbar = () => {
+  const { t, i18n } = useTranslation();
   const [cartCount, setCartCount] = useState(0);
+  const [countries, setCountries] = useState<any[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState({ name: "United States", code: "US", flag: "https://flagcdn.com/w20/us.png" });
+  const [currency, setCurrency] = useState("USD");
+  const [countrySearch, setCountrySearch] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,45 +40,121 @@ const NewNavbar = () => {
     return () => window.removeEventListener("cart_updated", updateCount);
   }, []);
 
+  useEffect(() => {
+    fetch("https://restcountries.com/v3.1/all?fields=name,cca2,flags")
+      .then(res => res.json())
+      .then(data => {
+        const formatted = data.map((c: any) => ({
+          name: c.name.common,
+          code: c.cca2,
+          flag: c.flags.png
+        })).sort((a: any, b: any) => a.name.localeCompare(b.name));
+        setCountries(formatted);
+      })
+      .catch(err => console.error("Error fetching countries", err));
+  }, []);
+
+  const currentLang = LANGS.find((l) => l.code === i18n.language?.split("-")[0]) ?? LANGS[0];
+  const filteredCountries = countries.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()));
+
   return (
     <header className="w-full">
-      {/* Top Bar */}
-      <div className="bg-[#0b3624] text-white/90 text-xs py-2 hidden lg:block border-b border-white/10">
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Truck className="h-4 w-4 text-amber-500" />
-              <span>Free Delivery Across Africa</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-amber-500" />
-              <span>Secure Payments</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-amber-500" />
-              <span>Verified Sellers</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Headphones className="h-4 w-4 text-amber-500" />
-              <span>24/7 Customer Support</span>
+      {/* Top Bar with Animation */}
+      <div className="bg-[#0b3624] text-white/90 text-xs py-2 hidden lg:block border-b border-white/10 overflow-hidden">
+        <div className="container mx-auto px-4 flex justify-between items-center relative">
+          
+          {/* Animated Marquee Section */}
+          <div className="flex-1 overflow-hidden relative">
+            <div className="flex items-center gap-8 whitespace-nowrap animate-[marquee_20s_linear_infinite] hover:[animation-play-state:paused]">
+              <div className="flex items-center gap-2">
+                <Truck className="h-4 w-4 text-amber-500" />
+                <span>Free Delivery Across Africa</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-amber-500" />
+                <span>Secure Payments</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-amber-500" />
+                <span>Verified Sellers</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Headphones className="h-4 w-4 text-amber-500" />
+                <span>24/7 Customer Support</span>
+              </div>
+              {/* Duplicate for seamless looping */}
+              <div className="flex items-center gap-2" aria-hidden="true">
+                <Truck className="h-4 w-4 text-amber-500" />
+                <span>Free Delivery Across Africa</span>
+              </div>
+              <div className="flex items-center gap-2" aria-hidden="true">
+                <Shield className="h-4 w-4 text-amber-500" />
+                <span>Secure Payments</span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1 cursor-pointer">
-              <Globe className="h-3 w-3" />
-              <span>Ship to</span>
-              <img src="https://flagcdn.com/w20/us.png" alt="US" className="h-3 ml-1" />
-              <span className="ml-1">United States</span>
-              <ChevronDown className="h-3 w-3" />
-            </div>
-            <div className="flex items-center gap-1 cursor-pointer">
-              <span>English (EN)</span>
-              <ChevronDown className="h-3 w-3" />
-            </div>
-            <div className="flex items-center gap-1 cursor-pointer">
-              <span>USD</span>
-              <ChevronDown className="h-3 w-3" />
-            </div>
+          
+          <div className="flex items-center gap-4 bg-[#0b3624] pl-4 z-10 shadow-[-10px_0_10px_#0b3624]">
+            {/* Country Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 cursor-pointer hover:text-amber-500 transition-colors outline-none">
+                <Globe className="h-3 w-3" />
+                <span>Ship to</span>
+                <img src={selectedCountry.flag} alt={selectedCountry.code} className="h-3 ml-1" />
+                <span className="ml-1 max-w-[100px] truncate">{selectedCountry.name}</span>
+                <ChevronDown className="h-3 w-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-white p-2">
+                <input 
+                  type="text" 
+                  placeholder="Search country..." 
+                  className="w-full p-2 text-sm border-b mb-2 outline-none"
+                  value={countrySearch}
+                  onChange={(e) => setCountrySearch(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                {filteredCountries.map(c => (
+                  <DropdownMenuItem key={c.code} onClick={() => setSelectedCountry(c)} className="cursor-pointer flex items-center gap-2 text-sm">
+                    <img src={c.flag} alt={c.code} className="h-3 w-4 object-cover" />
+                    <span>{c.name}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Language Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 cursor-pointer hover:text-amber-500 transition-colors outline-none">
+                <span>{currentLang.label} ({currentLang.code.toUpperCase()})</span>
+                <ChevronDown className="h-3 w-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-white">
+                {LANGS.map((l) => (
+                  <DropdownMenuItem key={l.code} onClick={() => {
+                    localStorage.setItem('camemark_lang', l.code);
+                    i18n.changeLanguage(l.code);
+                  }} className="cursor-pointer text-sm">
+                    <span className="mr-2">{l.flag}</span>
+                    {l.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Currency Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 cursor-pointer hover:text-amber-500 transition-colors outline-none">
+                <span>{currency}</span>
+                <ChevronDown className="h-3 w-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-white">
+                {CURRENCIES.map((c) => (
+                  <DropdownMenuItem key={c} onClick={() => setCurrency(c)} className="cursor-pointer text-sm">
+                    {c}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -67,7 +164,7 @@ const NewNavbar = () => {
         <div className="container mx-auto px-4 flex flex-wrap lg:flex-nowrap items-center justify-between gap-4">
           {/* Logo */}
           <Link to="/" className="flex-shrink-0 flex items-center gap-2">
-            <img src={logo} alt="Banda Market" className="h-10 md:h-12 w-auto object-contain" />
+            <img src={logo} alt="Banda Market" className="h-16 md:h-20 w-auto object-contain" />
           </Link>
 
           {/* Search Bar */}
@@ -136,6 +233,12 @@ const NewNavbar = () => {
           </nav>
         </div>
       </div>
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes marquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
+        }
+      `}} />
     </header>
   );
 };
