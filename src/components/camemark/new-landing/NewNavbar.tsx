@@ -20,6 +20,44 @@ const NewNavbar = () => {
   const [currency, setCurrency] = useState("USD");
   const navigate = useNavigate();
 
+  // Determine current language from cookie or default
+  const getCookie = (name: string) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift();
+    return null;
+  };
+
+  const googtrans = getCookie('googtrans');
+  const currentLangCode = googtrans ? googtrans.split('/')[2] : (i18n.language || 'en');
+  const currentLangDisplay = LANGUAGES.find(l => l.code === currentLangCode) || LANGUAGES[0];
+
+  const handleLanguageChange = (code: string) => {
+    document.cookie = `googtrans=/en/${code}; path=/`;
+    document.cookie = `googtrans=/en/${code}; path=/; domain=${window.location.hostname}`;
+    localStorage.setItem('camemark_lang', code);
+    i18n.changeLanguage(code);
+    window.location.reload();
+  };
+
+  useEffect(() => {
+    // Add Google Translate Script
+    if (!document.getElementById("google-translate-script")) {
+      const script = document.createElement("script");
+      script.id = "google-translate-script";
+      script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      script.async = true;
+      document.body.appendChild(script);
+
+      (window as any).googleTranslateElementInit = () => {
+        new (window as any).google.translate.TranslateElement(
+          { pageLanguage: "en", autoDisplay: false },
+          "google_translate_element"
+        );
+      };
+    }
+  }, []);
+
   useEffect(() => {
     const updateCount = () => {
       const items = getCartItems();
@@ -31,8 +69,7 @@ const NewNavbar = () => {
     return () => window.removeEventListener("cart_updated", updateCount);
   }, []);
 
-  // Current selected language display
-  const currentLangDisplay = LANGUAGES.find(l => l.code === i18n.language) || LANGUAGES.find(l => l.code === 'eng') || LANGUAGES[0];
+
 
   return (
     <header className="w-full">
@@ -99,10 +136,7 @@ const NewNavbar = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-white text-black p-2 shadow-xl z-50 border">
                 {LANGUAGES.map((l) => (
-                  <DropdownMenuItem key={l.code} onClick={() => {
-                    localStorage.setItem('camemark_lang', l.code);
-                    i18n.changeLanguage(l.code);
-                  }} className="cursor-pointer text-sm hover:bg-gray-100 p-2 rounded">
+                  <DropdownMenuItem key={l.code} onClick={() => handleLanguageChange(l.code)} className="cursor-pointer text-sm hover:bg-gray-100 p-2 rounded">
                     {l.label} ({l.code.toUpperCase()})
                   </DropdownMenuItem>
                 ))}
@@ -206,7 +240,15 @@ const NewNavbar = () => {
           0% { transform: translateX(0%); }
           100% { transform: translateX(-50%); }
         }
+        .goog-te-banner-frame {
+          display: none !important;
+        }
+        body {
+          top: 0px !important;
+        }
       `}} />
+      {/* Hidden Google Translate Element */}
+      <div id="google_translate_element" className="hidden"></div>
     </header>
   );
 };
