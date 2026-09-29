@@ -145,9 +145,9 @@ const NewNavbar = () => {
                 <span className="ml-1 max-w-[100px] truncate">{selectedCountry.name}</span>
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-white p-2">
+              <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-white text-black p-2 shadow-xl z-50 border">
                 {countries.map(c => (
-                  <DropdownMenuItem key={c.code} onClick={() => setSelectedCountry(c)} className="cursor-pointer flex items-center gap-2 text-sm">
+                  <DropdownMenuItem key={c.code} onClick={() => setSelectedCountry(c)} className="cursor-pointer flex items-center gap-2 text-sm hover:bg-gray-100 p-2 rounded">
                     <img src={c.flag} alt={c.code} className="h-3 w-4 object-cover" />
                     <span>{c.name}</span>
                   </DropdownMenuItem>
@@ -161,12 +161,12 @@ const NewNavbar = () => {
                 <span className="max-w-[80px] truncate">{currentLangDisplay?.label || 'Language'}</span>
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-white p-2">
+              <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-white text-black p-2 shadow-xl z-50 border">
                 {allLanguages.map((l) => (
                   <DropdownMenuItem key={l.code} onClick={() => {
                     localStorage.setItem('camemark_lang', l.code);
                     i18n.changeLanguage(l.code);
-                  }} className="cursor-pointer text-sm">
+                  }} className="cursor-pointer text-sm hover:bg-gray-100 p-2 rounded">
                     {l.label} ({l.code.toUpperCase()})
                   </DropdownMenuItem>
                 ))}
@@ -179,9 +179,9 @@ const NewNavbar = () => {
                 <span>{currency}</span>
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 max-h-80 overflow-y-auto bg-white p-2">
+              <DropdownMenuContent align="end" className="w-48 max-h-80 overflow-y-auto bg-white text-black p-2 shadow-xl z-50 border">
                 {allCurrencies.map((c) => (
-                  <DropdownMenuItem key={c} onClick={() => setCurrency(c)} className="cursor-pointer text-sm">
+                  <DropdownMenuItem key={c} onClick={() => setCurrency(c)} className="cursor-pointer text-sm hover:bg-gray-100 p-2 rounded">
                     {c}
                   </DropdownMenuItem>
                 ))}
