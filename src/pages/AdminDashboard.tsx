@@ -823,9 +823,13 @@ const AdminPopupBanner = () => {
 
     setSaving(true);
     try {
+      const token = localStorage.getItem("camemark_token");
       const res = await fetch(getApiUrl("/api/popup-banner"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
         body: JSON.stringify(banner)
       });
       const data = await res.json();
@@ -863,6 +867,22 @@ const AdminPopupBanner = () => {
         )}
 
         <form onSubmit={handleSaveBanner} className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border mb-4">
+            <div>
+              <h4 className="font-bold text-foreground">Banner Status</h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                Enable or disable the popup banner across the site.
+              </p>
+            </div>
+            <Button 
+              type="button"
+              onClick={() => setBanner({ ...banner, enabled: banner.enabled ? 0 : 1 })} 
+              variant={banner.enabled ? "destructive" : "default"}
+            >
+              {banner.enabled ? "Disable Banner" : "Enable Banner"}
+            </Button>
+          </div>
+
           <div className="space-y-1.5">
             <Label className="text-xs font-bold text-muted-foreground uppercase">Banner Image</Label>
             <div className="flex gap-2">

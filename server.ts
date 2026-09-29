@@ -1295,16 +1295,61 @@ app.all("/api/admin-tickets", async (req, res) => {
 });
 
 // ─── POPUP BANNER ────────────────────────────────────────────────────────────
-app.get("/api/popup-banner", (req, res) => {
-  res.json({
-    success: true,
-    banner: {
-      enabled: 1,
+app.get("/api/popup-banner", async (req, res) => {
+  try {
+    const setting = await prisma.referral_settings.findUnique({
+      where: { setting_key: "popup_banner_settings" }
+    });
+    
+    let bannerData = {
+      enabled: 0,
       imageUrl: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
       title: "Cameroon E-Commerce Forum 2026",
       linkUrl: "/#forum-2026"
+    };
+
+    if (setting && setting.setting_value) {
+      try {
+        bannerData = { ...bannerData, ...JSON.parse(setting.setting_value) };
+      } catch(e) {}
     }
-  });
+
+    res.json({
+      success: true,
+      banner: bannerData
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/popup-banner", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, JWT_SECRET) as { role?: string };
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ error: "Forbidden: Admins only" });
+    }
+
+    const { enabled, imageUrl, title, linkUrl } = req.body;
+    
+    const bannerData = JSON.stringify({ enabled, imageUrl, title, linkUrl });
+    
+    await prisma.referral_settings.upsert({
+      where: { setting_key: "popup_banner_settings" },
+      update: { setting_value: bannerData },
+      create: { setting_key: "popup_banner_settings", setting_value: bannerData }
+    });
+
+    res.json({ success: true, message: "Banner settings updated successfully" });
+  } catch (error) {
+    console.error("Update banner error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // ─── TRANZAK WEBHOOK ─────────────────────────────────────────────────────────

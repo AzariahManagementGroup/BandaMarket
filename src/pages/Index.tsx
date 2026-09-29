@@ -1,19 +1,16 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { getApiUrl } from "@/config";
-import Navbar from "@/components/camemark/Navbar";
-import Hero from "@/components/camemark/Hero";
-import CategoriesSlider from "@/components/camemark/CategoriesSlider";
-import PromoSlider from "@/components/camemark/PromoSlider";
-import StrategicPartners from "@/components/camemark/StrategicPartners";
-import FeatureGrid from "@/components/camemark/FeatureGrid";
-import RegionsMap from "@/components/camemark/RegionsMap";
-import HowItWorks from "@/components/camemark/HowItWorks";
-import BuiltFor from "@/components/camemark/BuiltFor";
-import TrustBar from "@/components/camemark/TrustBar";
-import AcademyLandingSection from "@/components/camemark/AcademyLandingSection";
 import EventPopupModal from "@/components/camemark/EventPopupModal";
-import Footer from "@/components/camemark/Footer";
+
+// New Landing Page Components
+import NewNavbar from "@/components/camemark/new-landing/NewNavbar";
+import NewHero from "@/components/camemark/new-landing/NewHero";
+import NewCategories from "@/components/camemark/new-landing/NewCategories";
+import NewPromoCards from "@/components/camemark/new-landing/NewPromoCards";
+import NewDeals from "@/components/camemark/new-landing/NewDeals";
+import NewCollections from "@/components/camemark/new-landing/NewCollections";
+import NewFooter from "@/components/camemark/new-landing/NewFooter";
 
 const Index = () => {
   const { t, i18n } = useTranslation();
@@ -72,26 +69,20 @@ const Index = () => {
   }, [t, i18n.language]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50/30">
       <EventPopupModal />
-      <Navbar />
+      <NewNavbar />
       <main className="overflow-x-hidden">
-        <CategoriesSlider />
-        <PromoSlider />
-        <StrategicPartners />
-        <Hero />
-        <AcademyLandingSection />
-        <FeatureGrid />
-        <section className="container py-20 grid gap-12 lg:grid-cols-2 items-start">
-          <RegionsMap />
-          <HowItWorks />
-        </section>
-        <BuiltFor />
-        <TrustBar />
+        <NewHero />
+        <NewCategories />
+        <NewPromoCards />
+        <NewDeals />
+        <NewCollections />
       </main>
-      <Footer />
+      <NewFooter />
     </div>
   );
 };
 
 export default Index;
+
