@@ -150,9 +150,28 @@ const MarketZone = () => {
     }
   };
 
-  const displayedProducts = tab === "saved" 
-    ? products.filter(p => savedItemIds.includes(p.id)) 
-    : products;
+  const searchQuery = searchParams.get("q")?.toLowerCase() || "";
+  const searchCategory = searchParams.get("category") || "All Categories";
+
+  const displayedProducts = products.filter(p => {
+    // 1. Saved Tab Filter
+    if (tab === "saved" && !savedItemIds.includes(p.id)) return false;
+
+    // 2. Search Query Filter
+    if (searchQuery) {
+      const matchTitle = p.title?.toLowerCase().includes(searchQuery);
+      const matchDesc = p.description?.toLowerCase().includes(searchQuery);
+      if (!matchTitle && !matchDesc) return false;
+    }
+
+    // 3. Category Filter
+    if (searchCategory && searchCategory !== "All Categories") {
+      // In a real DB, category might be exact match or slug, here we do simple check
+      if (p.category !== searchCategory) return false;
+    }
+
+    return true;
+  });
 
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);

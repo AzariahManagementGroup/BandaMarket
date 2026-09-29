@@ -18,6 +18,8 @@ const NewNavbar = () => {
   const [cartCount, setCartCount] = useState(0);
   const [selectedCountry, setSelectedCountry] = useState({ name: "United States", code: "US", flag: "🇺🇸" });
   const [currency, setCurrency] = useState("USD");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchCategory, setSearchCategory] = useState("All Categories");
   const navigate = useNavigate();
 
   // Determine current language from cookie or default
@@ -38,6 +40,15 @@ const NewNavbar = () => {
     localStorage.setItem('camemark_lang', code);
     i18n.changeLanguage(code);
     window.location.reload();
+  };
+
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/market-zone?q=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(searchCategory)}`);
+    } else {
+      navigate(`/market-zone?category=${encodeURIComponent(searchCategory)}`);
+    }
   };
 
   useEffect(() => {
@@ -171,19 +182,37 @@ const NewNavbar = () => {
 
           {/* Search Bar */}
           <div className="flex-grow max-w-3xl flex items-center w-full order-3 lg:order-2">
-            <div className="flex w-full border-2 border-amber-500 rounded-full overflow-hidden shadow-sm hover:shadow-md transition-all">
-              <div className="px-4 py-2 bg-white flex items-center gap-2 cursor-pointer border-r text-sm text-gray-700 min-w-max hidden md:flex">
-                All Categories <ChevronDown className="h-4 w-4" />
+            <form onSubmit={handleSearch} className="flex w-full border-2 border-amber-500 rounded-full overflow-hidden shadow-sm hover:shadow-md transition-all">
+              
+              <div className="bg-white flex items-center border-r text-sm text-gray-700 min-w-max hidden md:flex">
+                <select 
+                  className="px-4 py-2 bg-transparent outline-none cursor-pointer appearance-none pr-8 relative"
+                  value={searchCategory}
+                  onChange={(e) => setSearchCategory(e.target.value)}
+                  style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>')`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', paddingRight: '28px' }}
+                >
+                  <option>All Categories</option>
+                  <option>Electronics</option>
+                  <option>Fashion</option>
+                  <option>Home & Garden</option>
+                  <option>Automotive</option>
+                  <option>Beauty</option>
+                  <option>Agriculture</option>
+                  <option>Made in Africa</option>
+                </select>
               </div>
+
               <input 
                 type="text" 
                 placeholder="Search for products, brands and more..." 
                 className="flex-grow px-4 py-2 outline-none text-sm min-w-0"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <button className="bg-amber-500 hover:bg-amber-600 transition-colors px-6 py-2 text-white flex items-center justify-center">
+              <button type="submit" className="bg-amber-500 hover:bg-amber-600 transition-colors px-6 py-2 text-white flex items-center justify-center">
                 <Search className="h-5 w-5" />
               </button>
-            </div>
+            </form>
           </div>
 
           {/* User Actions */}
