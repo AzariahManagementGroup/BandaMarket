@@ -11,26 +11,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const LANGS = [
-  { code: "en", label: "English", flag: "🇬🇧" },
-  { code: "fr", label: "Français", flag: "🇫🇷" },
-  { code: "es", label: "Español", flag: "🇪🇸" },
-  { code: "ar", label: "العربية", flag: "🇸🇦" },
-];
-
-const CURRENCIES = ["USD", "EUR", "GBP", "XAF", "NGN", "ZAR", "KES"];
+import { COUNTRIES, CURRENCIES, LANGUAGES } from "@/utils/dropdownData";
 
 const NewNavbar = () => {
   const { t, i18n } = useTranslation();
   const [cartCount, setCartCount] = useState(0);
-  const [countries, setCountries] = useState<any[]>([]);
-  const [selectedCountry, setSelectedCountry] = useState({ name: "United States", code: "US", flag: "https://flagcdn.com/w20/us.png" });
+  const [selectedCountry, setSelectedCountry] = useState({ name: "United States", code: "US", flag: "🇺🇸" });
   const [currency, setCurrency] = useState("USD");
-  const [countrySearch, setCountrySearch] = useState("");
-  const [allLanguages, setAllLanguages] = useState<{code: string, label: string}[]>(LANGS);
-  const [allCurrencies, setAllCurrencies] = useState<string[]>(CURRENCIES);
-  const [langSearch, setLangSearch] = useState("");
-  const [currencySearch, setCurrencySearch] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,59 +31,8 @@ const NewNavbar = () => {
     return () => window.removeEventListener("cart_updated", updateCount);
   }, []);
 
-  useEffect(() => {
-    fetch("https://restcountries.com/v3.1/all?fields=name,cca2,flags,currencies,languages")
-      .then(res => res.json())
-      .then(data => {
-        const formatted = data.map((c: any) => ({
-          name: c.name.common,
-          code: c.cca2,
-          flag: c.flags.png
-        })).sort((a: any, b: any) => a.name.localeCompare(b.name));
-        setCountries(formatted);
-
-        // Extract unique currencies
-        const currenciesMap = new Set<string>();
-        data.forEach((c: any) => {
-          if (c.currencies) {
-            Object.keys(c.currencies).forEach(cur => currenciesMap.add(cur));
-          }
-        });
-        const extractedCurrencies = Array.from(currenciesMap).sort();
-        if (extractedCurrencies.length > 0) {
-          setAllCurrencies(extractedCurrencies);
-        }
-
-        // Extract unique languages
-        const languagesMap = new Map<string, string>();
-        data.forEach((c: any) => {
-          if (c.languages) {
-            Object.entries(c.languages).forEach(([code, name]) => {
-              if (!languagesMap.has(code)) {
-                languagesMap.set(code, name as string);
-              }
-            });
-          }
-        });
-        const extractedLanguages = Array.from(languagesMap.entries()).map(([code, label]) => ({
-          code,
-          label
-        })).sort((a, b) => a.label.localeCompare(b.label));
-        
-        if (extractedLanguages.length > 0) {
-          setAllLanguages(extractedLanguages);
-        }
-      })
-      .catch(err => console.error("Error fetching countries", err));
-  }, []);
-
-  // Filtered lists for search
-  const filteredCountries = countries.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()));
-  const filteredLanguages = allLanguages.filter(l => l.label.toLowerCase().includes(langSearch.toLowerCase()) || l.code.toLowerCase().includes(langSearch.toLowerCase()));
-  const filteredCurrencies = allCurrencies.filter(c => c.toLowerCase().includes(currencySearch.toLowerCase()));
-
   // Current selected language display
-  const currentLangDisplay = allLanguages.find(l => l.code === i18n.language) || allLanguages.find(l => l.code === 'eng') || allLanguages[0];
+  const currentLangDisplay = LANGUAGES.find(l => l.code === i18n.language) || LANGUAGES.find(l => l.code === 'eng') || LANGUAGES[0];
 
   return (
     <header className="w-full">
@@ -141,14 +77,14 @@ const NewNavbar = () => {
               <DropdownMenuTrigger className="flex items-center gap-1 cursor-pointer hover:text-amber-500 transition-colors outline-none">
                 <Globe className="h-3 w-3" />
                 <span>Ship to</span>
-                <img src={selectedCountry.flag} alt={selectedCountry.code} className="h-3 ml-1" />
+                <span className="ml-1 text-base leading-none">{selectedCountry.flag}</span>
                 <span className="ml-1 max-w-[100px] truncate">{selectedCountry.name}</span>
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-white text-black p-2 shadow-xl z-50 border">
-                {countries.map(c => (
+                {COUNTRIES.map(c => (
                   <DropdownMenuItem key={c.code} onClick={() => setSelectedCountry(c)} className="cursor-pointer flex items-center gap-2 text-sm hover:bg-gray-100 p-2 rounded">
-                    <img src={c.flag} alt={c.code} className="h-3 w-4 object-cover" />
+                    <span className="text-base leading-none">{c.flag}</span>
                     <span>{c.name}</span>
                   </DropdownMenuItem>
                 ))}
@@ -162,7 +98,7 @@ const NewNavbar = () => {
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-white text-black p-2 shadow-xl z-50 border">
-                {allLanguages.map((l) => (
+                {LANGUAGES.map((l) => (
                   <DropdownMenuItem key={l.code} onClick={() => {
                     localStorage.setItem('camemark_lang', l.code);
                     i18n.changeLanguage(l.code);
@@ -180,7 +116,7 @@ const NewNavbar = () => {
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 max-h-80 overflow-y-auto bg-white text-black p-2 shadow-xl z-50 border">
-                {allCurrencies.map((c) => (
+                {CURRENCIES.map((c) => (
                   <DropdownMenuItem key={c} onClick={() => setCurrency(c)} className="cursor-pointer text-sm hover:bg-gray-100 p-2 rounded">
                     {c}
                   </DropdownMenuItem>
