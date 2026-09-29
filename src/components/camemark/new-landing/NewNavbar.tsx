@@ -146,15 +146,7 @@ const NewNavbar = () => {
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-white p-2">
-                <input 
-                  type="text" 
-                  placeholder="Search country..." 
-                  className="w-full p-2 text-sm border-b mb-2 outline-none"
-                  value={countrySearch}
-                  onChange={(e) => setCountrySearch(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                {filteredCountries.map(c => (
+                {countries.map(c => (
                   <DropdownMenuItem key={c.code} onClick={() => setSelectedCountry(c)} className="cursor-pointer flex items-center gap-2 text-sm">
                     <img src={c.flag} alt={c.code} className="h-3 w-4 object-cover" />
                     <span>{c.name}</span>
@@ -170,15 +162,7 @@ const NewNavbar = () => {
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-white p-2">
-                <input 
-                  type="text" 
-                  placeholder="Search language..." 
-                  className="w-full p-2 text-sm border-b mb-2 outline-none"
-                  value={langSearch}
-                  onChange={(e) => setLangSearch(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                {filteredLanguages.map((l) => (
+                {allLanguages.map((l) => (
                   <DropdownMenuItem key={l.code} onClick={() => {
                     localStorage.setItem('camemark_lang', l.code);
                     i18n.changeLanguage(l.code);
@@ -196,15 +180,7 @@ const NewNavbar = () => {
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 max-h-80 overflow-y-auto bg-white p-2">
-                <input 
-                  type="text" 
-                  placeholder="Search currency..." 
-                  className="w-full p-2 text-sm border-b mb-2 outline-none"
-                  value={currencySearch}
-                  onChange={(e) => setCurrencySearch(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                {filteredCurrencies.map((c) => (
+                {allCurrencies.map((c) => (
                   <DropdownMenuItem key={c} onClick={() => setCurrency(c)} className="cursor-pointer text-sm">
                     {c}
                   </DropdownMenuItem>
