@@ -12,9 +12,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { COUNTRIES, CURRENCIES, LANGUAGES } from "@/utils/dropdownData";
+import CartBasketDrawer from "@/components/camemark/CartBasketDrawer";
 
 const NewNavbar = () => {
   const { t, i18n } = useTranslation();
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [selectedCountry, setSelectedCountry] = useState({ name: "United States", code: "US", flag: "🇺🇸" });
   const [currency, setCurrency] = useState("USD");
@@ -78,6 +80,38 @@ const NewNavbar = () => {
     updateCount();
     window.addEventListener("cart_updated", updateCount);
     return () => window.removeEventListener("cart_updated", updateCount);
+  }, []);
+
+  useEffect(() => {
+    // Fetch user location to set default country and currency
+    const fetchLocation = async () => {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+        if (data && data.country_code && data.country_name) {
+          const matchingCountry = COUNTRIES.find(c => c.code === data.country_code);
+          setSelectedCountry({
+            name: data.country_name,
+            code: data.country_code,
+            flag: matchingCountry ? matchingCountry.flag : ""
+          });
+
+          // Set currency if supported, else default to USD
+          if (data.currency && CURRENCIES.includes(data.currency)) {
+            setCurrency(data.currency);
+          } else {
+            setCurrency("USD");
+          }
+        }
+      } catch (err) {
+        console.log("Could not detect location, defaulting to USD");
+        setCurrency("USD");
+      }
+    };
+    
+    // Only fetch if they haven't explicitly chosen yet. 
+    // For simplicity, we just fetch once on mount.
+    fetchLocation();
   }, []);
 
 
@@ -230,7 +264,7 @@ const NewNavbar = () => {
               <div className="hidden lg:block text-sm font-semibold text-gray-800">Wishlist</div>
             </div>
 
-            <div className="flex items-center gap-2 cursor-pointer hover:text-amber-500 transition-colors relative" onClick={() => navigate('/cart')}>
+            <div className="flex items-center gap-2 cursor-pointer hover:text-amber-500 transition-colors relative" onClick={() => setIsCartOpen(true)}>
               <div className="relative">
                 <ShoppingCart className="h-6 w-6 text-gray-700" />
                 <span className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
@@ -278,6 +312,8 @@ const NewNavbar = () => {
       `}} />
       {/* Hidden Google Translate Element */}
       <div id="google_translate_element" className="hidden"></div>
+      
+      <CartBasketDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </header>
   );
 };

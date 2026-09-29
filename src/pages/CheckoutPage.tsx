@@ -605,78 +605,77 @@ const CheckoutPage = () => {
 
             {/* Step 2: Shipping Method */}
             {activeStep === 2 && (
-              <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4 animate-fade-in">
-                <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
-                  <span className="h-6 w-6 rounded-full bg-[#064E3B] text-white text-xs flex items-center justify-center">2</span> Delivery / Shipping Method
+              <div className="bg-white rounded-[24px] p-6 lg:p-8 border border-gray-100 shadow-sm space-y-6 animate-fade-in">
+                <h3 className="font-extrabold text-xl text-gray-900 flex items-center gap-3">
+                  <span className="h-7 w-7 rounded-full bg-[#064E3B] text-white text-sm flex items-center justify-center">2</span> Delivery / Shipping Method
                 </h3>
 
-                <div className="space-y-2.5">
+                <div className="space-y-4">
                   <div 
                     onClick={() => setShippingMethod("standard")}
-                    className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                      shippingMethod === "standard" ? "border-emerald-600 bg-emerald-50/40" : "border-gray-200"
+                    className={`p-5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                      shippingMethod === "standard" ? "border-[#09835A] bg-[#09835A]/[0.02]" : "border-gray-200"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <input type="radio" checked={shippingMethod === "standard"} onChange={() => {}} className="accent-emerald-600" />
+                    <div className="flex items-center gap-4">
+                      <input type="radio" checked={shippingMethod === "standard"} onChange={() => {}} className="accent-[#09835A] w-4 h-4" />
                       <div>
-                        <p className="font-extrabold text-xs text-gray-900">Standard Delivery</p>
-                        <p className="text-[10px] text-gray-400">Estimated delivery: May 27 – May 29</p>
+                        <p className="font-extrabold text-sm text-gray-900">Standard Delivery</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Estimated delivery: May 27 – May 29</p>
                       </div>
                     </div>
-                    <span className="font-extrabold text-xs text-emerald-700">FCFA 1,000</span>
+                    <span className="font-extrabold text-sm text-[#09835A]">FCFA 1,000</span>
                   </div>
 
                   <div 
                     onClick={() => setShippingMethod("express")}
-                    className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                      shippingMethod === "express" ? "border-emerald-600 bg-emerald-50/40" : "border-gray-200"
+                    className={`p-5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                      shippingMethod === "express" ? "border-[#09835A] bg-[#09835A]/[0.02]" : "border-gray-200"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <input type="radio" checked={shippingMethod === "express"} onChange={() => {}} className="accent-emerald-600" />
+                    <div className="flex items-center gap-4">
+                      <input type="radio" checked={shippingMethod === "express"} onChange={() => {}} className="accent-[#09835A] w-4 h-4" />
                       <div>
-                        <p className="font-extrabold text-xs text-gray-900">Express Delivery</p>
-                        <p className="text-[10px] text-gray-400">Estimated delivery: May 26</p>
+                        <p className="font-extrabold text-sm text-gray-900">Express Delivery</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Estimated delivery: May 26</p>
                       </div>
                     </div>
-                    <span className="font-extrabold text-xs text-emerald-700">FCFA 2,500</span>
+                    <span className="font-extrabold text-sm text-[#09835A]">FCFA 2,500</span>
                   </div>
 
                   <div 
                     onClick={() => setShippingMethod("pickup")}
-                    className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                      shippingMethod === "pickup" ? "border-emerald-600 bg-emerald-50/40" : "border-gray-200"
+                    className={`p-5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                      shippingMethod === "pickup" ? "border-[#09835A] bg-[#09835A]/[0.02]" : "border-gray-200"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <input type="radio" checked={shippingMethod === "pickup"} onChange={() => {}} className="accent-emerald-600" />
+                    <div className="flex items-center gap-4">
+                      <input type="radio" checked={shippingMethod === "pickup"} onChange={() => {}} className="accent-[#09835A] w-4 h-4" />
                       <div>
-                        <p className="font-extrabold text-xs text-gray-900">Pickup Point</p>
-                        <p className="text-[10px] text-gray-400">Pick up from a CaMark Pickup Point</p>
+                        <p className="font-extrabold text-sm text-gray-900">Pickup Point</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Pick up from a CaMark Pickup Point</p>
                       </div>
                     </div>
-                    <span className="font-extrabold text-xs text-emerald-700">FCFA 0</span>
+                    <span className="font-extrabold text-sm text-[#09835A]">FCFA 0</span>
                   </div>
                 </div>
 
-                <p className="text-[11px] text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" /> Orders are insured and tracked to your doorstep.
+                <p className="text-xs text-[#09835A] bg-[#09835A]/10 p-4 rounded-xl flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 shrink-0 text-[#09835A]" /> Orders are insured and tracked to your doorstep.
                 </p>
 
-                <div className="pt-4 flex justify-between">
+                <div className="pt-6 flex justify-between items-center">
                   <Button 
                     type="button" 
-                    variant="outline"
                     onClick={() => setActiveStep(1)}
-                    className="font-bold text-xs h-11 px-6 rounded-xl"
+                    className="bg-[#F8F6F0] hover:bg-[#EFECE5] text-gray-800 border border-gray-200 font-extrabold text-sm h-12 px-6 rounded-xl shadow-none"
                   >
                     ← Back: Address
                   </Button>
                   <Button 
                     type="button" 
                     onClick={() => setActiveStep(3)}
-                    className="bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold text-xs h-11 px-8 rounded-xl"
+                    className="bg-[#064E3B] hover:bg-[#043628] text-white font-extrabold text-sm h-12 px-8 rounded-xl"
                   >
                     Next: Payment Method →
                   </Button>
