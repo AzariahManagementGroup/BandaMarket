@@ -27,6 +27,10 @@ const NewNavbar = () => {
   const [selectedCountry, setSelectedCountry] = useState({ name: "United States", code: "US", flag: "https://flagcdn.com/w20/us.png" });
   const [currency, setCurrency] = useState("USD");
   const [countrySearch, setCountrySearch] = useState("");
+  const [allLanguages, setAllLanguages] = useState<{code: string, label: string}[]>(LANGS);
+  const [allCurrencies, setAllCurrencies] = useState<string[]>(CURRENCIES);
+  const [langSearch, setLangSearch] = useState("");
+  const [currencySearch, setCurrencySearch] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,7 +45,7 @@ const NewNavbar = () => {
   }, []);
 
   useEffect(() => {
-    fetch("https://restcountries.com/v3.1/all?fields=name,cca2,flags")
+    fetch("https://restcountries.com/v3.1/all?fields=name,cca2,flags,currencies,languages")
       .then(res => res.json())
       .then(data => {
         const formatted = data.map((c: any) => ({
@@ -50,12 +54,49 @@ const NewNavbar = () => {
           flag: c.flags.png
         })).sort((a: any, b: any) => a.name.localeCompare(b.name));
         setCountries(formatted);
+
+        // Extract unique currencies
+        const currenciesMap = new Set<string>();
+        data.forEach((c: any) => {
+          if (c.currencies) {
+            Object.keys(c.currencies).forEach(cur => currenciesMap.add(cur));
+          }
+        });
+        const extractedCurrencies = Array.from(currenciesMap).sort();
+        if (extractedCurrencies.length > 0) {
+          setAllCurrencies(extractedCurrencies);
+        }
+
+        // Extract unique languages
+        const languagesMap = new Map<string, string>();
+        data.forEach((c: any) => {
+          if (c.languages) {
+            Object.entries(c.languages).forEach(([code, name]) => {
+              if (!languagesMap.has(code)) {
+                languagesMap.set(code, name as string);
+              }
+            });
+          }
+        });
+        const extractedLanguages = Array.from(languagesMap.entries()).map(([code, label]) => ({
+          code,
+          label
+        })).sort((a, b) => a.label.localeCompare(b.label));
+        
+        if (extractedLanguages.length > 0) {
+          setAllLanguages(extractedLanguages);
+        }
       })
       .catch(err => console.error("Error fetching countries", err));
   }, []);
 
-  const currentLang = LANGS.find((l) => l.code === i18n.language?.split("-")[0]) ?? LANGS[0];
+  // Filtered lists for search
   const filteredCountries = countries.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()));
+  const filteredLanguages = allLanguages.filter(l => l.label.toLowerCase().includes(langSearch.toLowerCase()) || l.code.toLowerCase().includes(langSearch.toLowerCase()));
+  const filteredCurrencies = allCurrencies.filter(c => c.toLowerCase().includes(currencySearch.toLowerCase()));
+
+  // Current selected language display
+  const currentLangDisplay = allLanguages.find(l => l.code === i18n.language) || allLanguages.find(l => l.code === 'eng') || allLanguages[0];
 
   return (
     <header className="w-full">
@@ -125,17 +166,24 @@ const NewNavbar = () => {
             {/* Language Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-1 cursor-pointer hover:text-amber-500 transition-colors outline-none">
-                <span>{currentLang.label} ({currentLang.code.toUpperCase()})</span>
+                <span className="max-w-[80px] truncate">{currentLangDisplay?.label || 'Language'}</span>
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-white">
-                {LANGS.map((l) => (
+              <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto bg-white p-2">
+                <input 
+                  type="text" 
+                  placeholder="Search language..." 
+                  className="w-full p-2 text-sm border-b mb-2 outline-none"
+                  value={langSearch}
+                  onChange={(e) => setLangSearch(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                {filteredLanguages.map((l) => (
                   <DropdownMenuItem key={l.code} onClick={() => {
                     localStorage.setItem('camemark_lang', l.code);
                     i18n.changeLanguage(l.code);
                   }} className="cursor-pointer text-sm">
-                    <span className="mr-2">{l.flag}</span>
-                    {l.label}
+                    {l.label} ({l.code.toUpperCase()})
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -147,8 +195,16 @@ const NewNavbar = () => {
                 <span>{currency}</span>
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-white">
-                {CURRENCIES.map((c) => (
+              <DropdownMenuContent align="end" className="w-48 max-h-80 overflow-y-auto bg-white p-2">
+                <input 
+                  type="text" 
+                  placeholder="Search currency..." 
+                  className="w-full p-2 text-sm border-b mb-2 outline-none"
+                  value={currencySearch}
+                  onChange={(e) => setCurrencySearch(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                {filteredCurrencies.map((c) => (
                   <DropdownMenuItem key={c} onClick={() => setCurrency(c)} className="cursor-pointer text-sm">
                     {c}
                   </DropdownMenuItem>
